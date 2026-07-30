@@ -2,6 +2,8 @@
 
 ## Comet Catch — Bloop's Sky Carnival
 
+**▶ [Play it here](https://psticea.github.io/games/)**
+
 A single-file 3D browser game for roughly ages 6–10. Open `index.html` — no build step, no server, no keys.
 
 **Play:** `←` `→` move · `Space` jump (and start/restart) · `↓` skid to a stop · `Q` grown-ups menu.
