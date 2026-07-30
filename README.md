@@ -8,7 +8,7 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 | --- | --- | --- | --- | --- |
 | Comet Catch — Bloop's Sky Carnival | [play](https://psticea.github.io/games/comet-catch/) · [`comet-catch/`](comet-catch/index.html) | ~6–10 | 75s | 3D, three.js via CDN |
 | Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
-| Starbounce — Zip's Sky Rescue | [play](https://psticea.github.io/games/starbounce/) · [`starbounce/`](starbounce/index.html) | ~7–10 | <2 min a level | 2D canvas, no dependencies |
+| Starbounce — Zip's Sky Rescue | [play](https://psticea.github.io/games/starbounce/) · [`starbounce/`](starbounce/index.html) | ~7–10 | 90s | 2D canvas, no dependencies |
 | Beacon Bridge | [play](https://psticea.github.io/games/beacon-bridge/) · [`beacon-bridge/`](beacon-bridge/index.html) | ~7–10 | ~60–90s a crossing | 2D canvas, no dependencies |
 
 All four use **arrow keys, Space and `Q` only** — no mouse — and none of them has a "Game Over".
@@ -84,31 +84,35 @@ Gradients are baked into sprite caches and particles render in two batched passe
 
 ## Starbounce — Zip's Sky Rescue
 
-An aim-and-launch game for roughly ages 7–10. Open `starbounce/index.html` — no runtime dependencies, works offline.
+A 90-second aim-and-launch game for roughly ages 7–10. Open `starbounce/index.html` — no runtime dependencies, works offline.
 
-**Play:** `←` `→` aim the cannon (and steer the catcher cloud in flight) · `↑` `↓` power · `Space` launch · `Q` grown-ups menu.
+**Play:** `←` `→` aim the cannon · `↑` `↓` power · `Space` launch · `Q` grown-ups menu.
 
-Zip is a little star-comet. Aim a cannon, set its power, and launch Zip in an arc to pop the **golden rescue stars** and free the sky-friends trapped inside. Chain bubbles on the way for combos, bank off the candy walls, jelly blobs and candy rails, and steer the catcher cloud under Zip as it falls to save a hop. Levels are procedurally generated and always finish in under two minutes.
+Zip is a little star-comet. Aim a cannon, set its power, and launch Zip in an arc to pop the **golden stars** and free the sky-friends inside. Bank off the candy walls, jelly blobs and candy rails to reach the awkward ones. Popped stars are instantly replaced, so the sky never empties and there is always another shot worth taking.
+
+One round is 90 seconds and that is the whole game — no levels, no lives, no progression to grind. When the clock runs out you get a score, a 1–3 star rating and a single Space press to go again.
 
 ### The skill it builds
 
-**Trajectory prediction and angle of reflection** — spatial reasoning, plus fine motor control from steering the cloud mid-flight while the arc is still playing out.
+**Trajectory prediction and angle of reflection** — spatial reasoning, plus the fine motor control of holding an arrow key for exactly the right fraction of a second.
 
-The interesting part is the scaffold. A sparkling guide-path shows exactly where Zip will fly, simulated with the *same integrator the ball actually uses*, so it never lies. After every shot the game scores how well that shot was predicted and shrinks the guide from **2.30 s down to 0.42 s** as accuracy climbs — the prediction migrates off the screen and into the child's head. Miss a few and the scaffold grows straight back, an invisible grace radius on the rescue stars widens, and the catcher cloud gets wider (78 → 112 px). The skill estimate persists in `localStorage`, and the grown-ups menu shows the live readout ("guide reduced 46%").
+The interesting part is the scaffold. A sparkling guide-path shows exactly where Zip will fly, simulated with the *same integrator the ball actually uses*, so it never lies. The game scores how well each shot was predicted and shrinks the guide from **2.30 s down to 0.42 s** as accuracy climbs — the prediction migrates off the screen and into the child's head. Miss a few and the scaffold grows straight back, an invisible grace radius on the stars widens, and the guide returns. The skill estimate persists in `localStorage`, and the grown-ups menu shows the live readout ("guide reduced 46%").
 
-Star placement follows the same curve: early levels put rescue stars in the easy central band, later levels push them to the edges and the ceiling so banking becomes necessary.
+New stars also drift toward trickier positions — closer to the walls and the ceiling — as the rescue count climbs, so banking becomes necessary rather than optional.
 
 ### No failure state
 
-Running out of hops refills them (twice on the first two levels, once after that) with a **BONUS HOPS** fanfare. If a level really does end, the screen says "SO CLOSE! Every try makes your Star Sense stronger", offers a tip, and re-rolls the board one step easier with two extra hops — never the identical layout twice.
+There is nothing to lose. Missing costs only a couple of seconds, the sky refills itself, and the round always ends the same friendly way. The only resource is the clock.
 
 ### Built with
 
-Plain canvas 2D and the Web Audio API. Clouds, floating islands, glass bubbles, gold stars, jelly bumpers, candy rails and the aurora sky are all drawn from gradients and baked into offscreen sprite canvases at load, then blitted. Audio is a major-pentatonic combo scale (nothing can sound wrong), a convolution reverb built from generated noise, and a I–V–vi–IV arpeggio bed that speeds up during fever.
+Plain canvas 2D and the Web Audio API. Clouds, floating islands, golden stars, jelly bumpers, candy rails and the aurora sky are all drawn from gradients and baked into offscreen sprite canvases at load, then blitted. Audio is a major-pentatonic combo scale (nothing can sound wrong), a convolution reverb built from generated noise, and a I–V–vi–IV arpeggio bed that speeds up during a combo streak.
 
-Bloom is a downsample pyramid (÷3 → ÷6 → ÷12) composited additively rather than a per-frame blur filter, about 4× cheaper. Particles use a compact pool drawn in two batched passes. An adaptive quality governor watches a frame-time EMA and scales burst sizes or drops the particle glow pass. Worst case measured at ~10 ms/frame with 325 live particles in software-rendered headless Chromium.
+Bloom is a downsample pyramid (÷3 → ÷6 → ÷12) composited additively rather than a per-frame blur filter, about 4× cheaper. Particles use a compact pool drawn in two batched passes. An adaptive quality governor watches a frame-time EMA and scales burst sizes or drops the particle glow pass.
 
-Levels are seeded from the level number (mulberry32) and laid out with one of seven patterns: grid, arcs, flower, spiral, wave, pillars, diamond. Every rescue star on levels 1–12 *and* their retry re-rolls was verified reachable by brute-forcing 70 angles × 18 powers through the real physics, so no level can soft-lock.
+Physics runs on a clamped timestep so a stutter can never tunnel Zip through a wall, while the round clock runs on real elapsed time so "90 seconds" means 90 seconds even on a slow machine. Leaving the tab pauses the round rather than draining it.
+
+Every arena is generated fresh, then a fan of real trajectories is swept once to work out which star positions a shot can actually reach — stars only ever spawn in those, so the game cannot present a target that is impossible to hit.
 
 `window.__G` exposes the game state for debugging.
 
