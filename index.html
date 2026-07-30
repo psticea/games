@@ -183,7 +183,7 @@
         </div>
         <h2>What this game is</h2>
         <div class="panel">
-          <p><b>Starfall Meadow</b> is a 90&#8209;second catching game. Star&#8209;sprites are flung in big
+          <p><b>Starfall Meadow</b> is a 60&#8209;second catching game. Star&#8209;sprites are flung in big
           looping arcs across the sky, and your child runs and hops underneath to catch them
           before they land.</p>
           <p>The trick &mdash; and the whole point &mdash; is that you <b>cannot catch a star by chasing
@@ -225,7 +225,7 @@
       <div id="popts"></div>
       <div class="hintline">Press <span class="kbd">Q</span> to close this menu and jump straight back in.</div>
     </div>
-    <div class="foot">Rounds last 90 seconds by default. Everything you see and hear is drawn and
+    <div class="foot">Rounds last 60 seconds by default. Everything you see and hear is drawn and
     synthesised by the game itself &mdash; there are no image or audio downloads.</div>
   </div>
 </div>
@@ -315,15 +315,15 @@ if (!CanvasRenderingContext2D.prototype.roundRect) {
 
 /* ───────────────────────── 1. Persistent settings ──────────────────────── */
 const Store = {
-  data: { best: 0, sound: 1, music: 1, hints: 'auto', roundLen: 90, plays: 0, lifeStars: 0, lifeFlowers: 0 },
+  data: { best: 0, sound: 1, music: 1, hints: 'auto', roundLen: 60, plays: 0, lifeStars: 0, lifeFlowers: 0 },
   load() {
     try {
-      const raw = localStorage.getItem('starfall-meadow-v1');
+      const raw = localStorage.getItem('starfall-meadow-v2');
       if (raw) Object.assign(this.data, JSON.parse(raw));
     } catch (e) { /* file:// or privacy mode — run with defaults */ }
   },
   save() {
-    try { localStorage.setItem('starfall-meadow-v1', JSON.stringify(this.data)); } catch (e) { }
+    try { localStorage.setItem('starfall-meadow-v2', JSON.stringify(this.data)); } catch (e) { }
   }
 };
 Store.load();
@@ -606,6 +606,9 @@ const Input = {
       const k = map[e.code];
       if (!k) return;
       e.preventDefault();
+      /* Ignore OS auto-repeat: it re-fires ~30x/sec while a key is held, which
+         would re-toggle the parent menu and hammer the audio scheduler. */
+      if (e.repeat) return;
       Audio2.resume();
       if (!this.down[k]) this.pressed[k] = true;
       this.down[k] = true;
@@ -1514,7 +1517,7 @@ const World = {
 /* ───────────────────────────── 10. Pip, the player ─────────────────────── */
 const PIP_S = 1.12;
 const PHYS = {
-  accel: 5200, maxSpeed: 470, friction: 3800, airFriction: 700,
+  accel: 7200, maxSpeed: 470, friction: 5400, airFriction: 900,
   gravity: 2450, jumpV: -905, flutterV: -655, diveV: 1250
 };
 
@@ -2651,8 +2654,8 @@ const Game = {
     HUD.scorePop = 1;
 
     const big = s.type === 'rainbow';
-    FX.stop(big ? 0.10 : 0.045);
-    FX.kick(big ? 8 : 3.2);
+    FX.stop(big ? 0.07 : 0.028);
+    FX.kick(big ? 8 : 2.4);
     FX.flash(big ? 0.28 : 0.10, big ? [255, 220, 255] : [255, 246, 210]);
     FX.punch(big ? 1.014 : 1.006);
     Pip.celebrate(big);
@@ -2729,20 +2732,24 @@ const Game = {
     Pip.celebrate(true);
   },
 
-  update(dt) {
+  update(dt, pdt) {
+    /* dt   = world time (respects hitstop / end-of-round slow-mo)
+       pdt  = player time (ignores hitstop, so controls never stall)
+       Freezing the world on impact is good juice; freezing the *player* is
+       just input lag, so Pip is deliberately exempt. */
     World.update(dt);
     Theme.update(dt);
 
     if (this.state === 'title') {
-      this.titleT += dt;
-      Pip.update(dt, true);
+      this.titleT += pdt;
+      Pip.update(pdt, true);
       if (chance(dt * 2.2)) Parts.sparkle(rand(120, VW - 120), rand(180, 480), 1, [255, 240, 190]);
     } else if (this.state === 'count') {
       const before = Math.ceil(this.countdown / 0.7);
       this.countdown -= dt;
       const after = Math.ceil(this.countdown / 0.7);
       if (after !== before && after >= 0) Audio2.sCount(after);
-      Pip.update(dt, true);
+      Pip.update(pdt, true);
       if (this.countdown <= 0) {
         this.state = 'play';
         Director.prevLandT = 0; Director.nextLandT = 0.75; this.T = 0;
@@ -2751,7 +2758,7 @@ const Game = {
     } else if (this.state === 'play') {
       this.T += dt;
       this.timeLeft -= dt;
-      Pip.update(dt, true);
+      Pip.update(pdt, true);
       Director.update(dt, this.T);
       Stars.update(dt);
       if (this.timeLeft <= 0) { this.timeLeft = 0; this.endRound(); }
@@ -2759,7 +2766,7 @@ const Game = {
       FX.tsTarget = this.timeLeft < 2.2 ? 0.62 : 1;
     } else if (this.state === 'result') {
       this.resultT += dt;
-      Pip.update(dt, false);
+      Pip.update(pdt, false);
       FX.tsTarget = 1;
       if (chance(dt * (this.resultT < 2 ? 5 : 1.1))) {
         Parts.confetti(rand(120, VW - 120), rand(-40, 120), 16);
@@ -2768,7 +2775,7 @@ const Game = {
     }
 
     // camera drift toward player for parallax life
-    Cam.x = approach(Cam.x, (Pip.x - VW / 2) * 0.05, 4, dt);
+    Cam.x = approach(Cam.x, (Pip.x - VW / 2) * 0.05, 4, pdt);
     Parts.update(dt);
     Pops.update(dt);
   },
@@ -2944,13 +2951,17 @@ function frame(now) {
 function tick(rdt, t0) {
   FX.update(rdt);
   const paused = ParentMenu.open || document.hidden;
-  const gdt = paused ? 0 : (FX.hitstop > 0 ? 0 : rdt * FX.timeScale);
+  /* Hitstop freezes the world for punch, but the player keeps running —
+     a frozen character on every catch reads as input lag, not juice. */
+  const scaled = rdt * FX.timeScale;
+  const pdt = paused ? 0 : scaled;
+  const gdt = paused ? 0 : (FX.hitstop > 0 ? 0 : scaled);
 
-  if (gdt > 0) Game.update(gdt);
-  else if (paused) { /* frozen: world, physics, timer and audio scheduling all hold */ }
-  else { Parts.update(rdt * 0.15); }
+  if (!paused) Game.update(gdt, pdt);
 
-  Input.consume();
+  /* Only drop buffered presses on frames the game actually consumed them,
+     otherwise a hop pressed during a paused/frozen frame is silently lost. */
+  if (!paused) Input.consume();
 
   /* ── render ── */
   Stage.begin();
