@@ -65,10 +65,9 @@
 /* --- fixed vertical layout (VH=800) -----------------------------------------------------
    0..78     HUD header panel
    88        CEIL   — bouncy ceiling
-   120..450  bubble field
-   556       catcher cloud
+   120..450  star field
    672       cannon
-   742       FLOOR  — below this a hop is spent
+   742       FLOOR  — the shot ends here
    758..798  control hint bar
    --------------------------------------------------------------------------------------- */
 const VW = 1280, VH = 800;              // virtual/logical resolution — all game code uses this
@@ -960,12 +959,12 @@ const SKY = {
 
 /* ================================================================== 5. ENTITIES ======== */
 
-/* -- Bubble: a soft glass orb holding a tiny Fuzzle. `star=true` → must-pop rainbow star -- */
+/* -- Star: a golden rescue star with a friend inside. Pops on contact, then respawns. -- */
 class Bubble {
   constructor(x,y,r,star,hue,rng){
     this.x=x; this.y=y; this.hx=x; this.hy=y; this.r=r;
     this.star=star; this.hue=hue;
-    this.alive=true; this.pop=0;
+    this.alive=true; this.pop=0; this.respawn=0;
     this.ph=rng()*TAU; this.spin=rnd(0.6,-0.6);
     this.wobA=star?5:3; this.wobS=0.7+rng()*0.8;
     this.mover=null;             // {ax,ay,sp,ph} orbit for moving targets
@@ -1230,50 +1229,6 @@ class Rail {
   }
 }
 
-/* --- Catcher Cloud: steered with ← → while Zip is airborne --- */
-class Catcher {
-  constructor(){ this.x=VW/2; this.hw=96; this.y=556; this.vx=0; this.glow=0; this.ph=0; this.sprite=makeCloud(300,130,99,[196,70]); }
-  update(dt,dir){
-    const acc=2600, max=760;
-    this.vx = approach(this.vx, dir*max, acc*dt);
-    if(dir===0) this.vx*=Math.pow(0.0009,dt);
-    this.x=clamp(this.x+this.vx*dt, WALL+this.hw*0.6, VW-WALL-this.hw*0.6);
-    this.glow=Math.max(0,this.glow-dt*2.2); this.ph+=dt;
-  }
-  draw(c,glow,t){
-    const y=this.y+Math.sin(t*1.6)*4;
-    if(glow){
-      c.globalCompositeOperation='lighter';
-      drawDot(c,this.x,y-6,this.hw*1.15,196,0.20+this.glow*0.55);
-      c.globalCompositeOperation='source-over'; return;
-    }
-    // soft rainbow catch-shimmer (no hard edges — reads as a landing zone)
-    c.save(); c.globalCompositeOperation='lighter';
-    for(let i=0;i<6;i++){
-      const px=this.x-this.hw+ (i+0.5)*(this.hw*2/6);
-      const a=(0.14+0.07*Math.sin(t*3+i))*(0.55+this.glow*1.4);
-      drawDot(c,px,y-30,46,(t*70+i*46)%360,a);
-    }
-    c.restore();
-    const w=this.hw*2.15, h=w*(this.sprite.height/this.sprite.width);
-    c.save();
-    const sq=1+this.glow*0.16;
-    c.translate(this.x,y); c.scale(sq,2-sq);
-    c.drawImage(this.sprite,-w/2,-h*0.52,w,h);
-    c.restore();
-    drawFace(c,this.x,y+2,20,t*2,'happy');
-    // arrow hints on the cloud
-    c.globalAlpha=.55;
-    for(const s of [-1,1]){
-      c.save(); c.translate(this.x+s*(this.hw*0.86), y+2); c.scale(s,1);
-      c.fillStyle='rgba(255,255,255,.9)';
-      c.beginPath(); c.moveTo(0,-9); c.lineTo(11,0); c.lineTo(0,9); c.closePath(); c.fill();
-      c.restore();
-    }
-    c.globalAlpha=1;
-  }
-}
-
 /* --- Freed Fuzzle: flies from a popped star up to the rescue perch --- */
 class Freed {
   constructor(x,y,hue,variant,slot){
@@ -1402,114 +1357,113 @@ function patternPoints(kind, R, n){
   return pts;
 }
 
-function genLevel(level, skill, opts={}){
-  const seed = (level*7919 + 104729 + (opts.salt||0)*2654435761) >>> 0;
-  const R = makeRng(seed);
-  const diff = clamp((level-1)/11, 0, 1);
-  const kinds = ['grid','arcs','flower','spiral','wave','pillars','diamond'];
-  const kind = kinds[(level-1+(opts.salt||0)) % kinds.length];
+function genArena(seed){
+  const R = makeRng(seed >>> 0);
+  const bumpers=[], rails=[];
+  const nRails = 2, nBumpers = 3;
 
-  const bubbles=[], bumpers=[], rails=[];
-  const wantBubbles = Math.round(lerp(24, 32, diff));
-  const nStars   = clamp(2 + Math.floor(level/2) + (opts.starDelta||0), 2, 7);
-  const nBumpers = clamp(Math.floor(level/2), 0, 4);
-  const nRails   = level>=3 ? clamp(1+Math.floor((level-3)/3), 0, 3) : 0;
-  const nMovers  = level>=5 ? clamp(Math.floor((level-3)/2), 0, 6) : 0;
-
-  // ---- rails first (they define the banking geometry) ----
+  // ---- rails: the banking geometry ----
   for(let i=0;i<nRails;i++){
     let tries=0;
-    while(tries++<60){
+    while(tries++<80){
       const side = i%2 ? 1 : -1;
-      const cx = VW/2 + side*lerp(190,330,R());
+      const cx = VW/2 + side*lerp(200,330,R());
       const cy = lerp(PLAY_TOP+120, PLAY_BOT-40, R());
-      const len= lerp(120,205,R());
+      const len= lerp(140,210,R());
       const ang= (-side)*lerp(0.35,1.05,R()) + (R()<0.5?0:Math.PI);
       const x1=cx-Math.cos(ang)*len/2, y1=cy-Math.sin(ang)*len/2;
       const x2=cx+Math.cos(ang)*len/2, y2=cy+Math.sin(ang)*len/2;
       if(Math.min(x1,x2)<WALL+50 || Math.max(x1,x2)>VW-WALL-50) continue;
       if(Math.min(y1,y2)<PLAY_TOP+40 || Math.max(y1,y2)>PLAY_BOT-10) continue;
       if(!safeFromLaunch(cx,cy,len/2)) continue;
-      if(overlaps(rails.map(r=>({x:(r.x1+r.x2)/2,y:(r.y1+r.y2)/2,r:110})),cx,cy,60)) continue;
+      if(overlaps(rails.map(r=>({x:(r.x1+r.x2)/2,y:(r.y1+r.y2)/2,r:120})),cx,cy,60)) continue;
       rails.push(new Rail(x1,y1,x2,y2,11,[192,286,44][i%3]));
       break;
     }
   }
-  // ---- bumpers ----
+  // ---- jelly bumpers ----
   const solid = rails.map(r=>({x:(r.x1+r.x2)/2, y:(r.y1+r.y2)/2, r:Math.hypot(r.x2-r.x1,r.y2-r.y1)/2+16}));
   for(let i=0;i<nBumpers;i++){
     let tries=0;
-    while(tries++<120){
+    while(tries++<140){
       const x=lerp(WALL+90, VW-WALL-90, R());
-      const y=lerp(PLAY_TOP+90, PLAY_BOT-30, R());
-      const r=lerp(30,40,R());
+      const y=lerp(PLAY_TOP+80, PLAY_BOT-20, R());
+      const r=lerp(32,42,R());
       if(!safeFromLaunch(x,y,r)) continue;
-      if(overlaps(solid,x,y,r,26)) continue;
-      const b=new Bumper(x,y,r,[330,150,32,268][i%4]);
-      bumpers.push(b); solid.push({x,y,r:r+10});
+      if(overlaps(solid,x,y,r,30)) continue;
+      bumpers.push(new Bumper(x,y,r,[330,150,32,268][i%4]));
+      solid.push({x,y,r:r+10});
       break;
     }
   }
-  // ---- bubbles from the chosen pattern ----
-  let pts = patternPoints(kind, R, wantBubbles);
-  // jitter + clip + dedupe
-  const placed=[...solid];
-  for(const p of pts){
-    if(bubbles.length>=wantBubbles) break;
-    const x = clamp(p.x + (R()-.5)*16, WALL+46, VW-WALL-46);
-    const y = clamp(p.y + (R()-.5)*16, PLAY_TOP, PLAY_BOT-10);
-    const r = lerp(25,30,R());
-    if(!safeFromLaunch(x,y,r)) continue;
-    if(overlaps(placed,x,y,r,10)) continue;
-    const hue = [196,210,172,268,308][((R()*5)|0)];
-    const b=new Bubble(x,y,r,false,hue,R);
-    bubbles.push(b); placed.push({x,y,r});
-  }
-  // top-up with random placement if the pattern was sparse
-  let guard=0;
-  while(bubbles.length < wantBubbles && guard++<900){
-    const x=lerp(WALL+50, VW-WALL-50, R()), y=lerp(PLAY_TOP, PLAY_BOT-10, R()), r=lerp(25,29,R());
-    if(!safeFromLaunch(x,y,r) || overlaps(placed,x,y,r,8)) continue;
-    const b=new Bubble(x,y,r,false,[196,210,172,268,308][((R()*5)|0)],R);
-    bubbles.push(b); placed.push({x,y,r});
+
+  const world = { bumpers, rails, stars:[] };
+
+  // ---- candidate star slots on a jittered grid, clear of the furniture ----
+  const slots=[];
+  const cols=9, rows=5;
+  for(let gy=0;gy<rows;gy++) for(let gx=0;gx<cols;gx++){
+    const x = lerp(WALL+62, VW-WALL-62, gx/(cols-1)) + (R()-.5)*22;
+    const y = lerp(PLAY_TOP+10, PLAY_BOT-16, gy/(rows-1)) + (R()-.5)*18;
+    if(!safeFromLaunch(x,y,STAR_R)) continue;
+    if(overlaps(solid,x,y,STAR_R,14)) continue;
+    const edge = Math.min(x-WALL, VW-WALL-x)/(VW/2);        // 1 centre, 0 at a wall
+    const high = 1 - inv(PLAY_TOP, PLAY_BOT, y);            // 1 at the ceiling
+    slots.push({ x, y, hard: clamp((1-edge)*0.75 + high*0.55, 0, 1), ok:false });
   }
 
-  // ---- choose rescue stars: early levels favour the easy central band, later levels
-  //      push them to the edges and the ceiling so banking becomes necessary ----
-  const chosen=[];
-  const scored = bubbles.map((b,i)=>{
-    const edge = Math.min(b.x-WALL, VW-WALL-b.x)/(VW/2);     // 0 at a wall, 1 at centre
-    const high = 1 - inv(PLAY_TOP, PLAY_BOT, b.y);           // 1 at the ceiling
-    const hard = (1-edge)*1.4 + high*0.7;                    // "how awkward is this shot"
-    return { i, k: lerp(-hard, hard, diff) + R()*0.9 };
-  }).sort((a,b)=>b.k-a.k);
-  for(const s of scored){
-    if(chosen.length>=nStars) break;
-    const b=bubbles[s.i];
-    let ok=true;
-    for(const c of chosen) if(dist2(b.x,b.y,bubbles[c].x,bubbles[c].y) < 150*150) ok=false;
-    if(ok) chosen.push(s.i);
-  }
-  let ci=0;
-  while(chosen.length<nStars && ci<bubbles.length){ if(!chosen.includes(ci)) chosen.push(ci); ci++; }
-  for(const i of chosen){ bubbles[i].star=true; bubbles[i].r=Math.max(bubbles[i].r,31); }
+  // ---- keep only slots a real shot can actually reach ----
+  markReachable(world, slots);
+  const good = slots.filter(s=>s.ok);
+  world.slots = good.length >= STAR_COUNT + 3 ? good : slots;   // safety net, never starve
+  return world;
+}
 
-  // ---- movers ----
-  const nonStar = bubbles.filter(b=>!b.star);
-  for(let i=0;i<nMovers && i<nonStar.length;i++){
-    const b=nonStar[(R()*nonStar.length)|0];
-    if(b.mover) continue;
-    b.mover={ ax:lerp(24,64,R()), ay:lerp(12,36,R()), sp:lerp(0.5,1.1,R()), ph:R()*TAU };
+/* Sweep a fan of real trajectories once per round and flag every slot one passes through.
+   This is what guarantees a child can always reach every star that will ever spawn. */
+function markReachable(world, slots){
+  for(let ai=0; ai<=26; ai++){
+    const ang = -AIM_MAX + (ai/26)*(AIM_MAX*2);
+    for(let pi=0; pi<=8; pi++){
+      const pow = lerp(PMIN, PMAX, pi/8);
+      const ox=LAUNCH_X+Math.sin(ang)*MUZZLE, oy=LAUNCH_Y-Math.cos(ang)*MUZZLE;
+      const pts = simulate(ox,oy, Math.sin(ang)*pow, -Math.cos(ang)*pow, 5.0, world, true, 1/120);
+      for(const p of pts){
+        for(const s of slots){
+          if(s.ok) continue;
+          const rr = STAR_R + ZIP_R*0.86;
+          if(dist2(p.x,p.y,s.x,s.y) < rr*rr) s.ok = true;
+        }
+      }
+    }
   }
+}
 
-  const hops = level<=2 ? 8 : level<=5 ? 7 : 7;
-  return { bubbles, bumpers, rails, hops, kind, nStars, level };
+/* Pick a home for a new star: spread out from the live ones, and drifting toward the
+   trickier slots as the child racks up rescues. */
+function pickSlot(world, liveStars, progress){
+  const target = clamp(progress, 0, 1) * 0.85;
+  let best=null, bestK=Infinity;
+  for(let i=0;i<26;i++){
+    const s = world.slots[(Math.random()*world.slots.length)|0];
+    if(!s) break;
+    let near=0;
+    for(const st of liveStars){
+      if(!st.alive) continue;
+      const d2=dist2(s.x,s.y,st.x,st.y);
+      if(d2 < 150*150) near += 3;
+      else if(d2 < 240*240) near += 1;
+    }
+    const k = near*1.4 + Math.abs(s.hard-target)*1.2 + Math.random()*0.35;
+    if(k < bestK){ bestK=k; best=s; }
+  }
+  return best || world.slots[0];
 }
 
 /* ================================================================== 8. TRAJECTORY ====== */
 /* Same integrator as the real ball, so the guide never lies.                              */
-function simulate(x,y,vx,vy,duration,world,collide){
-  const pts=[{x,y}]; const dt=1/180;
+function simulate(x,y,vx,vy,duration,world,collide,step){
+  const pts=[{x,y}]; const dt=step||1/180;
   let t=0;
   while(t<duration){
     vy += GRAV*dt;
@@ -1546,10 +1500,16 @@ function simulate(x,y,vx,vy,duration,world,collide){
 <script>
 "use strict";
 /* ================================================================== 9. GAME STATE ====== */
+/* ONE round. 90 seconds. No levels, no lives, no menus in the way — just aim and fire.    */
 
-const SAVE_KEY = 'starbounce.v1';
+const ROUND      = 90;      // seconds in a round
+const STAR_COUNT = 6;       // rescue stars alive at once
+const STAR_R     = 31;
+const RELOAD     = 0.22;    // pause between a shot ending and the next aim
+
+const SAVE_KEY = 'starbounce.v2';
 const save = Object.assign(
-  { best:0, topLevel:1, skill:0.12, music:true, sfx:true, plays:0, rescued:0 },
+  { best:0, bestRescued:0, skill:0.12, music:true, sfx:true, plays:0, rescued:0 },
   (()=>{ try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch(e){ return {}; } })()
 );
 function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }catch(e){} }
@@ -1557,18 +1517,16 @@ function persist(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const G = {
-  state:'title',           // title | aim | fly | clear | retry | party
-  t:0, levelT:0, stateT:0,
-  level:1, score:0, hops:8, hopsStart:8,
-  world:null, zip:new Zip(), catcher:new Catcher(), freed:[],
-  aimAng:-0.30, aimPow:0.62, aimVel:0, powVel:0,
+  state:'title',           // title | aim | fly | over
+  t:0, stateT:0, roundT:0, timeLeft:ROUND, reload:0,
+  score:0, rescued:0, shots:0, timeUp:false,
+  world:null, zip:new Zip(), freed:[],
+  aimAng:-0.10, aimPow:0.66, aimVel:0, powVel:0,
   combo:0, bestCombo:0, fever:0, feverT:0,
   shakeX:0, shakeY:0, shakeAmt:0, hitstop:0, flash:0,
-  starsLeft:0, rescuedThisLevel:0,
   skill: save.skill, assist:0, guideT:2.3,
-  shotsThisLevel:0, missStreak:0, bonusGiven:0,
-  paused:false, menuSel:0, tutorial:0, clearStars:0,
-  lastSkillPips:0, timeWarn:0, retries:0
+  paused:false, menuSel:0, tutorial:0,
+  lastSkillPips:0, resultStars:0, newBest:false
 };
 
 /* ------------------------------------------------- input ------------------------------- */
@@ -1590,12 +1548,19 @@ addEventListener('keydown', e=>{
 
 addEventListener('keyup', e=>{ if(KEYMAP[e.key]) keys[KEYMAP[e.key]]=false; });
 addEventListener('blur', ()=>{ keys.l=keys.r=keys.u=keys.d=false; });
+/* Leaving the tab mid-round shouldn't cost time — freeze until they come back. */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden && !G.paused && (G.state==='aim'||G.state==='fly')){
+    G.paused=true; G.menuSel=0;
+    keys.l=keys.r=keys.u=keys.d=false;
+  }
+});
 
 function toggleMenu(){
   G.paused=!G.paused; G.menuSel=0;
   SND.ui(G.paused);
-  if(G.paused && SND.music) SND.music.gain.setTargetAtTime(save.music?0.12:0, SND.ac.currentTime, .2);
-  else if(SND.music && SND.ac) SND.music.gain.setTargetAtTime(save.music?0.30:0, SND.ac.currentTime, .2);
+  if(!SND.ac) return;
+  SND.music.gain.setTargetAtTime(save.music ? (G.paused?0.12:0.30) : 0, SND.ac.currentTime, .2);
 }
 function menuKey(k){
   if(k==='ArrowUp'){ G.menuSel=(G.menuSel+2)%3; SND.ui(true); }
@@ -1604,63 +1569,54 @@ function menuKey(k){
     if(G.menuSel===0){ save.music=!save.music; SND.setMusic(save.music);
       if(SND.music&&save.music) SND.music.gain.setTargetAtTime(0.12,SND.ac.currentTime,.2); }
     else if(G.menuSel===1){ save.sfx=!save.sfx; SND.setSfx(save.sfx); }
-    else { save.skill=0.12; G.skill=0.12; save.best=0; save.topLevel=1; save.rescued=0; }
+    else { save.skill=0.12; G.skill=0.12; save.best=0; save.bestRescued=0; save.rescued=0; }
     persist(); SND.ui(true);
   }
 }
 function pressSpace(){
   switch(G.state){
-    case 'title': startRun(); break;
-    case 'aim': doLaunch(); break;
-    case 'clear': nextLevel(); break;
-    case 'party': nextLevel(); break;
-    case 'retry': retryLevel(); break;
+    case 'title': startRound(); break;
+    case 'aim':   doLaunch();   break;
+    case 'over':  if(G.stateT>0.5) startRound(); break;
   }
 }
 
 /* ------------------------------------------------- flow -------------------------------- */
-function startRun(){
-  G.level=1; G.score=0; G.tutorial=1; save.plays++; persist();
-  loadLevel(1);
-  SND.cheer();
+function spawnStar(){
+  const s = pickSlot(G.world, G.world.stars, G.rescued/14);
+  if(!s) return;
+  const b = new Bubble(s.x, s.y, STAR_R, true, 48, Math.random);
+  G.world.stars.push(b);
+  emit({kind:'ring',x:s.x,y:s.y,r:8,r2:STAR_R*2.4,size:5,h:48,s:100,l:80,life:.45,g:0});
+  for(let i=0;i<6;i++) emit({kind:'spark',x:s.x,y:s.y,vx:rnd(150,-150),vy:rnd(150,-150),
+    g:0,drag:.9,life:.4,r:rnd(7,3),h:48,s:100,l:80});
 }
-function loadLevel(n, easier=false){
-  /* A retry re-rolls the board (never the identical layout again), drops one rescue star
-     and one jelly blob, and hands back a couple of extra hops. */
-  G.retries = easier ? (G.retries||0)+1 : 0;
-  G.world = genLevel(n, G.skill, easier ? {salt:G.retries, starDelta:-1} : {});
-  if(easier && G.world.bumpers.length) G.world.bumpers.pop();
-  G.level=n;
-  G.hops=G.world.hops + (easier?2:0); G.hopsStart=G.hops;
-  G.starsLeft=G.world.bubbles.filter(b=>b.star).length;
-  G.freed.length=0; G.rescuedThisLevel=0;
-  G.levelT=0; G.shotsThisLevel=0; G.missStreak=0; G.bonusGiven=0; G.timeWarn=0;
-  G.aimAng=-0.28; G.aimPow=0.66; G.combo=0; G.fever=0;
-  G.catcher.x=VW*0.27; G.catcher.vx=0;
-  G.catcher.hw = Math.round(lerp(112, 78, G.skill));
-  G.zip.flying=false; G.zip.trail.length=0;
+function startRound(){
+  G.world = genArena((Math.random()*0xffffffff)>>>0);
+  G.world.stars = [];
+  for(let i=0;i<STAR_COUNT;i++) spawnStar();
+  G.timeLeft = ROUND; G.roundT = 0; G.timeUp = false;
+  G.score = 0; G.rescued = 0; G.shots = 0;
+  G.combo = 0; G.bestCombo = 0; G.fever = 0; G.feverT = 0;
+  G.freed.length = 0; G.reload = 0;
+  G.aimAng = -0.10; G.aimPow = 0.66; G.aimVel = 0; G.powVel = 0;
+  G.zip.flying = false; G.zip.trail.length = 0;
+  G.tutorial = save.plays === 0 ? 1 : 0;
+  G.newBest = false;
+  save.plays++; persist();
   setState('aim');
-  for(let i=0;i<12;i++) emit({kind:'ring',x:LAUNCH_X,y:LAUNCH_Y,r:14,r2:rnd(150,70),size:4,
-    h:rnd(360),s:100,l:74,life:rnd(.62,.34),g:0});
+  SND.cheer();
+  for(let i=0;i<10;i++) emit({kind:'ring',x:LAUNCH_X,y:LAUNCH_Y,r:14,r2:rnd(150,70),size:4,
+    h:rnd(360),s:100,l:74,life:rnd(.6,.34),g:0});
 }
 function setState(s){ G.state=s; G.stateT=0; }
 
-function nextLevel(){
-  if(G.state==='party'){ setState('aim'); loadLevel(G.level+1); return; }
-  const nl=G.level+1;
-  if(nl%5===1 && nl>1){ /* handled by party screen before */ }
-  loadLevel(nl);
-  if(nl>save.topLevel){ save.topLevel=nl; persist(); }
-}
-function retryLevel(){ loadLevel(G.level, true); }
-
 function doLaunch(){
-  if(G.state!=='aim') return;
-  const pow = lerp(PMIN,PMAX,G.aimPow);
-  G.zip.launch(G.aimAng, pow);
+  if(G.state!=='aim' || G.reload>0) return;
+  G.zip.launch(G.aimAng, lerp(PMIN,PMAX,G.aimPow));
   setState('fly');
-  G.shotsThisLevel++;
-  G.tutorial = G.tutorial===1 ? 2 : G.tutorial===2 ? 0 : G.tutorial;
+  G.shots++;
+  if(G.tutorial===1) G.tutorial=2;
   SND.launch(G.aimPow);
   G.shakeAmt=Math.max(G.shakeAmt, 5);
   const ax=LAUNCH_X+Math.sin(G.aimAng)*MUZZLE, ay=LAUNCH_Y-Math.cos(G.aimAng)*MUZZLE;
@@ -1668,97 +1624,72 @@ function doLaunch(){
   emit({kind:'ring',x:ax,y:ay,r:12,r2:80,size:7,h:45,s:100,l:75,life:.4,g:0});
 }
 
-/* ------------------------------------------------- shot resolution --------------------- */
-function endShot(caught){
+function endShot(){
   const z=G.zip;
   z.flying=false;
-  // --- skill measurement: did the child predict well? ---
-  const quality = clamp(z.hitCount/5,0,1)*0.45 + clamp(z.starCount,0,1)*0.55;
-  G.skill = clamp(lerp(G.skill, quality, 0.26), 0, 1);
+  // --- skill measurement: how well was this shot predicted? ---
+  const quality = clamp(z.starCount/2, 0, 1);
+  G.skill = clamp(lerp(G.skill, quality, 0.24), 0, 1);
   save.skill=G.skill; persist();
-  if(z.hitCount===0){ G.missStreak++; G.assist=Math.min(0.55, G.assist+0.26); }
-  else { G.missStreak=0; G.assist=Math.max(0, G.assist-0.16); }
+  if(z.starCount===0) G.assist=Math.min(0.55, G.assist+0.24);
+  else                G.assist=Math.max(0,   G.assist-0.18);
 
-  // reward accurate shots taken with a short guide
   if(z.starCount>0 && G.guideT < 1.0){
-    G.score += 250*z.starCount;
-    popText(z.x, Math.max(90,z.y-40), 'PREDICTED!', 190, 34);
+    G.score += 200*z.starCount;
+    popText(z.x, Math.max(120,z.y-40), 'PREDICTED!', 190, 32);
   }
   const pips=Math.round(G.skill*5);
-  if(pips>G.lastSkillPips && pips>0){ popText(VW-190, 148, 'STAR SENSE UP!', 190, 26); SND.star(); }
+  if(pips>G.lastSkillPips && pips>0){ popText(VW-232, 104, 'STAR SENSE UP!', 190, 24); SND.star(); }
   G.lastSkillPips=pips;
 
-  if(G.starsLeft<=0){ levelClear(); return; }
-
-  if(caught){
-    /* a good catch simply refunds the hop — generous, but still earned */
-  } else {
-    G.hops--;
-  }
-  if(G.hops<=0){
-    const refills = G.level<=2 ? 2 : 1;      // the first levels are extra forgiving
-    if(G.bonusGiven<refills){
-      G.bonusGiven++; G.hops=3;
-      popText(VW/2, VH*0.42, 'BONUS HOPS!', 45, 60);
-      confettiBurst(VW/2, VH*0.5, 60);
-      SND.fanfare();
-      setState('aim'); return;
-    }
-    setState('retry'); SND.warm(); return;
-  }
+  G.combo = 0;
+  if(G.timeUp){ finishRound(); return; }
+  G.reload = RELOAD;
   setState('aim');
 }
 
-function levelClear(){
-  const ratio = G.hops/G.hopsStart;
-  G.clearStars = ratio>0.55 || G.shotsThisLevel<=3 ? 3 : ratio>0.25 ? 2 : 1;
-  G.score += 1000 + G.hops*500 + G.clearStars*750;
-  if(G.score>save.best){ save.best=G.score; }
-  save.rescued += G.rescuedThisLevel; persist();
-  setState(G.level%5===0 ? 'party' : 'clear');
+function finishRound(){
+  /* Thresholds tuned from 30 simulated rounds: a confident player lands ~31 rescues,
+     a middling one ~22, a first-timer ~16. So 2 stars is very reachable and 3 is a stretch. */
+  G.resultStars = G.rescued>=26 ? 3 : G.rescued>=15 ? 2 : 1;
+  G.newBest = G.score > save.best;
+  if(G.newBest) save.best = G.score;
+  if(G.rescued > save.bestRescued) save.bestRescued = G.rescued;
+  save.rescued += G.rescued;
+  persist();
+  setState('over');
   SND.fanfare();
-  for(let i=0;i<5;i++) setTimeout(()=>{
-    confettiBurst(rnd(VW*0.85,VW*0.15), VH*0.45, 46);
-  }, i*160);
-  G.flash=0.55;
+  G.flash=0.5;
+  for(let i=0;i<5;i++) setTimeout(()=>confettiBurst(rnd(VW*0.85,VW*0.15), VH*0.42, 44), i*160);
 }
 
 /* ================================================================== 10. UPDATE ========== */
-function popBubble(b, byZip){
+function popStar(b){
   b.alive=false; b.pop=0.001;
   G.combo++;
   G.bestCombo=Math.max(G.bestCombo,G.combo);
-  const mult=Math.min(G.combo,9);
+  const mult=Math.min(G.combo,5);
   SND._panX = b.x/VW;
-  if(b.star){
-    G.score += 300*mult;
-    G.starsLeft--; G.rescuedThisLevel++;
-    G.zip.starCount++;
-    G.hitstop=Math.max(G.hitstop,0.075);
-    G.shakeAmt=Math.max(G.shakeAmt, 15);
-    SND.pop(G.combo-1,1); SND.star();
-    burst(b.x,b.y,30,(G.t*90)%360,{spd:560});
-    confettiBurst(b.x,b.y,20,{spd:420});
-    emit({kind:'ring',x:b.x,y:b.y,r:b.r,r2:b.r*7,size:9,h:(G.t*90)%360,s:100,l:78,life:.55,g:0});
-    emit({kind:'ring',x:b.x,y:b.y,r:b.r,r2:b.r*4.4,size:5,h:50,s:100,l:88,life:.38,g:0});
-    popText(b.x, b.y-14, '+'+(300*mult), 48, 40);
-    G.freed.push(new Freed(b.x,b.y,(b.hue+150)%360,b.face,G.starsLeft));
-  } else {
-    G.score += 50*mult;
-    G.zip.hitCount++;
-    G.shakeAmt=Math.max(G.shakeAmt, 6);
-    SND.pop(G.combo-1,0);
-    burst(b.x,b.y,14,b.hue,{spd:340});
-    emit({kind:'ring',x:b.x,y:b.y,r:b.r*0.6,r2:b.r*3.4,size:4,h:b.hue,s:100,l:80,life:.4,g:0});
-    if(mult>=3) popText(b.x,b.y-10,'x'+mult, b.hue, 30);
-  }
-  if(G.combo>=6){ G.fever=1; G.feverT=2.4; }
+  G.score += 100*mult;
+  G.rescued++;
+  G.zip.starCount++;
+  G.hitstop=Math.max(G.hitstop,0.07);
+  G.shakeAmt=Math.max(G.shakeAmt, 14);
+  SND.pop(G.combo-1,1); SND.star();
+  burst(b.x,b.y,26,(G.t*90)%360,{spd:520});
+  confettiBurst(b.x,b.y,16,{spd:400});
+  emit({kind:'ring',x:b.x,y:b.y,r:b.r,r2:b.r*6.5,size:9,h:(G.t*90)%360,s:100,l:78,life:.55,g:0});
+  emit({kind:'ring',x:b.x,y:b.y,r:b.r,r2:b.r*4,size:5,h:50,s:100,l:88,life:.36,g:0});
+  popText(b.x, b.y-14, mult>1 ? '+'+(100*mult)+'  x'+mult : '+100', 48, mult>1?40:34);
+  G.freed.push(new Freed(b.x,b.y,(b.face*67+150)%360,b.face,G.freed.length));
+  if(G.combo>=3){ G.fever=1; G.feverT=2.2; }
+  b.respawn = 0.45;                       // a new star takes its place shortly
 }
 
 function stepBall(dt){
   const z=G.zip, w=G.world;
   z.age+=dt;
-  const gravity = GRAV * (z.age>8 ? 1+ (z.age-8)*0.55 : 1);
+  const gravity = GRAV * (z.age>4.5 ? 1+(z.age-4.5)*0.8 : 1);
   const sp=Math.hypot(z.vx,z.vy);
   const steps=clamp(Math.ceil(sp*dt/5), 1, 40);
   const h=dt/steps;
@@ -1782,7 +1713,7 @@ function stepBall(dt){
         G.shakeAmt=Math.max(G.shakeAmt,9);
         burst(z.x,z.y,10,b.hue,{spd:290,dir:Math.atan2(ny,nx),spread:2.0});
         emit({kind:'ring',x:b.x,y:b.y,r:b.r,r2:b.r*2.6,size:6,h:b.hue,s:100,l:80,life:.4,g:0});
-        G.score+=25;
+        G.score+=10;
       }
     }
     // rails
@@ -1796,41 +1727,22 @@ function stepBall(dt){
         SND._panX=cp.x/VW; SND.rail();
         G.shakeAmt=Math.max(G.shakeAmt,7);
         burst(cp.x,cp.y,9,r.hue,{spd:250,dir:Math.atan2(ny,nx),spread:1.8});
-        G.score+=15;
+        G.score+=10;
       }
     }
-    // bubbles (soft: they pop, they do not deflect — keeps prediction learnable).
-    // Rescue stars get an invisible grace radius that widens only while the child is
-    // struggling, so near-misses turn into wins without ever feeling like cheating.
+    // stars — an invisible grace radius widens only while the child is struggling
     const grace = 1 + G.assist*0.85;
-    for(const b of w.bubbles){
+    for(const b of w.stars){
       if(!b.alive) continue;
-      const rr = (b.star ? b.r*grace : b.r) + ZIP_R*0.86;
-      if(dist2(z.x,z.y,b.x,b.y) < rr*rr) popBubble(b,true);
-    }
-    // catcher — only after Zip has cleared the cannon, and only on the way down
-    if(z.vy>0 && z.age>0.30 && z.y > G.catcher.y-14 && z.y < G.catcher.y+40){
-      if(Math.abs(z.x-G.catcher.x) < G.catcher.hw){
-        G.catcher.glow=1; G.score+=400;
-        popText(G.catcher.x, G.catcher.y-70, 'NICE CATCH!', 190, 44);
-        confettiBurst(G.catcher.x,G.catcher.y-30,34);
-        burst(G.catcher.x,G.catcher.y-20,20,195,{spd:420,g:300});
-        SND.catchBall();
-        G.shakeAmt=Math.max(G.shakeAmt,10);
-        endShot(true); return;
-      }
-    } else if(z.vy<0 && z.y > G.catcher.y-30 && z.y < G.catcher.y+30
-              && Math.abs(z.x-G.catcher.x) < G.catcher.hw && Math.random()<0.5){
-      emit({kind:'puff',x:z.x+rnd(24,-24),y:z.y,r:10,r2:52,g:-30,drag:.9,
-        vx:rnd(90,-90),vy:rnd(40,-40),life:.55,h:198,s:60,l:92,add:false,fade:1.6});
+      const rr = b.r*grace + ZIP_R*0.86;
+      if(dist2(z.x,z.y,b.x,b.y) < rr*rr) popStar(b);
     }
     if(z.y > FLOOR){
       burst(z.x, FLOOR, 14, 30, {spd:280, dir:-Math.PI/2, spread:1.7, g:700});
       emit({kind:'ring',x:z.x,y:FLOOR,r:6,r2:70,size:5,h:35,s:100,l:70,life:.4,g:0});
       SND.bounce(.5);
-      endShot(false); return;
+      endShot(); return;
     }
-    // trail sampling
     if(s%2===0){
       z.trail.push({x:z.x,y:z.y});
       if(z.trail.length>26) z.trail.shift();
@@ -1841,6 +1753,7 @@ function stepBall(dt){
     emit({kind:'spark',x:z.x+rnd(8,-8),y:z.y+rnd(8,-8),vx:rnd(50,-50)-z.vx*0.05,vy:rnd(50,-50)-z.vy*0.05,
       g:-40,drag:.90,life:rnd(.5,.2),r:rnd(7,3),h:(G.t*160)%360,s:100,l:76});
   }
+  if(z.age > 7){ endShot(); }        // a shot can never stall the clock
 }
 function wallFx(x,y,side){
   SND._panX=x/VW; SND.bounce(0.9);
@@ -1849,16 +1762,16 @@ function wallFx(x,y,side){
   emit({kind:'ring',x,y,r:8,r2:52,size:5,h:200,s:100,l:80,life:.35,g:0});
 }
 
-function updateGame(dt){
+function updateGame(dt, clockDt){
+  clockDt = clockDt===undefined ? dt : clockDt;
   G.t+=dt; G.stateT+=dt;
   SKY.update(dt);
   SND.fever = G.fever;
 
-  // fever decay
-  if(G.feverT>0){ G.feverT-=dt; if(G.feverT<=0){ G.fever=0; } }
+  if(G.feverT>0){ G.feverT-=dt; if(G.feverT<=0) G.fever=0; }
   G.flash=Math.max(0,G.flash-dt*2.2);
 
-  // guide length driven by measured skill (the adaptive scaffold)
+  // guide length driven by measured skill — the adaptive scaffold
   const eff = clamp(G.skill - G.assist, 0, 1);
   G.guideT = lerp(2.30, 0.42, E.inOutSine(eff));
 
@@ -1870,39 +1783,49 @@ function updateGame(dt){
   for(const f of G.freed) f.update(dt);
   for(let i=G.freed.length-1;i>=0;i--) if(G.freed[i].dead) G.freed.splice(i,1);
 
-  if(G.state==='title'){
-    const tw=G.world;
-    if(tw){ for(const b of tw.bubbles) b.update(dt,G.t);
-            for(const b of tw.bumpers) b.update(dt);
-            for(const r of tw.rails) r.update(dt); }
-    G.catcher.update(dt,0); return;
-  }
-
   const w=G.world; if(!w) return;
-  for(const b of w.bubbles) b.update(dt,G.t);
   for(const b of w.bumpers) b.update(dt);
   for(const r of w.rails) r.update(dt);
+  // stars: animate, and recycle popped ones into fresh slots
+  for(let i=w.stars.length-1;i>=0;i--){
+    const b=w.stars[i];
+    b.update(dt,G.t);
+    if(!b.alive){
+      b.respawn -= dt;
+      if(b.respawn<=0 && b.pop>=1){
+        w.stars.splice(i,1);
+        if(G.state==='aim' || G.state==='fly') spawnStar();
+      }
+    }
+  }
+
+  if(G.state==='title'){ return; }
 
   if(G.state==='aim' || G.state==='fly'){
-    G.levelT+=dt;
-    assistDrift(dt);
+    G.roundT += clockDt;
+    if(G.tutorial>0 && G.roundT>16) G.tutorial=0;
+    if(!G.timeUp){
+      G.timeLeft -= clockDt;
+      if(G.timeLeft<=0){
+        G.timeLeft=0; G.timeUp=true;
+        if(G.state==='aim'){ finishRound(); return; }
+        popText(VW/2, 210, "LAST SHOT!", 45, 46); SND.star();
+      }
+    }
   }
 
   if(G.state==='aim'){
+    if(G.reload>0) G.reload-=dt;
     const dir=(keys.r?1:0)-(keys.l?1:0);
     const pdir=(keys.u?1:0)-(keys.d?1:0);
-    const acc=2.6, maxv=1.45;
-    if(dir!==0){ G.aimVel=approach(G.aimVel, dir*maxv, acc*dt*3); }
+    if(dir!==0) G.aimVel=approach(G.aimVel, dir*1.45, 7.8*dt);
     else G.aimVel*=Math.pow(0.0006,dt);
     G.aimAng=clamp(G.aimAng+G.aimVel*dt, -AIM_MAX, AIM_MAX);
     if((G.aimAng<=-AIM_MAX&&dir<0)||(G.aimAng>=AIM_MAX&&dir>0)) G.aimVel=0;
-    if(pdir!==0){ G.powVel=approach(G.powVel,pdir*0.85,3.4*dt*3); }
+    if(pdir!==0) G.powVel=approach(G.powVel,pdir*0.85,10.2*dt);
     else G.powVel*=Math.pow(0.0006,dt);
     G.aimPow=clamp(G.aimPow+G.powVel*dt,0,1);
     if((dir!==0||pdir!==0) && Math.random()<dt*14) SND.aim();
-    // cloud drifts to a gentle stop while aiming (it stays where the child parked it)
-    G.catcher.update(dt, 0);
-    // muzzle charge sparkles
     if(Math.random()<G.aimPow*0.9){
       const ax=LAUNCH_X+Math.sin(G.aimAng)*MUZZLE, ay=LAUNCH_Y-Math.cos(G.aimAng)*MUZZLE;
       emit({kind:'spark',x:ax+rnd(10,-10),y:ay+rnd(10,-10),vx:rnd(40,-40),vy:rnd(40,-40),
@@ -1910,35 +1833,7 @@ function updateGame(dt){
     }
   }
   else if(G.state==='fly'){
-    const dir=(keys.r?1:0)-(keys.l?1:0);
-    G.catcher.update(dt,dir);
     stepBall(dt);
-  }
-  else {
-    G.catcher.update(dt,0);
-  }
-}
-
-/* gentle guarantee that a level always finishes inside ~2 minutes */
-function assistDrift(dt){
-  const T=G.levelT;
-  if(T<58) return;
-  const k = T<86 ? 0.30 : 0.95;
-  if(T>58 && G.timeWarn===0){ G.timeWarn=1; popText(VW/2, 210, 'STAR RUSH!', 45, 52); SND.star(); }
-  for(const b of G.world.bubbles){
-    if(!b.alive || !b.star) continue;
-    if(b.r0===undefined) b.r0=b.r;
-    b.r = Math.min(b.r0*1.75, b.r + dt*4*k);
-    const tx = lerp(VW/2, b.hx, 0.55), ty = 400;
-    b.hx = lerp(b.hx, tx, dt*k*0.5);
-    b.hy = lerp(b.hy, ty, dt*k*0.5);
-    if(!b.mover){ b.x=b.hx; b.y=b.hy; }
-    if(Math.random()<dt*8) emit({kind:'spark',x:b.x+rnd(30,-30),y:b.y+rnd(30,-30),
-      vx:0,vy:0,g:0,drag:.9,life:.5,r:5,h:(G.t*120)%360,s:100,l:82});
-  }
-  if(T>104 && G.state!=='clear' && G.state!=='party'){
-    for(const b of G.world.bubbles) if(b.alive&&b.star) popBubble(b,false);
-    if(G.starsLeft<=0){ G.zip.flying=false; levelClear(); }
   }
 }
 
@@ -1948,9 +1843,6 @@ function shakeUpdate(dt){
   G.shakeY=(Math.random()-.5)*amp*2;
   G.shakeAmt=Math.max(0, G.shakeAmt - dt*46);
 }
-</script>
-<script>
-"use strict";
 /* ================================================================== 11. RENDER ========== */
 
 /* ---- candy walls: the reflective surfaces the child learns to bank off ---- */
@@ -2103,12 +1995,11 @@ function drawWorld(c, glow){
   if(w){
     for(const r of w.rails) r.draw(c,glow,t);
     for(const b of w.bumpers) b.draw(c,glow,t);
-    for(const b of w.bubbles) b.draw(c,glow,t);
+    for(const b of w.stars) b.draw(c,glow,t);
   }
   drawGuide(c,glow,t);
   drawLauncher(c,glow,t);
   G.zip.draw(c,glow,t);
-  G.catcher.draw(c,glow,t);
   if(!glow || QUAL.particleGlow) drawParticles(c,glow);
   for(const f of G.freed) f.draw(c,glow,t);
 }
@@ -2192,25 +2083,6 @@ function miniStar(c,x,y,r,on,t,i=0){
   }
   c.restore();
 }
-function zipIcon(c,x,y,r,on,t){
-  if(on){
-    const g=c.createRadialGradient(x-r*.3,y-r*.35,1,x,y,r);
-    g.addColorStop(0,'#fffdf2'); g.addColorStop(.35,'#ffe9a3');
-    g.addColorStop(.75,'#ffc44d'); g.addColorStop(1,'#f2652b');
-    c.fillStyle=g;
-  } else c.fillStyle='rgba(255,255,255,.13)';
-  c.beginPath(); c.arc(x,y,r,0,TAU); c.fill();
-  if(on){
-    c.fillStyle='rgba(30,14,54,.9)';
-    c.beginPath(); c.arc(x-r*.30,y-r*.08,r*.16,0,TAU); c.fill();
-    c.beginPath(); c.arc(x+r*.30,y-r*.08,r*.16,0,TAU); c.fill();
-    c.strokeStyle='rgba(30,14,54,.85)'; c.lineWidth=r*.13; c.lineCap='round';
-    c.beginPath(); c.arc(x,y+r*.1,r*.34,0.25*Math.PI,0.75*Math.PI); c.stroke();
-  } else {
-    c.strokeStyle='rgba(255,255,255,.26)'; c.lineWidth=2;
-    c.beginPath(); c.arc(x,y,r,0,TAU); c.stroke();
-  }
-}
 /* chunky key caps */
 function keycap(c,x,y,glyph,label,w){
   const h=30; w=w|| (label? Math.max(44, measure(c,label,17,900)+22) : 34);
@@ -2233,13 +2105,12 @@ function keycap(c,x,y,glyph,label,w){
   return w;
 }
 function drawHintBar(c){
-  const key = G.state==='fly' ? 'fly' : G.state==='aim' ? 'aim' : 'go';
+  const key = (G.state==='aim'||G.state==='fly') ? 'aim' : 'go';
   let spr=drawHintBar.cache[key];
   if(!spr){
-    let items;
-    if(key==='fly') items=[{k:['left','right'],t:'Steer the cloud'},{k:[],l:'Q',t:'Grown-ups'}];
-    else if(key==='aim') items=[{k:['left','right'],t:'Aim'},{k:['up','down'],t:'Power'},{k:[],l:'SPACE',t:'Launch!'},{k:[],l:'Q',t:'Grown-ups'}];
-    else items=[{k:[],l:'SPACE',t:'Go!'},{k:[],l:'Q',t:'Grown-ups'}];
+    const items = key==='aim'
+      ? [{k:['left','right'],t:'Aim'},{k:['up','down'],t:'Power'},{k:[],l:'SPACE',t:'Launch!'},{k:[],l:'Q',t:'Grown-ups'}]
+      : [{k:[],l:'SPACE',t:'Go!'},{k:[],l:'Q',t:'Grown-ups'}];
     let total=0;
     for(const it of items){
       let w=0;
@@ -2265,20 +2136,18 @@ function drawHintBar(c){
   }
   c.drawImage(spr, VW/2-spr.width/2, VH-16-spr.height/2);
 }
-drawHintBar.cache={};
 
 /* static header chrome is baked once — only the live numbers are drawn per frame */
-const SS_X = 898, SS_PITCH = 30, SS_W = 24;      // star-sense pips
-const HP_X = 1074, HP_PITCH = 20;                // hop icons
+const SS_X = 1052, SS_PITCH = 30, SS_W = 24;      // star-sense pips
 let hudChrome=null;
 function bakeHudChrome(){
   const px=WALL+2, pw=VW-2*WALL-4;
   const c=offscreen(VW,92), x=c.getContext('2d');
   panel(x,px,6,pw,72,20,0.55);
-  text(x,'SCORE', VW/2, 20, {size:15,fill:'rgba(255,255,255,.7)',stroke:0,shadow:false,letter:'2px'});
-  text(x,'STAR SENSE', SS_X+(SS_PITCH*4+SS_W)/2, 22,
-    {size:14,fill:'rgba(255,255,255,.7)',stroke:0,shadow:false,letter:'1px'});
-  text(x,'HOPS', HP_X+HP_PITCH*3.5, 22,
+  text(x,'FRIENDS',   px+96, 20, {size:15,fill:'rgba(255,255,255,.7)',stroke:0,shadow:false,letter:'2px'});
+  text(x,'TIME LEFT', VW/2,  20, {size:15,fill:'rgba(255,255,255,.7)',stroke:0,shadow:false,letter:'2px'});
+  text(x,'SCORE',     820,   20, {size:15,fill:'rgba(255,255,255,.7)',stroke:0,shadow:false,letter:'2px'});
+  text(x,'STAR SENSE',SS_X+(SS_PITCH*4+SS_W)/2, 20,
     {size:14,fill:'rgba(255,255,255,.7)',stroke:0,shadow:false,letter:'1px'});
   return c;
 }
@@ -2287,58 +2156,67 @@ function drawHUD(c){
   if(G.state==='title'){ drawHintBar(c); return; }
   if(!hudChrome) hudChrome=bakeHudChrome();
   c.drawImage(hudChrome,0,0);
-  const px=WALL+2;
 
-  // level + rescue stars remaining
-  text(c,'LEVEL '+G.level, px+26, 27, {size:25,align:'left',fill:['#ffffff','#ffd97a'],stroke:4,shadow:false});
-  const total=G.world?G.world.nStars:0;
-  for(let i=0;i<total;i++) miniStar(c, px+38+i*31, 54, 13, i<G.starsLeft, t, i);
+  // friends rescued
+  const px=WALL+2;
+  drawFuzzle(c, px+50, 50, 15, 190, 0, t*1.4, 1);
+  text(c, String(G.rescued), px+112, 50,
+    {size:40,fill:['#ffffff','#9be7ff','#4fb8f0'],stroke:6,shadow:false});
+
+  // the clock — the only resource in the game, so it gets the centre and the biggest type
+  const low = G.timeLeft<=10;
+  const beat = low ? 1+0.09*Math.abs(Math.sin(t*6)) : 1;
+  const secs = Math.max(0, Math.ceil(G.timeLeft));
+  c.save(); c.translate(VW/2, 52); c.scale(beat,beat);
+  text(c, secs+'s', 0, 0, {size:46, stroke:7, shadow:false,
+    fill: low ? ['#fff3c0','#ff9d5c','#ff5a3c'] : ['#ffffff','#ffd447','#ff9d18']});
+  c.restore();
+  // time bar
+  const bw=250, bx=VW/2-bw/2, by=76;
+  rrect(c,bx,by,bw,7,4); c.fillStyle='rgba(255,255,255,.16)'; c.fill();
+  const f=clamp(G.timeLeft/ROUND,0,1);
+  if(f>0){
+    c.save(); rrect(c,bx,by,bw,7,4); c.clip();
+    c.fillStyle = low ? hsl(lerp(40,4,1-f/0.111),100,62) : hsl(lerp(190,48,1-f),100,64);
+    c.fillRect(bx,by,bw*f,7); c.restore();
+  }
 
   // score
-  text(c,G.score.toLocaleString('en-US'), VW/2, 50,
-    {size:42,fill:['#ffffff','#ffd447','#ff9d18'],stroke:6,shadow:false});
+  text(c, G.score.toLocaleString('en-US'), 820, 52,
+    {size:34,fill:['#ffffff','#ffd447','#ff9d18'],stroke:5,shadow:false});
 
   // star sense (the adaptive-skill readout)
   const pips=5, lvl=G.skill*pips;
   for(let i=0;i<pips;i++){
-    const f=clamp(lvl-i,0,1);
-    const bx=SS_X+i*SS_PITCH, by=44, bh=17;
-    rrect(c,bx,by,SS_W,bh,7); c.fillStyle='rgba(255,255,255,.14)'; c.fill();
-    if(f>0){
-      c.save(); rrect(c,bx,by,SS_W,bh,7); c.clip();
-      const g=c.createLinearGradient(bx,by,bx,by+bh);
+    const fp=clamp(lvl-i,0,1);
+    const bx2=SS_X+i*SS_PITCH, by2=40, bh=17;
+    rrect(c,bx2,by2,SS_W,bh,7); c.fillStyle='rgba(255,255,255,.14)'; c.fill();
+    if(fp>0){
+      c.save(); rrect(c,bx2,by2,SS_W,bh,7); c.clip();
+      const g=c.createLinearGradient(bx2,by2,bx2,by2+bh);
       const hue=lerp(190,300,i/(pips-1));
       g.addColorStop(0,hsl(hue,100,80)); g.addColorStop(1,hsl(hue,100,58));
-      c.fillStyle=g; c.fillRect(bx,by,SS_W*f,bh);
+      c.fillStyle=g; c.fillRect(bx2,by2,SS_W*fp,bh);
       c.restore();
     }
-    c.lineWidth=2; c.strokeStyle='rgba(255,255,255,.30)'; rrect(c,bx,by,SS_W,bh,7); c.stroke();
+    c.lineWidth=2; c.strokeStyle='rgba(255,255,255,.30)'; rrect(c,bx2,by2,SS_W,bh,7); c.stroke();
   }
-  // hops
-  const shown=Math.min(G.hops,8);
-  for(let i=0;i<shown;i++) zipIcon(c, HP_X+i*HP_PITCH, 52, 9, true, t);
-  if(G.hops>8) text(c,'+'+(G.hops-8), HP_X+8*HP_PITCH+8, 52,
-    {size:16,fill:'#ffd447',stroke:3,shadow:false});
-  if(G.hops<=2){
-    const pulse=0.5+0.5*Math.sin(t*7);
-    text(c, G.hops===1?'LAST HOP!':'2 LEFT', HP_X+HP_PITCH*3.5, 76,
-      {size:16,fill:hsl(45,100,lerp(66,94,pulse)),stroke:3.5});
-  }
+
   // combo
   if(G.combo>1 && G.state==='fly'){
-    const s=1+Math.min(G.combo,10)*0.05;
+    const s=1+Math.min(G.combo,6)*0.06;
     c.save(); c.translate(VW/2, 126); c.scale(s,s);
     text(c,'COMBO x'+G.combo,0,0,{size:34,fill:['#fff',hsl((t*200)%360,100,66)],stroke:6});
     c.restore();
   }
-  // tutorial nudges
-  if(G.tutorial>0 && G.level===1){
-    const msg = G.tutorial===1 ? 'Hold ◀ ▶ to aim, ▲ ▼ for power — then press SPACE!'
-                               : 'Follow the sparkle path to the golden stars!';
+  // first-run nudges
+  if(G.tutorial>0){
+    const msg = G.tutorial===1 ? 'Hold \u25c0 \u25b6 to aim, \u25b2 \u25bc for power — then press SPACE!'
+                               : 'Pop the golden stars — bounce off the walls and jelly blobs!';
     text(c,msg,VW/2,VH-74,{size:26,fill:['#ffffff',hsl(45,100,72)],stroke:6,shadowBlur:12});
-    if(G.state==='aim'){
-      const bx=LAUNCH_X+Math.sin(G.aimAng)*150, by=LAUNCH_Y-Math.cos(G.aimAng)*150;
-      c.save(); c.translate(bx,by+Math.sin(t*6)*7);
+    if(G.state==='aim' && G.tutorial===1){
+      const bx3=LAUNCH_X+Math.sin(G.aimAng)*150, by3=LAUNCH_Y-Math.cos(G.aimAng)*150;
+      c.save(); c.translate(bx3,by3+Math.sin(t*6)*7);
       c.globalAlpha=0.65+0.35*Math.sin(t*4);
       c.fillStyle='#fff'; c.beginPath();
       c.moveTo(0,-16); c.lineTo(13,8); c.lineTo(-13,8); c.closePath(); c.fill();
@@ -2347,17 +2225,15 @@ function drawHUD(c){
   }
   drawHintBar(c);
 }
-</script>
-<script>
-"use strict";
+drawHintBar.cache={};
+
 /* ================================================================== 13. SCREENS ========= */
 const TIPS = [
   'Bounce off the candy walls to reach the tricky stars!',
-  'Hold  ▲  for a long shot,  ▼  for a gentle lob.',
-  'Catch Zip in the cloud and you get an extra hop!',
+  'Hold  \u25b2  for a long shot,  \u25bc  for a gentle lob.',
   'Jelly blobs bounce Zip — aim at them on purpose!',
   'Aim a little ABOVE a star. Zip curves down as it flies.',
-  'Pop lots of bubbles in one hop for a big combo!'
+  'Pop two stars in one shot for a big combo!'
 ];
 
 function bigZip(c,x,y,r,t,mood='happy'){
@@ -2405,61 +2281,56 @@ function drawScreens(c){
     text(c,'STARBOUNCE',0,0,{size:104,fill:['#ffffff','#ffe27a','#ff9de2'],stroke:14,
       strokeColor:'rgba(40,10,80,.95)',shadowBlur:40,shadowY:10,letter:'2px'});
     c.restore();
-    text(c,"Zip's Sky Rescue",VW/2,270,{size:34,fill:['#d9f4ff','#8fd8ff'],stroke:6});
-    bigZip(c,VW/2,378,50,t);
-    // floating friends
+    text(c,'Rescue as many star friends as you can in 90 seconds!',VW/2,272,
+      {size:31,fill:['#d9f4ff','#8fd8ff'],stroke:6});
+    bigZip(c,VW/2,382,50,t);
     for(let i=0;i<5;i++){
       const a=t*0.5+i*1.26;
-      drawFuzzle(c, VW/2+Math.cos(a)*(180+i*15), 378+Math.sin(a*1.3)*48, 17,
+      drawFuzzle(c, VW/2+Math.cos(a)*(180+i*15), 382+Math.sin(a*1.3)*48, 17,
                  (i*67)%360, i%4, t+i, .95);
     }
-    pressHint(c,486,'SPACE','to play');
-    const stats=`BEST ${save.best.toLocaleString('en-US')}   ·   SKY LEVEL ${save.topLevel}   ·   ${save.rescued} FRIENDS RESCUED`;
-    text(c,stats,VW/2,544,{size:21,fill:'rgba(255,255,255,.85)',stroke:4});
+    pressHint(c,490,'SPACE','to play');
+    if(save.best>0){
+      text(c,`BEST ${save.best.toLocaleString('en-US')}   ·   ${save.bestRescued} FRIENDS IN ONE ROUND`,
+        VW/2,548,{size:21,fill:'rgba(255,255,255,.85)',stroke:4});
+    }
     return;
   }
-  if(G.state==='clear' || G.state==='party'){
-    const party=G.state==='party';
-    c.fillStyle='rgba(10,4,32,.5)'; c.fillRect(0,0,VW,VH);
+  if(G.state==='over'){
+    c.fillStyle='rgba(10,4,32,.55)'; c.fillRect(0,0,VW,VH);
     const s=E.outBack(clamp(G.stateT*1.5,0,1));
-    const w=760,h=party?440:400, x=VW/2-w/2, y=VH/2-h/2-30;
+    const w=800,h=430, x=VW/2-w/2, y=VH/2-h/2-34;
     c.save(); c.translate(VW/2,y+h/2); c.scale(s,s); c.translate(-VW/2,-(y+h/2));
-    panel(c,x,y,w,h,34,0.78);
-    text(c, party?'SKY TOUR COMPLETE!':'SKY RESCUE!', VW/2, y+66,
-      {size:party?54:58, fill:['#ffffff','#ffe27a','#ff9d18'], stroke:9});
+    panel(c,x,y,w,h,34,0.80);
+    text(c,"TIME'S UP!", VW/2, y+62, {size:56, fill:['#ffffff','#ffe27a','#ff9d18'], stroke:9});
     for(let i=0;i<3;i++){
       const k=clamp((G.stateT-0.25-i*0.22)*3.2,0,1);
       const sc=E.outBack(k);
-      if(k<=0) { miniStar(c, VW/2+(i-1)*104, y+164, 44, false, t, i); continue; }
-      c.save(); c.translate(VW/2+(i-1)*104, y+164); c.scale(sc,sc);
-      miniStar(c,0,0,44, i<G.clearStars, t, i);
+      if(k<=0){ miniStar(c, VW/2+(i-1)*104, y+156, 44, false, t, i); continue; }
+      c.save(); c.translate(VW/2+(i-1)*104, y+156); c.scale(sc,sc);
+      miniStar(c,0,0,44, i<G.resultStars, t, i);
       c.restore();
     }
-    text(c,'SCORE', VW/2, y+236, {size:18,fill:'rgba(255,255,255,.7)',stroke:0,letter:'2px'});
-    text(c,G.score.toLocaleString('en-US'), VW/2, y+280,
-      {size:56,fill:['#ffffff','#ffd447','#ff9d18'],stroke:8});
-    text(c, party ? `You rescued ${save.rescued} sky friends so far!`
-                  : `${G.rescuedThisLevel} friends rescued  ·  ${G.hops} hops left`,
-      VW/2, y+330, {size:22,fill:'rgba(255,255,255,.88)',stroke:4});
+    // headline number: friends rescued
+    const rt = G.rescued+' rescued';
+    const rw = measure(c, rt, 44, 900);
+    const gap = 30, iconR = 22;
+    const blockL = VW/2 - (rw + gap + iconR*2)/2;
+    drawFuzzle(c, blockL + iconR, y+248, iconR, 190, 1, t*1.4, 1);
+    text(c, rt, blockL + iconR*2 + gap, y+248,
+      {size:44,align:'left',fill:['#ffffff','#9be7ff','#4fb8f0'],stroke:7});
+    text(c,'SCORE  '+G.score.toLocaleString('en-US'), VW/2, y+312,
+      {size:30,fill:['#ffffff','#ffd447'],stroke:5});
+    if(G.newBest){
+      const p=0.6+0.4*Math.sin(t*6);
+      text(c,'NEW BEST!', VW/2, y+358, {size:28,fill:hsl(45,100,lerp(66,94,p)),stroke:5});
+    } else {
+      text(c,'TIP: '+TIPS[(G.rescued+G.shots)%TIPS.length], VW/2, y+358,
+        {size:19,fill:'rgba(255,255,255,.82)',stroke:4});
+    }
     c.restore();
-    pressHint(c, y+h+52, 'SPACE', party?'to keep exploring':'for Level '+(G.level+1));
-    if(party && Math.random()<0.34) confettiBurst(rnd(VW*0.9,VW*0.1), -20, 3, {spd:120,g:260});
-    return;
-  }
-  if(G.state==='retry'){
-    c.fillStyle='rgba(10,4,32,.5)'; c.fillRect(0,0,VW,VH);
-    const s=E.outBack(clamp(G.stateT*1.5,0,1));
-    const w=800,h=350,x=VW/2-w/2,y=VH/2-h/2-20;
-    c.save(); c.translate(VW/2,y+h/2); c.scale(s,s); c.translate(-VW/2,-(y+h/2));
-    panel(c,x,y,w,h,34,0.78);
-    text(c,'SO CLOSE!',VW/2,y+64,{size:56,fill:['#ffffff','#9be7ff','#5ab8ff'],stroke:9});
-    bigZip(c,VW/2,y+150,40,t,'happy');
-    text(c,'Every try makes your Star Sense stronger.',VW/2,y+222,
-      {size:24,fill:'rgba(255,255,255,.92)',stroke:4});
-    const tip=TIPS[(G.level+G.shotsThisLevel)%TIPS.length];
-    text(c,'TIP: '+tip,VW/2,y+272,{size:20,fill:['#ffe27a','#ffb648'],stroke:4});
-    c.restore();
-    pressHint(c,y+h+48,'SPACE','to try again');
+    pressHint(c, y+h+50, 'SPACE', 'to play again');
+    if(Math.random()<0.28) confettiBurst(rnd(VW*0.9,VW*0.1), -20, 3, {spd:120,g:260});
     return;
   }
 }
@@ -2468,9 +2339,8 @@ function drawScreens(c){
 function drawParentMenu(c){
   const t=G.t;
   c.fillStyle='rgba(8,3,26,.82)'; c.fillRect(0,0,VW,VH);
-  const w=1170,h=734,x=VW/2-w/2,y=VH/2-h/2;
+  const w=1170,h=700,x=VW/2-w/2,y=VH/2-h/2;
   panel(c,x,y,w,h,30,0.94);
-  // header
   text(c,'FOR GROWN-UPS',x+40,y+44,{size:33,align:'left',fill:['#ffffff','#ffd97a'],stroke:6});
   text(c,'Game paused — nothing is lost.',x+w-40,y+46,
     {size:19,align:'right',fill:'rgba(255,255,255,.72)',stroke:0,shadowBlur:6});
@@ -2486,9 +2356,9 @@ function drawParentMenu(c){
   let ly=y+108;
   H('WHAT THIS GAME IS',lx,ly); ly+=32;
   P('Zip is a little star-comet. Your child aims a cannon, sets its',lx,ly); ly+=24;
-  P('power, and launches Zip in an arc to pop golden rescue stars',lx,ly); ly+=24;
-  P('and free the trapped sky-friends. Every level is generated',lx,ly); ly+=24;
-  P('fresh, and a level always finishes in under two minutes.',lx,ly); ly+=44;
+  P('power, and launches Zip in an arc to pop golden stars and free',lx,ly); ly+=24;
+  P('the sky-friends inside. One round is 90 seconds — that is the',lx,ly); ly+=24;
+  P('whole game. There are no levels and nothing to lose.',lx,ly); ly+=44;
 
   H('THE SKILLS IT BUILDS',lx,ly); ly+=32;
   const skills=[
@@ -2496,10 +2366,10 @@ function drawParentMenu(c){
      'core of throwing, catching and every ball sport.'],
     ['Angle of reflection','The candy walls, jelly blobs and rails all bounce Zip',
      'predictably, so "in equals out" is learned by feel, not by rule.'],
-    ['Spatial planning','Choosing which target to chain into next builds',
-     'multi-step mental simulation and working memory.'],
-    ['Fine motor + timing','Steering the catcher cloud mid-flight trains',
-     'smooth, continuous control and divided attention.']
+    ['Spatial planning','Choosing which star to aim for, and which surface to',
+     'bank off to get there, is multi-step mental simulation.'],
+    ['Fine motor control','Holding an arrow key for exactly the right fraction of',
+     'a second to land an angle trains graded, precise input.']
   ];
   for(const s2 of skills){
     c.fillStyle='#ffd447'; c.beginPath(); c.arc(lx+6,ly-6,5,0,TAU); c.fill();
@@ -2512,9 +2382,9 @@ function drawParentMenu(c){
   let ry=y+108;
   H('CONTROLS  (keyboard only — no mouse)',rx,ry); ry+=34;
   const rows=[
-    [['left','right'],null,'Aim the cannon  ·  steer the cloud in flight'],
+    [['left','right'],null,'Aim the cannon left and right'],
     [['up','down'],null,'More power / less power'],
-    [[],'SPACE','Launch Zip  ·  continue on any screen'],
+    [[],'SPACE','Launch Zip  ·  start or replay a round'],
     [[],'Q','Open and close this menu (pauses the game)']
   ];
   for(const r of rows){
@@ -2533,7 +2403,6 @@ function drawParentMenu(c){
   P('moves off the screen and into their head. Miss a few and it',rx,ry,.85); ry+=24;
   P('grows back: the support is always there when it is needed.',rx,ry,.85); ry+=32;
 
-  // live readout
   const pct=Math.round((1 - inv(0.42,2.30,G.guideT))*100);
   panel(c,rx,ry-6,colW,50,14,0.35);
   text(c,'Star Sense',rx+16,ry+18,{size:17,align:'left',fill:'rgba(255,255,255,.82)',stroke:0});
@@ -2548,12 +2417,11 @@ function drawParentMenu(c){
     {size:16,align:'right',fill:'rgba(255,255,255,.66)',stroke:0});
   ry+=64;
 
-  /* ---------- settings ---------- */
-  H('SETTINGS   ( ▲ ▼ choose  ·  SPACE toggle )',rx,ry); ry+=28;
+  H('SETTINGS   ( \u25b2 \u25bc choose  ·  SPACE toggle )',rx,ry); ry+=28;
   const opts=[
     ['Music', save.music?'ON':'OFF'],
     ['Sound effects', save.sfx?'ON':'OFF'],
-    ['Reset score & Star Sense', 'PRESS SPACE']
+    ['Reset best score & Star Sense', 'PRESS SPACE']
   ];
   for(let i=0;i<opts.length;i++){
     const sel=i===G.menuSel;
@@ -2571,23 +2439,26 @@ function drawParentMenu(c){
       fill:sel?'#ffd447':'rgba(255,255,255,.58)',stroke:0,shadowBlur:6});
   }
 
-  // footer
   const pulse=0.55+0.45*Math.sin(t*4);
   text(c,'Press  Q  to close and jump right back in',VW/2,y+h-28,
     {size:22,fill:['#ffffff',hsl(45,100,lerp(70,92,pulse))],stroke:5});
 }
 
 /* ================================================================== 15. MAIN LOOP ======= */
+/* Physics uses a clamped dt so a stutter can never tunnel Zip through a wall. The round
+   clock uses the *real* elapsed time instead, so "90 seconds" means 90 seconds even on a
+   slow machine. Long stalls (tab switches) are capped so nobody loses their round. */
 let last=0, fpsAcc=0, fpsN=0;
 window.__fps=60;
 function loop(now){
   requestAnimationFrame(loop);
   if(!last) last=now;
-  let dt=(now-last)/1000; last=now;
-  if(dt>0){ fpsAcc+=1/dt; fpsN++; if(fpsN>=30){ window.__fps=fpsAcc/fpsN; fpsAcc=0; fpsN=0; } }
-  dt=Math.min(dt,0.05);
+  const raw=(now-last)/1000; last=now;
+  if(raw>0){ fpsAcc+=1/raw; fpsN++; if(fpsN>=30){ window.__fps=fpsAcc/fpsN; fpsAcc=0; fpsN=0; } }
+  const dt = Math.min(raw, 0.05);        // physics step
+  const clockDt = Math.min(raw, 0.25);   // round clock step
   if(G.paused){ SKY.update(dt*0.25); G.t+=dt*0.25; updateParticles(dt*0.25); }
-  else updateGame(dt);
+  else updateGame(dt, clockDt);
   const t0=performance.now();
   render();
   qualityTick(performance.now()-t0);
@@ -2610,7 +2481,9 @@ function render(){
 /* ================================================================== 16. BOOT ============ */
 SPR.init();
 SKY.init();
-loadLevel(1);
+/* the title screen shows a live arena behind it, so the child sees the toy before playing */
+G.world = genArena((Math.random()*0xffffffff)>>>0);
+for(let i=0;i<STAR_COUNT;i++) spawnStar();
 setState('title');
 G.lastSkillPips = Math.round(G.skill*5);
 window.__G = G; window.__SND = SND;
