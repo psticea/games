@@ -2,20 +2,21 @@
 
 Single-file browser games for kids. No build step, no server, no accounts, no API keys.
 
-Open `index.html` for the picker, or jump straight to a game:
+**▶ [Play them here](https://psticea.github.io/games/)**
 
-| Game | Folder | Ages | Round | Tech |
+| Game | Play | Ages | Round | Tech |
 | --- | --- | --- | --- | --- |
-| [Comet Catch — Bloop's Sky Carnival](comet-catch/index.html) | `comet-catch/` | ~6–10 | 75s | 3D, three.js via CDN |
-| [Starfall Meadow](starfall-meadow/index.html) | `starfall-meadow/` | ~7–10 | 60s | 2D canvas, no dependencies |
+| Comet Catch — Bloop's Sky Carnival | [play](https://psticea.github.io/games/comet-catch/) · [`comet-catch/`](comet-catch/index.html) | ~6–10 | 75s | 3D, three.js via CDN |
+| Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
 
 Both use **arrow keys, Space and `Q` only** — no mouse — and neither has a "Game Over".
+The root page is a picker linking to both.
 
 ---
 
 ## Comet Catch — Bloop's Sky Carnival
 
-A single-file 3D browser game for roughly ages 6–10. Open `comet-catch/index.html`.
+A single-file 3D browser game for roughly ages 6–10. Open `comet-catch/index.html` — no build step, no server, no keys.
 
 **Play:** `←` `→` move · `Space` jump (and start/restart) · `↓` skid to a stop · `Q` grown-ups menu.
 
@@ -41,7 +42,7 @@ The renderer degrades in small ordered steps if a frame genuinely costs too much
 
 ## Starfall Meadow
 
-A 60-second 2D catching game for roughly ages 7–10. Open `starfall-meadow/index.html` — it has no runtime dependencies at all and works offline.
+A 60-second 2D catching game for roughly ages 7–10. Open `starfall-meadow/index.html` — it has no runtime dependencies and works offline.
 
 **Play:** `←` `→` run · `Space` hop (twice for a flutter-jump) · `↑` hop · `↓` dive · `Q` grown-ups menu.
 
