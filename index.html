@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Games</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%235cbcff'/%3E%3Cpath d='M32 12l5.6 11.4L50 25.2l-9 8.8 2.1 12.4L32 40.6 20.9 46.4 23 34l-9-8.8 12.4-1.8z' fill='%23ffd24d' stroke='%23fff' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2a2140;
+    --line:rgba(70,55,120,.16);
+    --card:#fffdf8;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    background:linear-gradient(180deg,#4aa8dd 0%,#7fc9e8 42%,#bfe6c9 100%);
+    background-attachment:fixed;
+    font-family:'Nunito','Baloo 2','Segoe UI',system-ui,-apple-system,sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;
+    padding:40px 20px 56px;
+  }
+  header{text-align:center;margin-bottom:30px;max-width:720px;}
+  h1{
+    font-family:'Baloo 2',system-ui,sans-serif;
+    font-size:clamp(34px,6vw,56px);margin:0 0 6px;color:#fff;font-weight:800;
+    letter-spacing:.5px;
+    text-shadow:0 2px 0 rgba(38,26,66,.28), 0 6px 18px rgba(20,10,50,.22);
+  }
+  header p{
+    margin:0;font-size:clamp(15px,2.2vw,18px);font-weight:700;color:#fff;
+    text-shadow:0 1px 3px rgba(20,10,50,.34);
+  }
+  .grid{
+    display:grid;gap:22px;width:100%;max-width:1084px;
+    grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+  }
+  .game{
+    display:block;text-decoration:none;color:inherit;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:0 0 20px;
+    overflow:hidden;
+    box-shadow:0 1px 2px rgba(0,0,0,.14), 0 8px 20px rgba(0,0,0,.14);
+    transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s cubic-bezier(.22,1,.36,1);
+  }
+  .game:hover,.game:focus-visible{
+    transform:translateY(-4px);
+    box-shadow:0 1px 2px rgba(0,0,0,.16), 0 14px 34px rgba(0,0,0,.20);
+    outline:none;
+  }
+  .game.sel{
+    box-shadow:inset 0 0 0 3px #ff7ab8, 0 1px 2px rgba(0,0,0,.16), 0 14px 34px rgba(0,0,0,.20);
+    transform:translateY(-4px);
+  }
+  .art{height:150px;overflow:hidden;}
+  .art svg{display:block;width:100%;height:100%;}
+  .body{padding:16px 22px 0;}
+  h2{
+    font-family:'Baloo 2',system-ui,sans-serif;
+    font-size:25px;margin:0 0 2px;font-weight:800;
+  }
+  .sub{font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#8c7fb0;margin:0 0 10px;}
+  .desc{font-size:14.5px;line-height:1.55;color:#4a3f6b;margin:0 0 12px;}
+  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+  .tag{
+    font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+    padding:4px 10px;border-radius:999px;
+    background:#f1ecfb;color:#6b5c98;border:1px solid rgba(120,100,170,.2);
+  }
+  .tag.skill{background:#fff2f8;color:#c4467f;border-color:rgba(255,122,184,.35);}
+  .play{
+    display:inline-flex;align-items:center;gap:9px;
+    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:16px;
+    color:#fff;background:linear-gradient(180deg,#6ec1f5,#3d95d8);
+    padding:10px 20px;border-radius:999px;
+    box-shadow:0 1px 2px rgba(20,10,50,.2);
+  }
+  .game:nth-child(2) .play{background:linear-gradient(180deg,#ffb066,#f4823a);}
+  .game:nth-child(3) .play{background:linear-gradient(180deg,#c48bf0,#8b4fd0);}
+  .keys{
+    display:flex;flex-wrap:wrap;align-items:center;gap:6px;
+    margin-top:12px;font-size:12.5px;font-weight:700;color:#7a6da0;
+  }
+  kbd{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:26px;height:25px;padding:0 7px;
+    background:linear-gradient(180deg,#fff,#efe9f9);
+    border:1.5px solid #cfc4e6;border-bottom-width:3px;border-radius:7px;
+    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:12.5px;color:#3b2f5e;
+  }
+  footer{
+    margin-top:30px;text-align:center;font-size:13.5px;font-weight:700;
+    color:#fff;text-shadow:0 1px 3px rgba(20,10,50,.34);
+  }
+  @media (prefers-reduced-motion:reduce){ .game{transition:none;} }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Games</h1>
+    <p>Three browser games for kids. No install, no accounts &mdash; just open and play.</p>
+  </header>
+
+  <div class="grid" id="grid">
+    <a class="game" href="starfall-meadow/index.html">
+      <div class="art">
+        <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="sfSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3fa6e0"/><stop offset="55%" stop-color="#95ddf5"/><stop offset="1" stop-color="#fff6cf"/>
+            </linearGradient>
+            <linearGradient id="sfStar" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff3c0"/><stop offset="1" stop-color="#ffae33"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="150" fill="url(#sfSky)"/>
+          <circle cx="330" cy="34" r="20" fill="#fffbe0"/>
+          <ellipse cx="70" cy="40" rx="34" ry="16" fill="#fff" opacity=".92"/>
+          <ellipse cx="96" cy="34" rx="24" ry="14" fill="#fff" opacity=".92"/>
+          <path d="M0 118 Q60 100 120 112 T260 106 T400 116 L400 150 L0 150Z" fill="#79ce6b"/>
+          <path d="M0 130 Q80 118 160 128 T320 124 T400 132 L400 150 L0 150Z" fill="#52b457"/>
+          <path d="M40 108 Q140 34 250 74" stroke="#fff" stroke-width="3" stroke-dasharray="6 10" fill="none" opacity=".85" stroke-linecap="round"/>
+          <ellipse cx="250" cy="120" rx="28" ry="8" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
+          <path d="M150 44l6.4 13L171 59.2l-10.4 10 2.5 14.2L150 76.7l-13.1 6.7 2.5-14.2-10.4-10 14.6-2.2z" fill="url(#sfStar)" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+          <g transform="translate(66,112)">
+            <ellipse cx="0" cy="6" rx="17" ry="5" fill="#2f7a3c" opacity=".3"/>
+            <path d="M-14 -6 Q-30 -14 -26 -32 Q-16 -26 -10 -12Z" fill="#c9a077"/>
+            <circle cx="0" cy="-14" r="16" fill="#ffd8a8"/>
+            <ellipse cx="2" cy="-10" rx="9" ry="10" fill="#fff9ec"/>
+            <path d="M-11 -26 Q-9 -37 -1 -32 Q-3 -26 -11 -26Z" fill="#ffd8a8"/>
+            <path d="M11 -26 Q9 -37 1 -32 Q3 -26 11 -26Z" fill="#ffd8a8"/>
+            <circle cx="-5" cy="-17" r="2.6" fill="#3a2850"/><circle cx="5" cy="-17" r="2.6" fill="#3a2850"/>
+            <circle cx="-5.8" cy="-18" r="1" fill="#fff"/><circle cx="4.2" cy="-18" r="1" fill="#fff"/>
+            <ellipse cx="-10" cy="-13" rx="3" ry="2" fill="#ff8caa" opacity=".5"/>
+            <ellipse cx="10" cy="-13" rx="3" ry="2" fill="#ff8caa" opacity=".5"/>
+          </g>
+        </svg>
+      </div>
+      <div class="body">
+        <h2>Starfall Meadow</h2>
+        <p class="sub">Ages ~7&ndash;10 &middot; 60 seconds a round</p>
+        <p class="desc">Stars arc across the sky and Pip runs to catch them. You can't win by chasing
+        where a star <em>is</em> &mdash; you have to read its curve and get to where it's <em>going to be</em>.
+        Missed stars bloom into flowers, so there's no losing.</p>
+        <div class="tags">
+          <span class="tag skill">Trajectory prediction</span>
+          <span class="tag skill">Anticipatory timing</span>
+          <span class="tag">2D &middot; works offline</span>
+        </div>
+        <span class="play">Play &rarr;</span>
+        <div class="keys">
+          <kbd>&larr;</kbd><kbd>&rarr;</kbd> run <kbd>Space</kbd> hop <kbd>&darr;</kbd> dive <kbd>Q</kbd> grown-ups
+        </div>
+      </div>
+    </a>
+
+    <a class="game" href="comet-catch/index.html">
+      <div class="art">
+        <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="ccSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2f7fd0"/><stop offset="60%" stop-color="#5cbcff"/><stop offset="1" stop-color="#ffe6b8"/>
+            </linearGradient>
+            <radialGradient id="ccComet" cx="38%" cy="32%">
+              <stop offset="0" stop-color="#fffbe8"/><stop offset="55%" stop-color="#ffd24d"/><stop offset="1" stop-color="#ff9a2e"/>
+            </radialGradient>
+          </defs>
+          <rect width="400" height="150" fill="url(#ccSky)"/>
+          <ellipse cx="200" cy="150" rx="260" ry="52" fill="#7fd08a"/>
+          <ellipse cx="200" cy="156" rx="200" ry="40" fill="#5cb86e"/>
+          <path d="M20 104 Q120 20 230 66" stroke="#fff" stroke-width="3" stroke-dasharray="7 11" fill="none" opacity=".8" stroke-linecap="round"/>
+          <path d="M226 76 Q206 88 190 98" stroke="#ffd97a" stroke-width="6" stroke-linecap="round" opacity=".6" fill="none"/>
+          <circle cx="236" cy="70" r="13" fill="url(#ccComet)" stroke="#fff" stroke-width="2"/>
+          <g transform="translate(320,96)">
+            <circle cx="0" cy="-20" r="9" fill="#ffd24d" opacity=".85"/>
+            <rect x="-13" y="-6" width="26" height="26" rx="7" fill="#ff8f5e"/>
+            <rect x="-16" y="-11" width="32" height="9" rx="4.5" fill="#ffb27f"/>
+          </g>
+          <g transform="translate(96,106)">
+            <ellipse cx="0" cy="16" rx="18" ry="5" fill="#2f7a3c" opacity=".28"/>
+            <ellipse cx="0" cy="-2" rx="17" ry="16" fill="#9ee7ff"/>
+            <ellipse cx="2" cy="2" rx="9" ry="9" fill="#e8fbff"/>
+            <circle cx="-5" cy="-6" r="3" fill="#243a52"/><circle cx="6" cy="-6" r="3" fill="#243a52"/>
+            <circle cx="-6" cy="-7.2" r="1.1" fill="#fff"/><circle cx="5" cy="-7.2" r="1.1" fill="#fff"/>
+            <path d="M-4 2 Q0 6 4 2" stroke="#243a52" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M-17 -14 Q-4 -26 12 -18" stroke="#ffcf6b" stroke-width="5" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="body">
+        <h2>Comet Catch</h2>
+        <p class="sub">Ages ~6&ndash;10 &middot; 75 seconds a round</p>
+        <p class="desc">Bloop's Sky Carnival, in 3D. Flower cannons fire comets in long readable arcs
+        and you run to where each one will land, basket ready. Dodge the sneezy clouds and watch out
+        for berries that change course mid&#8209;flight.</p>
+        <div class="tags">
+          <span class="tag skill">Trajectory prediction</span>
+          <span class="tag skill">Response inhibition</span>
+          <span class="tag">3D &middot; needs internet</span>
+        </div>
+        <span class="play">Play &rarr;</span>
+        <div class="keys">
+          <kbd>&larr;</kbd><kbd>&rarr;</kbd> move <kbd>Space</kbd> jump <kbd>&darr;</kbd> skid <kbd>Q</kbd> grown-ups
+        </div>
+      </div>
+    </a>
+
+    <a class="game" href="starbounce/index.html">
+      <div class="art">
+        <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="sbSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2b1d5e"/><stop offset="52%" stop-color="#7d3f9e"/><stop offset="1" stop-color="#e87a4e"/>
+            </linearGradient>
+            <linearGradient id="sbStar" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff3b0"/><stop offset="55%" stop-color="#ffc21f"/><stop offset="1" stop-color="#ff8207"/>
+            </linearGradient>
+            <radialGradient id="sbZip" cx="38%" cy="32%">
+              <stop offset="0" stop-color="#fffdf2"/><stop offset="45%" stop-color="#ffdc4a"/><stop offset="1" stop-color="#f2652b"/>
+            </radialGradient>
+            <linearGradient id="sbRail" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#bdf0ff"/><stop offset="1" stop-color="#37a8d8"/>
+            </linearGradient>
+          </defs>
+          <rect width="400" height="150" fill="url(#sbSky)"/>
+          <g fill="#fff">
+            <circle cx="36" cy="26" r="1.6" opacity=".9"/><circle cx="112" cy="16" r="1.2" opacity=".7"/>
+            <circle cx="196" cy="30" r="1.7" opacity=".85"/><circle cx="286" cy="18" r="1.3" opacity=".7"/>
+            <circle cx="352" cy="44" r="1.6" opacity=".85"/><circle cx="76" cy="66" r="1.2" opacity=".6"/>
+            <circle cx="248" cy="60" r="1.4" opacity=".7"/><circle cx="330" cy="96" r="1.3" opacity=".6"/>
+          </g>
+          <rect x="0" y="0" width="9" height="150" rx="4.5" fill="#a54fd0" opacity=".9"/>
+          <rect x="391" y="0" width="9" height="150" rx="4.5" fill="#a54fd0" opacity=".9"/>
+          <g opacity=".95">
+            <circle cx="126" cy="52" r="13" fill="#4fc9f0" stroke="#fff" stroke-width="2" opacity=".85"/>
+            <circle cx="122" cy="48" r="4" fill="#eafaff" opacity=".9"/>
+            <circle cx="272" cy="44" r="13" fill="#e05fc8" stroke="#fff" stroke-width="2" opacity=".85"/>
+            <circle cx="268" cy="40" r="4" fill="#ffeafa" opacity=".9"/>
+            <circle cx="322" cy="74" r="12" fill="#7d6ef0" stroke="#fff" stroke-width="2" opacity=".8"/>
+          </g>
+          <rect x="176" y="82" width="58" height="10" rx="5" fill="url(#sbRail)" stroke="#fff" stroke-width="1.6" transform="rotate(-24 205 87)"/>
+          <path d="M72 92 Q112 50 152 62 Q192 74 199 52" stroke="#ffe9a3" stroke-width="2.6" stroke-dasharray="5 9"
+                stroke-linecap="round" fill="none" opacity=".95"/>
+          <path d="M200 26l6.6 13.4L221 41.6l-10.5 10.2 2.5 14.4L200 59.4l-13 6.8 2.5-14.4L179 41.6l14.4-2.2z"
+                fill="url(#sbStar)" stroke="#3f1560" stroke-width="2.6" stroke-linejoin="round"/>
+          <g transform="translate(78,120)">
+            <ellipse cx="0" cy="16" rx="34" ry="9" fill="#57c05f"/>
+            <rect x="-8" y="-31" width="16" height="36" rx="8" fill="#3fa4e0" stroke="#1d0a3a" stroke-width="2.6"
+                  transform="rotate(-24 0 -13)"/>
+            <circle cx="0" cy="2" r="14" fill="url(#sbZip)" stroke="#1d0a3a" stroke-width="2.6"/>
+          </g>
+          <g transform="translate(300,120)">
+            <ellipse cx="-12" cy="0" rx="15" ry="11" fill="#fff" opacity=".95"/>
+            <ellipse cx="6" cy="-2" rx="17" ry="13" fill="#fff" opacity=".95"/>
+            <ellipse cx="20" cy="2" rx="12" ry="9" fill="#fff" opacity=".95"/>
+            <circle cx="0" cy="0" r="1.8" fill="#33255c"/><circle cx="10" cy="0" r="1.8" fill="#33255c"/>
+            <path d="M2 5 Q5 8 8 5" stroke="#33255c" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          </g>
+        </svg>
+      </div>
+      <div class="body">
+        <h2>Starbounce</h2>
+        <p class="sub">Ages ~7&ndash;10 &middot; under 2 minutes a level</p>
+        <p class="desc">Zip's Sky Rescue. Aim a cannon, set the power, and launch Zip in an arc to pop the
+        golden stars and free the friends inside. Bank off the candy walls and jelly blobs &mdash; and the
+        sparkle guide gets shorter the better you predict.</p>
+        <div class="tags">
+          <span class="tag skill">Trajectory prediction</span>
+          <span class="tag skill">Angle of reflection</span>
+          <span class="tag">2D &middot; works offline</span>
+        </div>
+        <span class="play">Play &rarr;</span>
+        <div class="keys">
+          <kbd>&larr;</kbd><kbd>&rarr;</kbd> aim <kbd>&uarr;</kbd><kbd>&darr;</kbd> power <kbd>Space</kbd> launch <kbd>Q</kbd> grown-ups
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <footer>Use <kbd>&larr;</kbd><kbd>&rarr;</kbd> and <kbd>Enter</kbd> to pick a game, or just click one.</footer>
+
+<script>
+  /* Keyboard navigation, to match the arrow-keys-only spirit of both games. */
+  (function () {
+    var cards = Array.prototype.slice.call(document.querySelectorAll('.game'));
+    var sel = 0, engaged = false;
+    cards.forEach(function (c, i) {
+      c.addEventListener('focus', function () { sel = i; });
+    });
+    function paint() {
+      cards.forEach(function (c, i) { c.classList.toggle('sel', engaged && i === sel); });
+    }
+    document.addEventListener('keydown', function (e) {
+      var k = e.key;
+      if (k === 'ArrowRight' || k === 'ArrowLeft' || k === 'ArrowDown' || k === 'ArrowUp') {
+        e.preventDefault();
+        if (engaged) sel = (sel + ((k === 'ArrowRight' || k === 'ArrowDown') ? 1 : -1) + cards.length) % cards.length;
+        engaged = true;
+        paint();
+        cards[sel].focus();
+      } else if ((k === 'Enter' || k === ' ') && engaged) {
+        e.preventDefault();
+        window.location.href = cards[sel].getAttribute('href');
+      }
+    });
+  })();
+</script>
+</body>
+</html>
