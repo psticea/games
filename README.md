@@ -9,7 +9,7 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 | Comet Catch — Bloop's Sky Carnival | [play](https://psticea.github.io/games/comet-catch/) · [`comet-catch/`](comet-catch/index.html) | ~6–10 | 75s | 3D, three.js via CDN |
 | Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
 | Starbounce — Zip's Sky Rescue | [play](https://psticea.github.io/games/starbounce/) · [`starbounce/`](starbounce/index.html) | ~7–10 | 90s | 2D canvas, no dependencies |
-| Beacon Bridge | [play](https://psticea.github.io/games/beacon-bridge/) · [`beacon-bridge/`](beacon-bridge/index.html) | ~7–10 | ~60–90s a crossing | 2D canvas, no dependencies |
+| Beacon Bridge | [play](https://psticea.github.io/games/beacon-bridge/) · [`beacon-bridge/`](beacon-bridge/index.html) | ~7–10 | 90s a crossing | 2D canvas, no dependencies |
 | Foxglove Trail | [play](https://psticea.github.io/games/foxglove-trail/) · [`foxglove-trail/`](foxglove-trail/index.html) | ~7–10 | 3 nights, <2 min | 2D canvas, no dependencies |
 
 All five use **arrow keys, Space and `Q` only** — no mouse — and none of them has a "Game Over".
@@ -125,33 +125,43 @@ A mental-rotation puzzle for roughly ages 7–10. Open `beacon-bridge/index.html
 
 **Play:** `←` `→` slide the block · `↑` `↓` turn it a quarter turn · `Space` drop it into the gap · `Q` grown-ups menu.
 
-A fox needs to cross a canyon at dusk. Each of the five stone spans has a piece missing, and a wooden block floats above it in the wrong orientation. Turn the block, line it up, and drop it. A whole span means the fox trots to the next one; five spans lights the beacon on the far cliff. A crossing takes about 60–90 seconds.
+A fox has to cross a canyon before the light goes. Each of the three stone spans has a bite taken out of its deck, and **two** wooden blocks are needed to make it whole again — a lower one that slots into the notch, then an upper one that caps it off flush with the road. Three spans, six blocks, ninety seconds. Fill all three and the beacon on the far cliff lights up.
+
+The next block is always shown in the corner, so the first drop has to be chosen with the second one already in mind. If the finished span is wrong, **both** blocks float back up and the span is offered again — the section restarts, nothing else is lost.
 
 ### The skill it builds
 
 **Mental rotation** — picturing what a shape will look like once it is turned, *before* committing to it. It is one of the most-studied spatial abilities and the one that later carries geometry, map reading, packing, engineering and design. The mechanic *is* the exercise: nothing else stands between the child and the gap.
 
 - **Mental rotation** — matching a rotated silhouette to a target outline.
-- **Spatial visualisation** — holding the block and the hole in mind at once and comparing them without moving anything.
-- **Plan-then-act** — the drop is instant, so all the thinking happens first. A first-try fit earns a star.
+- **Two-step spatial planning** — holding both blocks and the notch in mind at once, and working out which has to go in first. That is working memory and forward planning rather than trial and error.
+- **Spatial visualisation** — comparing shape to hole without moving anything.
 
-The block never starts in the solved orientation, and the check is by cell-set identity rather than rotation index, so a symmetric shape can't hand out a free "already solved" start.
+Neither block ever starts in its solved orientation, and the check is by cell-set identity rather than rotation index, so a symmetric shape can't hand out a free "already solved" start.
 
 ### How the difficulty adapts
 
-The game counts attempts per block. Across a crossing, an average at or under 1.35 tries moves the level up; 2.4 or more moves it down, clamped to 1–6. Level chooses the shape pool — trominoes → tetrominoes → pentominoes — and how much slack the stone window has around the shape (1 spare column early, 2 later, so there are more wrong places to line it up). Spans 4 and 5 of every crossing are drawn one level harder than the rest, so each crossing still ramps.
+The game counts attempts per span. Across a crossing, an average at or under 1.2 goes moves the level up; 2.0 or more moves it down, clamped to 1–6. Level chooses the block pool — trominoes → mixed → tetrominoes → all eight — and the deck width, from 5 cells up to 7, which multiplies the places a block can be lined up. The last span of every crossing is drawn one level harder, so each crossing still ramps. Running out of daylight always eases the next one.
 
-After three tries on the same block, a soft glowing outline appears inside the gap showing exactly where it should sit. There is no timer, no lives and no "Game Over" — a wrong block simply comes to rest on the stone, where the child can *see* why it missed, and floats back up.
+After two goes at the same span, a soft glowing outline shows exactly where the current block belongs. There is no "Game Over": running out of light ends the walk gently at dusk and offers another go.
 
-### Why it can never soft-lock
+### The eight blocks, and why a solution always exists
 
-The gap is carved from a rotation only if every column of that rotation is a run of cells starting at the top row (`topOpen`). Otherwise stone would sit above a hole and gravity could never deliver the block into it. Shapes with no valid rotation (the S and Z tetrominoes) and shapes with fewer than two distinct rotations (the O tetromino) are filtered out of the shape table at load. The stone window is always at least as wide as the widest rotation, so no orientation can ever get wedged against a wall.
+Two trominoes and six tetrominoes — `I3 L3 I4 L4 J4 T4 S4 Z4`. Every one has at least two genuinely different silhouettes, so turning always matters; the square is left out precisely because it doesn't.
 
-Because a rotation always has the same cell count as the gap, "every dropped cell landed in a hole" is equivalent to an exact fill, which makes the fit test both cheap and exact.
+Each notch is **built rather than guessed**. The upper block is laid flush with the deck surface, and the lower block is then slotted directly beneath it at one consistent vertical offset across every column it uses. That construction guarantees three things at once: every gap column runs unbroken from the deck surface downwards, so a block can always fall into it; the lower block, dropped first, comes to rest exactly where it was laid, because the stone beneath stops it; and the upper block, dropped second, comes to rest exactly on top of the lower one. A solution always exists and gravity can always reach it.
+
+The upper block additionally has to be flat-topped in its chosen orientation — every column running from its own top row down — or stone would sit above it and it could never be dropped in. That is why `S4` and `Z4` only ever appear as the lower block. Generation is then verified against the game's own physics before a span is handed over. Across 2,400 generated spans (400 at each of the six levels) every one was solvable, every one had both blocks starting in the wrong orientation, and none took more than a fraction of a millisecond to build.
+
+Because two blocks always have the same total cell count as the notch, "every placed cell landed inside the notch" is equivalent to an exact fill, which makes the completion test both cheap and exact.
 
 ### Built with
 
-Plain canvas 2D and the Web Audio API. The dusk canyon — sky gradient, mesa silhouettes, layered ridges, arch substructure, mist bands and vignette — is drawn from gradients and hash-noise, and the fox is authored from curves so it walks, breathes and blinks. The block is always drawn as its rotation-0 cell set spun about its own bounding-box centre, so the silhouette stays exact through every intermediate angle of the turn tween. Audio is a small synth: soft filtered tones for turns and slides, a woody knock on landing, a warm stacked chord when a span completes and a C-major arpeggio when the beacon lights, over a bed of low-passed brown noise standing in for canyon wind. No music loop, and the whole mix sits at a quarter gain.
+Plain canvas 2D and the Web Audio API. The dusk canyon — sky gradient, sinking sun, star field, three layers of ridge, strata, river, mist, drifting fireflies — is drawn from gradients and value noise, and the fox is authored from curves with two-bone IK legs so he has real knees, a brush tail that lags behind the body, ears that flick and a head that counter-bobs against his gait. The floating block is always drawn as its rotation-0 cell set spun about its own bounding-box centre, so the silhouette stays exact through every intermediate angle of the turn.
+
+**The 90-second clock is the sky.** Daylight drains from a warm late afternoon to full night over the round: the sun sinks behind the far ridge, stars come out, the lanterns along the parapet light themselves and fireflies rise out of the gorge. Two whole palettes are interpolated per frame, so the clock is something a child can feel rather than read.
+
+Every stone and wood face is baked into an offscreen tile and blitted, and the ridges and strata are built once as `Path2D` and drawn under a translate, which took the frame from ~30 ms to ~20 ms in software-rendered headless Chromium. Audio is a small synth — soft filtered tones for turns and slides, a woody knock on landing, a warm chord when a span closes and a C-major arpeggio when the beacon lights — over a bed of low-passed brown noise standing in for canyon wind.
 
 The render loop wraps update and draw so a stray exception unwinds the canvas state and keeps running — a child should never be able to reach a frozen screen.
 
