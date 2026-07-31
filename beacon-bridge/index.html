@@ -24,9 +24,9 @@
   }
   #parent.hidden{opacity:0;pointer-events:none;}
   #parentCard{
-    width:min(92%,53em);max-height:94%;overflow:auto;
+    width:min(92%,53em);max-height:95%;overflow:auto;
     background:var(--panel);border:1px solid rgba(240,200,138,.28);border-radius:1.1em;
-    padding:1.15em 1.5em 1em;color:var(--ink);font-size:.735em;line-height:1.42;
+    padding:1.1em 1.5em 1em;color:var(--ink);font-size:.705em;line-height:1.42;
     box-shadow:0 20px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06);
   }
   #parentCard::-webkit-scrollbar{width:.5em;}
@@ -35,21 +35,26 @@
     margin:0 0 .05em;font-size:1.62em;color:var(--amber);}
   #parentCard .sub{margin:0 0 .7em;opacity:.55;font-size:.8em;letter-spacing:.08em;text-transform:uppercase;}
   #parentCard h2{font-family:'Fredoka','Trebuchet MS',sans-serif;font-weight:500;
-    font-size:1.25em;margin:.8em 0 .2em;color:var(--amber);letter-spacing:.02em;}
-  #parentCard p{margin:.28em 0;opacity:.88;}
-  #parentCard ul{margin:.22em 0;padding-left:1.1em;}
-  #parentCard li{margin:.18em 0;opacity:.88;}
+    font-size:1.25em;margin:.62em 0 .16em;color:var(--amber);letter-spacing:.02em;}
+  #parentCard p{margin:.24em 0;opacity:.88;}
+  #parentCard ul{margin:.2em 0;padding-left:1.1em;}
+  #parentCard li{margin:.14em 0;opacity:.88;}
   #parentCard b{color:#FFF3E2;font-weight:700;}
   .kbd{display:inline-block;min-width:1.9em;text-align:center;padding:.05em .42em;margin:0 .1em;
     border-radius:.4em;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.16);
     border-bottom-width:2px;font-family:'Fredoka',sans-serif;font-size:.9em;color:#FFF3E2;}
-  .rule{height:1px;background:linear-gradient(90deg,rgba(240,200,138,.35),rgba(240,200,138,0));margin:.85em 0 0;}
-  .footrow{display:flex;justify-content:space-between;align-items:center;gap:1em;margin-top:.7em;flex-wrap:wrap;}
+  .rule{height:1px;background:linear-gradient(90deg,rgba(240,200,138,.35),rgba(240,200,138,0));margin:.5em 0 0;}
+  .footrow{display:flex;justify-content:space-between;align-items:center;gap:1em;margin-top:.5em;flex-wrap:wrap;}
   .soundbtn{display:inline-flex;align-items:center;gap:.4em;padding:.28em .75em;border-radius:.6em;
     background:rgba(240,200,138,.11);border:1px solid rgba(240,200,138,.3);color:var(--amber);font-weight:700;}
   .closehint{opacity:.6;}
   .cols{display:grid;grid-template-columns:1fr 1fr;gap:0 1.7em;align-items:start;}
   .cols.keys ul{list-style:none;padding-left:0;}
+  .levelnow{
+    margin:.5em 0 .2em !important;padding:.45em .7em;border-radius:.5em;
+    background:rgba(240,200,138,.09);border:1px solid rgba(240,200,138,.22);
+  }
+  .levelnow b{color:var(--amber);}
   @media (max-width:760px){ .cols{grid-template-columns:1fr;} }
 </style>
 </head>
@@ -63,9 +68,8 @@
       <p class="sub">A note for grown-ups &nbsp;&middot;&nbsp; the game is paused</p>
 
       <p>A fox has to cross a canyon before the light goes. Each of the three stone spans has a bite
-      taken out of it, and <b>two</b> wooden blocks are needed to make it whole again &mdash; a lower one
-      that slots into the notch, then an upper one that caps it off. Your child turns both blocks
-      <i>in their head</i> before dropping either one.</p>
+      out of it, and it takes <b>two</b> blocks to mend one: a lower one that slots into the notch, then
+      an upper one that caps it off.</p>
 
       <h2>Controls &mdash; keyboard only, nothing to click</h2>
       <div class="cols keys">
@@ -83,28 +87,30 @@
         <div>
           <h2>What it builds</h2>
           <ul>
-            <li><b>Mental rotation.</b> Picturing how a shape will look once turned, <i>before</i>
-              committing. One of the most-studied spatial abilities, and it underpins later geometry,
-              map reading, engineering and design.</li>
-            <li><b>Two-step spatial planning.</b> The next block is always shown in the corner, so the
-              first drop has to be chosen with the second one already in mind. That is working memory
-              and forward planning, not trial and error.</li>
-            <li><b>Persistence without sting.</b> If the finished span is wrong, both blocks simply
-              float back up and the span is offered again. Nothing is taken away.</li>
+            <li><b>Mental rotation.</b> Turning a shape <i>in the head</i> and picturing how it will
+              look, <i>before</i> committing. One of the most-studied spatial abilities, and it
+              underpins later geometry, map reading and design.</li>
+            <li><b>Two-step planning.</b> The next block is always shown in the corner, so the first
+              drop has to be chosen with the second already in mind. That is working memory, not trial
+              and error.</li>
+            <li><b>Persistence without sting.</b> If the finished span is wrong, both blocks float back
+              up and it is offered again. Nothing is taken away.</li>
           </ul>
+
+          <h2>Session length</h2>
+          <p>Three spans and six blocks on a <b>90-second</b> light. The sky darkens as it goes, so the
+          clock is something your child can feel rather than read.</p>
         </div>
         <div>
           <h2>How the difficulty adapts</h2>
-          <p>The game counts how many goes each span takes. A tidy crossing brings bigger, less
-          symmetrical shapes and a wider deck with more places to line them up; a struggle eases it
-          back down.</p>
-          <p>After two goes at the same span, a soft glowing outline shows where the current block
-          belongs &mdash; so nobody ever gets stuck.</p>
-
-          <h2>Session length</h2>
-          <p>One crossing is three spans and six blocks, on a <b>90-second</b> light. The sky darkens
-          as the time goes, so the clock is something your child can feel rather than read. Running out
-          just ends the walk gently and offers another go.</p>
+          <p>The game counts how many goes each span takes. An average of one and a third or better
+          nudges it up a step; two or more eases it back down, as does running out of light. One step
+          at a time, and remembered between sittings.</p>
+          <p>Six steps. Each widens the deck or brings in bigger, less symmetrical blocks, and the
+          <i>last</i> span of every crossing is always one step harder than the other two.</p>
+          <p class="levelnow">Right now: <b id="lvlNum">step 2 of 6</b> &mdash; <span id="lvlDesc"></span></p>
+          <p>After two goes at the same span, a glowing outline shows where the current block belongs,
+          so nobody ever gets stuck.</p>
         </div>
       </div>
 
@@ -141,6 +147,8 @@ const cv    = document.getElementById('c');
 const ctx   = cv.getContext('2d');
 const parentEl = document.getElementById('parent');
 const soundStateEl = document.getElementById('soundState');
+const lvlNumEl  = document.getElementById('lvlNum');
+const lvlDescEl = document.getElementById('lvlDesc');
 
 /* ------------------------------------------------------------ small utils */
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -282,16 +290,28 @@ const TROM = SHAPES.filter(s=>s.size===3);
 const TETRO = SHAPES.filter(s=>s.size===4);
 const capTop = list => list.filter(s=>s.topRots.length>0);
 
-/* Six difficulty steps. `w` is the deck width in cells; `lo` is the pool for
-   the first block dropped, `up` the pool for the second (which must be able to
-   sit flush with the top of the deck). */
+/* Six difficulty steps, each one strictly harder than the last. `w` is the
+   deck width in cells, which decides how many places a block can be lined up
+   in; `lo` is the pool for the first block dropped, `up` for the second
+   (which must be able to sit flush with the deck surface). Listing a shape
+   twice weights it: at the top step the two least symmetrical blocks come up
+   most often. */
 const LEVELS = [
   {w:5, lo:TROM,                 up:capTop(TROM)},
   {w:5, lo:TROM.concat(TETRO),   up:capTop(TROM)},
-  {w:5, lo:TROM.concat(TETRO),   up:capTop(TROM.concat(TETRO))},
+  {w:6, lo:TROM.concat(TETRO),   up:capTop(TROM.concat(TETRO))},
   {w:6, lo:TETRO,                up:capTop(TETRO)},
-  {w:6, lo:TETRO,                up:capTop(TETRO)},
-  {w:7, lo:SHAPES,               up:capTop(TETRO)}
+  {w:7, lo:TETRO,                up:capTop(TETRO)},
+  {w:7, lo:TETRO.concat([byName('S4'),byName('Z4'),byName('T4')]),
+        up:capTop(TETRO)}
+];
+const LEVEL_BLURB = [
+  'small three-cell blocks, narrow deck',
+  'a bigger block underneath, small one on top',
+  'four-cell blocks either end, wider deck',
+  'four-cell blocks throughout',
+  'four-cell blocks on the widest deck so far',
+  'the widest deck, and the awkward S, Z and T blocks come up most'
 ];
 
 /* =============================================================== ONE SPAN
@@ -535,6 +555,19 @@ const piece = {
 
 const fox = { x:0, y:DECK_Y, tx:0, walking:false, t:0, gait:0, speed:0, cheer:0, blink:0, ear:0 };
 
+/* The level carries over between sittings, so a child picks up where they
+   left off rather than starting from scratch every time. */
+function loadLevel(){
+  try{
+    const v=parseInt(localStorage.getItem('beaconBridge.level'),10);
+    if(v>=1 && v<=6) G.level=v;
+  }catch(e){}
+}
+function saveLevel(){
+  try{ localStorage.setItem('beaconBridge.level', String(G.level)); }catch(e){}
+}
+loadLevel();
+
 /* fixed decorative fields, generated once */
 const STARS=[]; for(let i=0;i<130;i++) STARS.push({x:Math.random()*LW, y:Math.random()*(DECK_Y-6), r:0.5+Math.random()*1.1, p:Math.random()*6.28, s:0.6+Math.random()*1.6});
 const FLIES=[]; for(let i=0;i<16;i++) FLIES.push({x:Math.random()*1300, y:DECK_Y+40+Math.random()*180, p:Math.random()*6.28, s:0.5+Math.random()*0.9, r:22+Math.random()*40});
@@ -603,10 +636,13 @@ function handleKey(k){
   }
   if(G.scene==='crossed' || G.scene==='dusk'){
     if(space){
+      /* One retry anywhere still earns a promotion; it takes a struggle on
+         every span to ease back down. */
       const avg = G.attemptSum/Math.max(1,SPANS);
       if(G.scene==='dusk')      G.level=Math.max(1,G.level-1);
-      else if(avg<=1.20)        G.level=Math.min(6,G.level+1);
+      else if(avg<=1.34)        G.level=Math.min(6,G.level+1);
       else if(avg>=2.00)        G.level=Math.max(1,G.level-1);
+      saveLevel();
       buildCrossing(); G.scene='play'; sfx.start();
     }
     return;
@@ -636,6 +672,10 @@ function handleKey(k){
 }
 function togglePause(){
   G.paused=!G.paused;
+  if(G.paused){
+    lvlNumEl.textContent  = 'step '+G.level+' of 6';
+    lvlDescEl.textContent = LEVEL_BLURB[G.level-1];
+  }
   parentEl.classList.toggle('hidden',!G.paused);
 }
 

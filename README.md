@@ -140,7 +140,22 @@ Neither block ever starts in its solved orientation, and the check is by cell-se
 
 ### How the difficulty adapts
 
-The game counts attempts per span. Across a crossing, an average at or under 1.2 goes moves the level up; 2.0 or more moves it down, clamped to 1–6. Level chooses the block pool — trominoes → mixed → tetrominoes → all eight — and the deck width, from 5 cells up to 7, which multiplies the places a block can be lined up. The last span of every crossing is drawn one level harder, so each crossing still ramps. Running out of daylight always eases the next one.
+There are six steps, and the level is remembered in `localStorage` between sittings. It never changes mid-crossing — only when the next bridge is started.
+
+| Step | Deck width | Lower block | Upper block |
+| --- | --- | --- | --- |
+| 1 | 5 cells | trominoes | trominoes |
+| 2 | 5 | + tetrominoes | trominoes |
+| 3 | 6 | + tetrominoes | + tetrominoes |
+| 4 | 6 | tetrominoes | tetrominoes |
+| 5 | 7 | tetrominoes | tetrominoes |
+| 6 | 7 | tetrominoes, `S` `Z` `T` weighted double | tetrominoes |
+
+A wider deck means more columns to line a block up in; bigger blocks mean an eight-cell notch instead of six. The ladder is monotonic on every axis it moves — measured over 600 generated spans per step, average notch size goes 6.0 → 6.7 → 7.5 → 8.0 → 8.0 → 8.0, the share of four-cell blocks goes 0% → 34% → 74% → 100% → 100% → 100%, and the share of the awkward `S`/`Z` blocks climbs 0% → 16% → 20% → 26% → 28% → 32%. No two steps are the same and none of them goes backwards.
+
+At the end of a crossing the game averages the attempts across the three spans (one attempt = built first go). An average of 1.34 or better moves up a step — so a single retry anywhere still earns a promotion — and 2.0 or worse moves down, as does running out of daylight. One step per crossing, never more. The **last span of every crossing is drawn one step harder** than the other two, so each crossing ramps on its own.
+
+The grown-ups menu shows the current step and what it means, so none of this is hidden.
 
 After two goes at the same span, a soft glowing outline shows exactly where the current block belongs. There is no "Game Over": running out of light ends the walk gently at dusk and offers another go.
 
