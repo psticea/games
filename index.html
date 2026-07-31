@@ -37,7 +37,7 @@
     text-shadow:0 1px 3px rgba(20,10,50,.34);
   }
   .grid{
-    display:grid;gap:22px;width:100%;max-width:1084px;
+    display:grid;gap:22px;width:100%;max-width:748px;
     grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
   }
   .game{
@@ -84,7 +84,8 @@
   }
   .game:nth-child(2) .play{background:linear-gradient(180deg,#ffb066,#f4823a);}
   .game:nth-child(3) .play{background:linear-gradient(180deg,#c48bf0,#8b4fd0);}
-  .game:nth-child(4) .play{background:linear-gradient(180deg,#7fd0a8,#35937a);}
+  .game:nth-child(4) .play{background:linear-gradient(180deg,#ffd08a,#e08a3c);}
+  .game:nth-child(5) .play{background:linear-gradient(180deg,#7fd0a8,#35937a);}
   .keys{
     display:flex;flex-wrap:wrap;align-items:center;gap:6px;
     margin-top:12px;font-size:12.5px;font-weight:700;color:#7a6da0;
@@ -106,7 +107,8 @@
 <body>
   <header>
     <h1>Games</h1>
-    <p>Four browser games for kids. No install, no accounts &mdash; just open and play.</p>  </header>
+    <p>Five browser games for kids. No install, no accounts &mdash; just open and play.</p>
+  </header>
 
   <div class="grid" id="grid">
     <a class="game" href="starfall-meadow/index.html">
@@ -267,7 +269,7 @@
       </div>
       <div class="body">
         <h2>Starbounce</h2>
-        <p class="sub">Ages ~7&ndash;10 &middot; under 2 minutes a level</p>
+        <p class="sub">Ages ~7&ndash;10 &middot; 90 seconds a round</p>
         <p class="desc">Zip's Sky Rescue. Aim a cannon, set the power, and launch Zip in an arc to pop the
         golden stars and free the friends inside. Bank off the candy walls and jelly blobs &mdash; and the
         sparkle guide gets shorter the better you predict.</p>
@@ -279,6 +281,97 @@
         <span class="play">Play &rarr;</span>
         <div class="keys">
           <kbd>&larr;</kbd><kbd>&rarr;</kbd> aim <kbd>&uarr;</kbd><kbd>&darr;</kbd> power <kbd>Space</kbd> launch <kbd>Q</kbd> grown-ups
+        </div>
+      </div>
+    </a>
+
+    <a class="game" href="beacon-bridge/index.html">
+      <div class="art">
+        <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <defs>
+            <linearGradient id="bbSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#2b2050"/><stop offset="54%" stop-color="#6b4a72"/><stop offset="1" stop-color="#d9895f"/>
+            </linearGradient>
+            <linearGradient id="bbStone" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#9d8ea6"/><stop offset="1" stop-color="#6b5d74"/>
+            </linearGradient>
+            <linearGradient id="bbWood" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f2c884"/><stop offset="1" stop-color="#d2954c"/>
+            </linearGradient>
+            <radialGradient id="bbGlow" cx="50%" cy="50%">
+              <stop offset="0" stop-color="#ffe2a8" stop-opacity=".85"/>
+              <stop offset="1" stop-color="#ffc882" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="400" height="150" fill="url(#bbSky)"/>
+          <ellipse cx="286" cy="108" rx="150" ry="42" fill="#f0a878" opacity=".38"/>
+          <g fill="#fff" opacity=".75">
+            <circle cx="44" cy="20" r="1.5"/><circle cx="128" cy="13" r="1.2"/>
+            <circle cx="214" cy="26" r="1.4"/><circle cx="312" cy="17" r="1.2"/>
+            <circle cx="366" cy="38" r="1.4"/>
+          </g>
+          <path d="M0 104 L46 74 L86 104 Z M120 104 L168 66 L214 104 Z M252 104 L300 78 L344 104 Z"
+                fill="#463663" opacity=".72"/>
+          <rect x="0" y="102" width="400" height="48" fill="#5c4a63"/>
+          <g fill="url(#bbStone)">
+            <rect x="26" y="102" width="12" height="48"/><rect x="122" y="102" width="12" height="48"/>
+            <rect x="218" y="102" width="12" height="48"/><rect x="314" y="102" width="12" height="48"/>
+          </g>
+          <g fill="#8c7c95" opacity=".55">
+            <path d="M38 150 a44 42 0 0 1 84 0 Z"/><path d="M134 150 a44 42 0 0 1 84 0 Z"/>
+            <path d="M230 150 a44 42 0 0 1 84 0 Z"/>
+          </g>
+          <rect x="0" y="88" width="400" height="20" fill="url(#bbStone)"/>
+          <g fill="#3a2f48">
+            <rect x="182" y="88" width="19" height="19" rx="3"/>
+            <rect x="203" y="88" width="19" height="19" rx="3"/>
+          </g>
+          <g stroke="#4c3f58" stroke-width="1.4" opacity=".5">
+            <path d="M20 88v20M62 88v20M104 88v20M146 88v20M244 88v20M286 88v20M328 88v20M370 88v20"/>
+          </g>
+          <g transform="translate(192,44)">
+            <rect x="-20" y="-10" width="19" height="19" rx="3" fill="url(#bbWood)" stroke="#a9702f" stroke-width="1.6"/>
+            <rect x="1" y="-10" width="19" height="19" rx="3" fill="url(#bbWood)" stroke="#a9702f" stroke-width="1.6"/>
+            <path d="M-30 -14 a20 20 0 0 1 20 -14" stroke="#ffe0a6" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+            <path d="M-11 -30 l4 5 -6 1 z" fill="#ffe0a6"/>
+          </g>
+          <circle cx="340" cy="60" r="42" fill="url(#bbGlow)"/>
+          <path d="M328 88 L331 46 L349 46 L352 88 Z" fill="url(#bbStone)"/>
+          <rect x="328" y="26" width="24" height="22" rx="3" fill="#e0b56a"/>
+          <rect x="332" y="30" width="16" height="14" rx="2" fill="#fff0c4"/>
+          <rect x="325" y="21" width="30" height="7" rx="3" fill="#f4d79a"/>
+          <g transform="translate(92,88)">
+            <ellipse cx="2" cy="0" rx="22" ry="3" fill="#2a2038" opacity=".3"/>
+            <path d="M-12 -14 q-22 4 -28 -12 q-4 -14 10 -12 q9 5 18 16 z" fill="#b85a2e"/>
+            <circle cx="-38" cy="-27" r="6" fill="#f0dcc4"/>
+            <g stroke="#a94e27" stroke-width="5" stroke-linecap="round">
+              <path d="M-8 -16 V-3"/><path d="M8 -16 V-3"/>
+            </g>
+            <ellipse cx="0" cy="-22" rx="19" ry="11" fill="#d9713c"/>
+            <ellipse cx="8" cy="-15" rx="13" ry="6" fill="#efd9c2"/>
+            <circle cx="20" cy="-33" r="10" fill="#d9713c"/>
+            <path d="M14 -40 l3 -10 5 9 z" fill="#d9713c"/>
+            <path d="M24 -40 l6 -8 1 9 z" fill="#d9713c"/>
+            <path d="M24 -34 q14 1 17 4 q-7 5 -17 3 z" fill="#efd9c2"/>
+            <circle cx="41" cy="-30" r="2.2" fill="#2e2126"/>
+            <circle cx="24" cy="-35" r="1.9" fill="#2e2126"/>
+          </g>
+        </svg>
+      </div>
+      <div class="body">
+        <h2>Beacon Bridge</h2>
+        <p class="sub">Ages ~7&ndash;10 &middot; about a minute a crossing</p>
+        <p class="desc">A fox needs to cross a canyon, and every stone span has a piece missing. Turn the
+        floating block in your head, slide it over the gap, and drop it in. Five clean spans and the
+        beacon on the far cliff lights up.</p>
+        <div class="tags">
+          <span class="tag skill">Mental rotation</span>
+          <span class="tag skill">Spatial visualisation</span>
+          <span class="tag">2D &middot; works offline</span>
+        </div>
+        <span class="play">Play &rarr;</span>
+        <div class="keys">
+          <kbd>&larr;</kbd><kbd>&rarr;</kbd> slide <kbd>&uarr;</kbd><kbd>&darr;</kbd> turn <kbd>Space</kbd> drop <kbd>Q</kbd> grown-ups
         </div>
       </div>
     </a>
