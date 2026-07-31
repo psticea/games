@@ -9,9 +9,10 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 | Comet Catch — Bloop's Sky Carnival | [play](https://psticea.github.io/games/comet-catch/) · [`comet-catch/`](comet-catch/index.html) | ~6–10 | 75s | 3D, three.js via CDN |
 | Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
 | Starbounce — Zip's Sky Rescue | [play](https://psticea.github.io/games/starbounce/) · [`starbounce/`](starbounce/index.html) | ~7–10 | <2 min a level | 2D canvas, no dependencies |
+| Foxglove Trail | [play](https://psticea.github.io/games/foxglove-trail/) · [`foxglove-trail/`](foxglove-trail/index.html) | ~7–10 | 3 nights, <2 min | 2D canvas, no dependencies |
 
-All three use **arrow keys, Space and `Q` only** — no mouse — and none of them has a "Game Over".
-The root page is a picker linking to all three.
+All four use **arrow keys, Space and `Q` only** — no mouse — and none of them has a "Game Over".
+The root page is a picker linking to all four.
 
 ---
 
@@ -110,3 +111,50 @@ Bloom is a downsample pyramid (÷3 → ÷6 → ÷12) composited additively rathe
 Levels are seeded from the level number (mulberry32) and laid out with one of seven patterns: grid, arcs, flower, spiral, wave, pillars, diamond. Every rescue star on levels 1–12 *and* their retry re-rolls was verified reachable by brute-forcing 70 angles × 18 powers through the real physics, so no level can soft-lock.
 
 `window.__G` exposes the game state for debugging.
+
+---
+
+## Foxglove Trail
+
+A map-reading game for roughly ages 7–10. Open `foxglove-trail/index.html` — no runtime dependencies, works offline.
+
+**Play:** `←` `↑` `↓` `→` run · `Space` sniff (and start/continue) · `Q` grown-ups menu. Those are the only keys — no mouse.
+
+A fox has to get home to the den before the evening fog closes in. You can only see a few paces of wood — but a paper map in the corner shows the **whole** forest, with the den marked by a dotted ring. A round is three short nights and takes under two minutes.
+
+### The skill it builds
+
+The mechanic *is* the exercise: **allocentric → egocentric translation**, the real skill behind map reading and orienteering. The map does not turn when you do. On later nights it is pinned at an angle, so "the den is up-left on the paper" has to be converted into "so I run *that* way from here" — mental rotation of a whole layout, performed while steering.
+
+- **Landmark-based wayfinding** — a fallen log, standing stone, berry bush, mushroom ring and pond are drawn *both* in the wood and on the map, each with a distinct silhouette. Every junction carries one, and walking near a landmark rings it on the paper so the two pictures link up.
+- **Route planning and self-location** — sniffing pulses your position onto the map but recharges slowly, so a child learns to keep a running sense of where they are instead of checking constantly.
+- **Spatial working memory** — the map is studied on the briefing screen and stays small during play.
+
+### How it adapts
+
+The game scores how *directly* each night was walked (shortest path ÷ distance actually covered) and keeps a rolling skill estimate in `localStorage`. Every scaffold is tied to it and is removed one at a time:
+
+| Scaffold | Beginner | Confident |
+| --- | --- | --- |
+| Map rotation | 0° on night 1 | up to 155° |
+| Circle of sight | 330 px | 232 px |
+| Sniff recharge | 3.8 s | 7.2 s |
+| Breadcrumb trail on the paper | on | off |
+| "Screen-up" arrow on the map rim | on | faded out |
+| Wood size | 5×3 grid | up to 7×4 grid |
+
+The grown-ups menu shows the live readout of all of it.
+
+### No failure state
+
+If the fog closes in completely, an owl starts calling from the den — **stereo-panned, so you can hear which side it is on** — a warm glow appears at the screen edge pointing home, and the moon slowly comes out so the circle of sight *widens* the longer a child takes. The night always finishes. The results card says how straight the trail was read, never how badly.
+
+### Built with
+
+Plain canvas 2D and the Web Audio API. Every tree, fern, landmark, foxglove and the den are procedurally drawn once into offscreen canvases at load, then trimmed to their alpha bounds and blitted. Woods are generated with a jittered grid, a Kruskal minimum spanning tree plus extra loop edges, and Dijkstra to choose a start node at the target path length — so the wood is always connected and the den is always reachable. The map is a separate ink-on-aged-paper rendering scaled to the trail's bounding box.
+
+Audio is a brown-noise wind bed, FM-free sine voices through a generated-impulse convolution reverb, a pentatonic pad whose density tracks the fog, and a vibrato owl hoot panned toward the den.
+
+The renderer only draws what the circle of sight can reach: the ground blit, sprite culling and the fog itself are all clipped to a quantised box around the fox, and the fog disc is cached until its radius changes. That took the frame from 216 ms to 27 ms in software-rendered headless Chromium. The fox is always drawn last and anything that would cover her fades out, so she can never be lost behind a canopy.
+
+`window.__FG` exposes the game state for debugging.
