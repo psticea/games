@@ -1,0 +1,2532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Foxglove Trail</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231b2f38'/%3E%3Cpath d='M20 22l-4-10 12 6h8l12-6-4 10 4 12c0 9-7 16-16 16s-16-7-16-16z' fill='%23ef8b41'/%3E%3Cpath d='M32 34l-7 5c2 4 4 6 7 6s5-2 7-6z' fill='%23fff3e2'/%3E%3Ccircle cx='25' cy='31' r='2.6' fill='%231b2f38'/%3E%3Ccircle cx='39' cy='31' r='2.6' fill='%231b2f38'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f2e5c8;
+    --ink:#3b2d1e;
+    --night:#0d1c22;
+    --fox:#ef8b41;
+    --moss:#7fb08a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0a151a;}
+  body{
+    font-family:'Nunito','Segoe UI',system-ui,-apple-system,sans-serif;
+    color:#f4ead9;
+    -webkit-font-smoothing:antialiased;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+  #stage{position:fixed;inset:0;}
+  canvas{display:block;width:100%;height:100%;}
+
+  /* ---------- HUD ---------- */
+  .hud{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .5s ease;}
+  .hud.on{opacity:1;}
+  .topleft{
+    position:absolute;left:22px;top:20px;
+    display:flex;flex-direction:column;gap:9px;align-items:flex-start;
+  }
+  .pill{
+    display:inline-flex;align-items:center;gap:9px;
+    background:rgba(11,26,32,.62);
+    border:1px solid rgba(226,206,166,.20);
+    border-radius:999px;padding:7px 16px 7px 13px;
+    font-weight:800;font-size:14px;letter-spacing:.4px;
+    color:#e9dcc4;
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    box-shadow:0 6px 18px rgba(0,0,0,.30);
+  }
+  .pill .lbl{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:#9fb5ad;font-weight:800;}
+  .fogbar{
+    width:126px;height:8px;border-radius:999px;overflow:hidden;
+    background:rgba(255,255,255,.13);
+  }
+  .fogbar i{
+    display:block;height:100%;width:100%;border-radius:999px;
+    transform-origin:left center;
+    background:linear-gradient(90deg,#7fd6c4,#9ad9a0);
+    transition:background .8s ease;
+    will-change:transform;
+  }
+  .fogbar.low i{background:linear-gradient(90deg,#e8b06a,#e5806a);}
+  #gloves{display:inline-flex;gap:5px;align-items:center;}
+  #gloves svg{display:block;width:14px;height:19px;}
+  #gloves svg.off{opacity:.24;}
+
+  /* ---------- bottom control strip ---------- */
+  .controls{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:18px;
+    display:flex;align-items:center;gap:18px;flex-wrap:nowrap;justify-content:center;
+    background:rgba(11,26,32,.60);
+    border:1px solid rgba(226,206,166,.18);
+    border-radius:999px;padding:8px 20px;
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    box-shadow:0 8px 22px rgba(0,0,0,.34);
+    font-size:14px;font-weight:800;color:#dfd2ba;letter-spacing:.3px;
+    white-space:nowrap;max-width:96vw;
+  }
+  .controls span{display:inline-flex;align-items:center;gap:6px;}
+  .controls .short{display:none;}
+  kbd{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:27px;height:26px;padding:0 8px;
+    background:linear-gradient(180deg,#f6ecd8,#dcccae);
+    border:1.5px solid #b9a685;border-bottom-width:3px;border-radius:7px;
+    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:13px;color:#3b2d1e;
+    line-height:1;
+  }
+  kbd.wide{min-width:62px;}
+  @media (max-width:1080px){
+    .controls{font-size:12.5px;gap:12px;padding:7px 15px;}
+    .controls kbd{min-width:23px;height:23px;padding:0 6px;font-size:11.5px;}
+    .controls kbd.wide{min-width:50px;}
+    .controls .long{display:none;}
+    .controls .short{display:inline;}
+  }
+  @media (max-width:760px){
+    .controls{font-size:11px;gap:8px;padding:6px 12px;}
+    .controls kbd{min-width:20px;height:21px;padding:0 5px;font-size:10.5px;}
+    .controls kbd.wide{min-width:42px;}
+  }
+
+  /* ---------- overlays ---------- */
+  .veil{
+    position:fixed;inset:0;display:none;align-items:flex-start;justify-content:center;
+    background:radial-gradient(ellipse at 50% 42%,rgba(20,42,50,.82),rgba(6,14,18,.95));
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+    padding:26px;overflow:auto;z-index:5;
+  }
+  .veil.on{display:flex;}
+  .card{
+    width:min(690px,100%);
+    margin:auto;
+    background:linear-gradient(180deg,#f6ecd6,#ecdcbd);
+    color:#3b2d1e;
+    border-radius:22px;
+    border:1px solid rgba(90,70,45,.30);
+    box-shadow:0 30px 70px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.7);
+    padding:26px 32px 24px;
+  }
+  .card h2{
+    font-family:'Baloo 2',system-ui,sans-serif;font-size:30px;margin:0 0 4px;font-weight:800;
+    letter-spacing:.3px;
+  }
+  .card h3{
+    font-family:'Baloo 2',system-ui,sans-serif;font-size:15px;margin:20px 0 7px;font-weight:800;
+    text-transform:uppercase;letter-spacing:1.4px;color:#8a6a3f;
+  }
+  .card p{margin:0 0 10px;font-size:15px;line-height:1.6;color:#4a3a27;}
+  .card ul{margin:0;padding-left:19px;font-size:15px;line-height:1.62;color:#4a3a27;}
+  .card li{margin-bottom:5px;}
+  .card li b{color:#3b2d1e;}
+  .lede{font-size:16.5px;color:#5a452c;}
+  .rowkeys{display:flex;flex-wrap:wrap;gap:9px 20px;margin:4px 0 2px;}
+  .rowkeys div{display:inline-flex;align-items:center;gap:7px;font-size:14.5px;font-weight:700;color:#4a3a27;}
+  .closehint{
+    margin-top:20px;text-align:center;font-size:13.5px;font-weight:800;
+    color:#8a6a3f;letter-spacing:.4px;
+  }
+  .readout{
+    margin-top:14px;background:rgba(120,95,55,.11);border:1px solid rgba(120,95,55,.22);
+    border-radius:13px;padding:11px 15px;font-size:13.5px;line-height:1.6;color:#5a452c;
+  }
+  .readout b{color:#3b2d1e;}
+  @media (max-width:560px){
+    .card{padding:22px 20px 20px;}
+    .controls{gap:11px;font-size:12.5px;padding:7px 14px;}
+  }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c"></canvas></div>
+
+<div class="hud" id="hud">
+  <div class="topleft">
+    <div class="pill"><span class="lbl">Night</span><span id="nightNum">1</span><span style="opacity:.45">/</span><span id="nightTot">3</span></div>
+    <div class="pill"><span class="lbl">Fog</span><span class="fogbar" id="fogbar"><i id="fogfill"></i></span></div>
+    <div class="pill"><span class="lbl">Foxgloves</span><span id="gloves"></span></div>
+  </div>
+  <div class="controls">
+    <span><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> run</span>
+    <span><kbd class="wide">Space</kbd> <span class="long">sniff &mdash; puts you on the map</span><span class="short">sniff</span></span>
+    <span><kbd>Q</kbd> grown&#8209;ups</span>
+  </div>
+</div>
+
+<div class="veil" id="parentVeil">
+  <div class="card">
+    <h2>Foxglove Trail &mdash; for grown&#8209;ups</h2>
+    <p class="lede">A quiet map&#8209;reading game for roughly ages 7&ndash;10. A round is three short nights and
+    takes under two minutes. There is no way to lose.</p>
+
+    <h3>Controls</h3>
+    <div class="rowkeys">
+      <div><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> run through the wood</div>
+      <div><kbd class="wide">Space</kbd> sniff &mdash; pulses your position onto the map</div>
+      <div><kbd class="wide">Space</kbd> also starts and continues</div>
+      <div><kbd>Q</kbd> open / close this menu (the game pauses)</div>
+    </div>
+    <p style="margin-top:10px">Those are the only keys the game uses. No mouse, anywhere.</p>
+
+    <h3>What you do</h3>
+    <p>A fox has to get home to the den before the evening fog closes in. You can only see a little way
+    through the trees &mdash; but a paper map in the corner shows the <em>whole</em> wood, with the den marked
+    by a dotted ring. The catch: <b>the map does not turn when you do.</b> On later nights it is pinned at
+    an angle, so &ldquo;the den is up&#8209;left on the paper&rdquo; must be translated into &ldquo;so I run
+    <em>that</em> way from here.&rdquo; Landmarks &mdash; log, standing stone, berry bush, mushroom ring, pond
+    &mdash; are drawn both in the wood and on the map, so a child can match them up. Pink foxgloves are
+    optional detours.</p>
+
+    <h3>The skill it builds</h3>
+    <ul>
+      <li><b>Allocentric&nbsp;&rarr;&nbsp;egocentric translation.</b> Holding a bird's&#8209;eye model of a
+      place in mind while moving through it at ground level &mdash; the real skill behind map reading,
+      orienteering and finding your way in an unfamiliar building.</li>
+      <li><b>Mental rotation under load.</b> The map's angle changes between nights, so a whole layout is
+      rotated in the head <em>while</em> steering.</li>
+      <li><b>Landmark&#8209;based wayfinding.</b> Matching a symbol on paper to an object in front of you.
+      Every junction carries a landmark, so it always pays off.</li>
+      <li><b>Route planning and self&#8209;location.</b> Sniffing is limited, so they keep a running sense of
+      where they are rather than checking constantly.</li>
+      <li><b>Spatial working memory.</b> The map is studied before the night starts and stays small during
+      it, so part of the layout is carried in the head.</li>
+    </ul>
+
+    <h3>How it adapts, and how it ends</h3>
+    <p>The game measures how directly each night is walked and keeps a rolling estimate of skill in this
+    browser. Struggling brings the scaffolding back &mdash; a wider circle of sight, a faster&#8209;recharging
+    sniff, a gentler map angle, and a breadcrumb trail on the paper. Doing well removes those one at a time.
+    There is no failure state: if the fog closes in completely, an owl calls from the den &mdash; you can hear
+    which side it is on &mdash; and a soft glow points home. The night still finishes.</p>
+
+    <div class="readout" id="readout"></div>
+    <div class="closehint">Press <kbd>Q</kbd> to close and carry on</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =====================================================================
+   FOXGLOVE TRAIL — a map-reading game for kids.
+   Canvas 2D + Web Audio. No external assets. window.__FG for debugging.
+   ===================================================================== */
+
+/* ---------------------------------------------------------------- utils */
+var TAU = Math.PI * 2;
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function smooth(t) { return t * t * (3 - 2 * t); }
+function dist(ax, ay, bx, by) { return Math.hypot(ax - bx, ay - by); }
+function angDelta(a, b) { return ((b - a + Math.PI) % TAU + TAU) % TAU - Math.PI; }
+function angLerp(a, b, t) { return a + angDelta(a, b) * t; }
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function makeNoise(rand) {
+  var P = new Uint8Array(512), perm = new Uint8Array(256), i, j, t;
+  for (i = 0; i < 256; i++) perm[i] = i;
+  for (i = 255; i > 0; i--) { j = (rand() * (i + 1)) | 0; t = perm[i]; perm[i] = perm[j]; perm[j] = t; }
+  for (i = 0; i < 512; i++) P[i] = perm[i & 255];
+  function g(h, x, y) {
+    switch (h & 3) { case 0: return x + y; case 1: return -x + y; case 2: return x - y; default: return -x - y; }
+  }
+  return function (x, y) {
+    var X = Math.floor(x) & 255, Y = Math.floor(y) & 255;
+    var xf = x - Math.floor(x), yf = y - Math.floor(y);
+    var u = smooth(xf), v = smooth(yf);
+    var aa = P[P[X] + Y], ab = P[P[X] + Y + 1], ba = P[P[X + 1] + Y], bb = P[P[X + 1] + Y + 1];
+    var x1 = lerp(g(aa, xf, yf), g(ba, xf - 1, yf), u);
+    var x2 = lerp(g(ab, xf, yf - 1), g(bb, xf - 1, yf - 1), u);
+    return (lerp(x1, x2, v) + 1) * 0.5;
+  };
+}
+function segDist(px, py, ax, ay, bx, by) {
+  var vx = bx - ax, vy = by - ay;
+  var L = vx * vx + vy * vy;
+  var t = L === 0 ? 0 : ((px - ax) * vx + (py - ay) * vy) / L;
+  t = clamp(t, 0, 1);
+  return Math.hypot(px - (ax + vx * t), py - (ay + vy * t));
+}
+function newCanvas(w, h) {
+  var cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.ceil(w)); cv.height = Math.max(1, Math.ceil(h));
+  return cv;
+}
+function rr(ctx, x, y, w, h, r) {
+  var rad = Math.min(r, Math.abs(w) * 0.5, Math.abs(h) * 0.5);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rad);
+  ctx.arcTo(x + w, y + h, x, y + h, rad);
+  ctx.arcTo(x, y + h, x, y, rad);
+  ctx.arcTo(x, y, x + w, y, rad);
+  ctx.closePath();
+}
+
+/* ------------------------------------------------------------ prefs/save */
+var PREFS_KEY = 'foxgloveTrail.v1';
+function loadPrefs() {
+  try {
+    var raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return null;
+    var o = JSON.parse(raw);
+    if (o && typeof o.skill === 'number') return o;
+  } catch (e) { }
+  return null;
+}
+function savePrefs(o) { try { localStorage.setItem(PREFS_KEY, JSON.stringify(o)); } catch (e) { } }
+var prefs = loadPrefs() || { skill: 0.25, runs: 0, bestGloves: 0 };
+
+/* ==================================================================== */
+/*  AUDIO                                                               */
+/* ==================================================================== */
+var Snd = (function () {
+  var ctx = null, master = null, musicGain = null, sfxGain = null, conv = null, convGain = null;
+  var started = false, muted = false, ambience = null, windGain = null;
+  var padTimer = 0, padIdx = 0;
+
+  function makeIR(seconds, decay) {
+    var rate = ctx.sampleRate, len = (rate * seconds) | 0;
+    var buf = ctx.createBuffer(2, len, rate);
+    for (var ch = 0; ch < 2; ch++) {
+      var d = buf.getChannelData(ch);
+      for (var i = 0; i < len; i++) {
+        var t = i / len;
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - t, decay);
+      }
+    }
+    return buf;
+  }
+  function noiseBuffer(sec, brown) {
+    var rate = ctx.sampleRate, len = Math.max(64, (rate * sec) | 0);
+    var b = ctx.createBuffer(1, len, rate), d = b.getChannelData(0), last = 0;
+    for (var i = 0; i < len; i++) {
+      var w = Math.random() * 2 - 1;
+      if (brown) { last = (last + 0.03 * w) / 1.03; d[i] = last * 3.2; }
+      else d[i] = w;
+    }
+    return b;
+  }
+  function init() {
+    if (started) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    try { ctx = new AC(); } catch (e) { return; }
+    master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    musicGain = ctx.createGain(); musicGain.gain.value = 0.55; musicGain.connect(master);
+    sfxGain = ctx.createGain(); sfxGain.gain.value = 0.95; sfxGain.connect(master);
+    conv = ctx.createConvolver(); conv.buffer = makeIR(2.2, 2.8);
+    convGain = ctx.createGain(); convGain.gain.value = 0.30; conv.connect(convGain); convGain.connect(master);
+    started = true;
+    master.gain.setTargetAtTime(muted ? 0 : 0.85, ctx.currentTime, 0.7);
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(6, true); src.loop = true;
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 430; lp.Q.value = 0.35;
+    var g = ctx.createGain(); g.gain.value = 0.05;
+    var lfo = ctx.createOscillator(); lfo.frequency.value = 0.06;
+    var lg = ctx.createGain(); lg.gain.value = 0.028;
+    lfo.connect(lg); lg.connect(g.gain); lfo.start();
+    src.connect(lp); lp.connect(g); g.connect(master);
+    src.start();
+    ambience = src; windGain = g;
+  }
+  function pan(node, p) {
+    if (p === undefined || !ctx.createStereoPanner) return node;
+    var sp = ctx.createStereoPanner(); sp.pan.value = clamp(p, -1, 1);
+    node.connect(sp); return sp;
+  }
+  function tone(freq, t0, dur, vol, type, p, wet) {
+    if (!ctx) return;
+    var o = ctx.createOscillator(); o.type = type || 'sine'; o.frequency.value = freq;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g);
+    var node = pan(g, p);
+    node.connect(sfxGain);
+    if (wet) { var w = ctx.createGain(); w.gain.value = wet; node.connect(w); w.connect(conv); }
+    o.start(t0); o.stop(t0 + dur + 0.06);
+  }
+  function noiseHit(t0, dur, vol, freq, q, p) {
+    if (!ctx) return;
+    var src = ctx.createBufferSource(); src.buffer = noiseBuffer(0.35, false);
+    var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = freq; bp.Q.value = q || 1.2;
+    var g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(bp); bp.connect(g);
+    pan(g, p).connect(sfxGain);
+    src.start(t0); src.stop(t0 + dur + 0.1);
+  }
+  return {
+    init: init,
+    resume: function () { if (ctx && ctx.state === 'suspended') ctx.resume(); },
+    get ready() { return started; },
+    get muted() { return muted; },
+    toggleMute: function () {
+      muted = !muted;
+      if (master) master.gain.setTargetAtTime(muted ? 0 : 0.85, ctx.currentTime, 0.25);
+      return muted;
+    },
+    step: function () {
+      if (!ctx) return;
+      var t = ctx.currentTime;
+      noiseHit(t, 0.10, 0.048 + Math.random() * 0.018, 250 + Math.random() * 170, 0.9, (Math.random() - 0.5) * 0.5);
+      noiseHit(t + 0.015, 0.05, 0.014, 1100 + Math.random() * 400, 1.6);
+    },
+    sniff: function () {
+      if (!ctx) return;
+      var t = ctx.currentTime;
+      noiseHit(t, 0.085, 0.045, 680, 1.1, -0.12);
+      noiseHit(t + 0.105, 0.075, 0.036, 920, 1.3, 0.12);
+      tone(523.25, t + 0.04, 0.55, 0.05, 'sine', 0, 0.45);
+      tone(783.99, t + 0.14, 0.6, 0.036, 'sine', 0, 0.45);
+    },
+    sniffEmpty: function () {
+      if (!ctx) return;
+      tone(174.61, ctx.currentTime, 0.24, 0.03, 'sine', 0, 0.2);
+    },
+    glove: function (n) {
+      if (!ctx) return;
+      var t = ctx.currentTime, sc = [587.33, 698.46, 880, 1046.5, 1174.66];
+      var f = sc[Math.min(n, sc.length - 1)];
+      tone(f, t, 0.95, 0.07, 'sine', 0, 0.6);
+      tone(f * 2, t + 0.012, 0.5, 0.024, 'sine', 0, 0.5);
+      tone(f * 3, t + 0.06, 0.35, 0.011, 'sine', 0, 0.4);
+    },
+    landmark: function (p) {
+      if (!ctx) return;
+      var t = ctx.currentTime;
+      tone(392, t, 0.55, 0.026, 'sine', p, 0.55);
+      tone(587.33, t + 0.06, 0.45, 0.018, 'sine', p, 0.55);
+    },
+    owl: function (p) {
+      if (!ctx) return;
+      var t = ctx.currentTime;
+      function hoot(t0, f, d, v) {
+        var o = ctx.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(f * 1.06, t0);
+        o.frequency.exponentialRampToValueAtTime(f, t0 + 0.10);
+        o.frequency.exponentialRampToValueAtTime(f * 0.93, t0 + d);
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(v, t0 + 0.08);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+        var vib = ctx.createOscillator(); vib.frequency.value = 10.5;
+        var vg = ctx.createGain(); vg.gain.value = f * 0.013;
+        vib.connect(vg); vg.connect(o.frequency); vib.start(t0); vib.stop(t0 + d + 0.05);
+        o.connect(g);
+        var node = pan(g, p);
+        node.connect(sfxGain);
+        var w = ctx.createGain(); w.gain.value = 1.0; node.connect(w); w.connect(conv);
+        o.start(t0); o.stop(t0 + d + 0.07);
+      }
+      hoot(t, 330, 0.32, 0.07);
+      hoot(t + 0.40, 293.66, 0.5, 0.058);
+    },
+    arrive: function () {
+      if (!ctx) return;
+      var t = ctx.currentTime, chord = [261.63, 329.63, 392, 523.25, 659.25];
+      for (var i = 0; i < chord.length; i++) {
+        tone(chord[i], t + i * 0.08, 1.9 - i * 0.11, 0.07 - i * 0.008, i > 2 ? 'sine' : 'triangle', (i - 2) * 0.16, 0.75);
+      }
+      for (var k = 0; k < 3; k++) noiseHit(t + 0.55 + k * 0.11, 0.08, 0.024, 1500 + k * 320, 2.4, (k - 1) * 0.4);
+    },
+    fanfare: function () {
+      if (!ctx) return;
+      var t = ctx.currentTime, mel = [523.25, 659.25, 783.99, 1046.5];
+      for (var i = 0; i < mel.length; i++) tone(mel[i], t + i * 0.14, 1.3, 0.062, 'triangle', 0, 0.65);
+      tone(130.81, t, 2.2, 0.045, 'sine', 0, 0.6);
+      tone(196, t + 0.02, 2.0, 0.035, 'sine', 0, 0.6);
+    },
+    ui: function () { if (ctx) tone(587.33, ctx.currentTime, 0.17, 0.04, 'sine', 0, 0.35); },
+    wind: function (v) {
+      if (windGain && ctx) windGain.gain.setTargetAtTime(0.042 + v * 0.075, ctx.currentTime, 0.9);
+    },
+    music: function (dt, intensity) {
+      if (!ctx || muted) return;
+      padTimer -= dt;
+      if (padTimer > 0) return;
+      padTimer = 2.7 - intensity * 0.7;
+      var roots = [110, 146.83, 164.81, 130.81];
+      var r = roots[padIdx % roots.length]; padIdx++;
+      var t = ctx.currentTime;
+      function voice(f, d, v, delay) {
+        var o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        var o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2.004;
+        var g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t + delay);
+        g.gain.exponentialRampToValueAtTime(v, t + delay + 0.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + delay + d);
+        var g2 = ctx.createGain(); g2.gain.value = 0.3;
+        o.connect(g); o2.connect(g2); g2.connect(g);
+        g.connect(musicGain);
+        var w = ctx.createGain(); w.gain.value = 0.85; g.connect(w); w.connect(conv);
+        o.start(t + delay); o.stop(t + delay + d + 0.1);
+        o2.start(t + delay); o2.stop(t + delay + d + 0.1);
+      }
+      voice(r, 3.6, 0.048, 0);
+      voice(r * 1.5, 3.1, 0.026, 0.4);
+      if (intensity > 0.45) voice(r * 3, 2.3, 0.014, 0.95);
+    }
+  };
+})();
+/* ==================================================================== */
+/*  ART BAKING — every sprite is drawn once into an offscreen canvas     */
+/* ==================================================================== */
+var Art = { trees: [], ferns: [], marks: {}, glove: null, den: null, paper: null, noiseTile: null };
+
+function bakeNoiseTile() {
+  var S = 256, cv = newCanvas(S, S), g = cv.getContext('2d');
+  var img = g.createImageData(S, S), d = img.data;
+  var n = makeNoise(mulberry32(9137));
+  for (var y = 0; y < S; y++) {
+    for (var x = 0; x < S; x++) {
+      var v = n(x / 26, y / 26) * 0.55 + n(x / 9, y / 9) * 0.30 + n(x / 3.5, y / 3.5) * 0.15;
+      var c = (v * 255) | 0, i = (y * S + x) * 4;
+      d[i] = d[i + 1] = d[i + 2] = c; d[i + 3] = 255;
+    }
+  }
+  g.putImageData(img, 0, 0);
+  Art.noiseTile = cv;
+}
+
+/* ---- one birch / pine tree, anchored at bottom-centre ----
+   Deliberately small: this is a near-top-down wood, so a tree must read as a
+   canopy the fox walks *past*, never a wall that hides her. */
+function bakeTree(seed) {
+  var rnd = mulberry32(seed);
+  var W = 116, H = 132, cv = newCanvas(W, H), g = cv.getContext('2d');
+  var cx = W / 2, base = H - 12;
+  var pine = rnd() < 0.42;
+
+  /* soft ground shadow */
+  var sh = g.createRadialGradient(cx, base + 2, 2, cx, base + 2, 30);
+  sh.addColorStop(0, 'rgba(4,12,14,.40)');
+  sh.addColorStop(1, 'rgba(4,12,14,0)');
+  g.fillStyle = sh;
+  g.save(); g.translate(cx, base + 2); g.scale(1, 0.36); g.beginPath(); g.arc(0, 0, 30, 0, TAU); g.fill(); g.restore();
+
+  var trunkH = 26 + rnd() * 12;
+  var tw = pine ? 6 : 7;
+  var tg = g.createLinearGradient(cx - tw, 0, cx + tw, 0);
+  if (pine) { tg.addColorStop(0, '#3b2f28'); tg.addColorStop(0.45, '#5a4638'); tg.addColorStop(1, '#2e241e'); }
+  else { tg.addColorStop(0, '#b7ae98'); tg.addColorStop(0.4, '#e6dfcb'); tg.addColorStop(1, '#9a927e'); }
+  g.fillStyle = tg;
+  g.beginPath();
+  g.moveTo(cx - tw, base);
+  g.quadraticCurveTo(cx - tw * 0.72, base - trunkH * 0.6, cx - tw * 0.55, base - trunkH);
+  g.lineTo(cx + tw * 0.55, base - trunkH);
+  g.quadraticCurveTo(cx + tw * 0.72, base - trunkH * 0.6, cx + tw, base);
+  g.closePath(); g.fill();
+  if (!pine) {
+    g.fillStyle = 'rgba(38,34,30,.7)';
+    for (var i = 0; i < 3; i++) {
+      var yy = base - 5 - rnd() * (trunkH - 8);
+      var ww = 3 + rnd() * 5, hh = 1.6 + rnd() * 1.4;
+      g.save(); g.translate(cx - tw * 0.6 + rnd() * tw * 1.2, yy); g.rotate((rnd() - 0.5) * 0.3);
+      rr(g, -ww / 2, -hh / 2, ww, hh, hh / 2); g.fill(); g.restore();
+    }
+  }
+
+  var top = base - trunkH;
+  var blobs = [];
+  if (pine) {
+    for (var k = 0; k < 3; k++) blobs.push({ x: cx, y: top - k * 15 - 2, r: 31 - k * 7, tri: true });
+  } else {
+    var n = 5 + (rnd() * 2 | 0);
+    for (var j = 0; j < n; j++) {
+      var a = (j / n) * TAU + rnd() * 0.5;
+      blobs.push({ x: cx + Math.cos(a) * (13 + rnd() * 11), y: top - 20 + Math.sin(a) * (9 + rnd() * 8), r: 14 + rnd() * 11 });
+    }
+    blobs.push({ x: cx, y: top - 23, r: 23 });
+  }
+  var dark = pine ? '#173f3a' : '#1d4a41';
+  var mid = pine ? '#215449' : '#286053';
+  var lite = pine ? '#2f6f57' : '#3a7a5e';
+  for (var pass = 0; pass < 3; pass++) {
+    g.fillStyle = pass === 0 ? dark : pass === 1 ? mid : lite;
+    for (var b = 0; b < blobs.length; b++) {
+      var bl = blobs[b];
+      var off = pass === 0 ? 0 : pass === 1 ? -2 : -4.5;
+      var shrink = pass === 0 ? 1 : pass === 1 ? 0.86 : 0.6;
+      g.beginPath();
+      if (bl.tri) {
+        var r2 = bl.r * shrink;
+        g.moveTo(bl.x, bl.y - 19 + off);
+        g.quadraticCurveTo(bl.x + r2 * 0.6, bl.y + off + 3, bl.x + r2, bl.y + 8 + off);
+        g.quadraticCurveTo(bl.x, bl.y + 3 + off, bl.x - r2, bl.y + 8 + off);
+        g.quadraticCurveTo(bl.x - r2 * 0.6, bl.y + off + 3, bl.x, bl.y - 19 + off);
+      } else {
+        g.arc(bl.x + off * 0.4, bl.y + off, bl.r * shrink, 0, TAU);
+      }
+      g.fill();
+    }
+  }
+  /* moonlit rim on the upper-left */
+  g.globalCompositeOperation = 'lighter';
+  g.fillStyle = 'rgba(150,205,190,.10)';
+  for (var q = 0; q < blobs.length; q++) {
+    var bb = blobs[q];
+    g.beginPath(); g.arc(bb.x - 5, bb.y - 6, (bb.tri ? bb.r * 0.5 : bb.r) * 0.6, 0, TAU); g.fill();
+  }
+  g.globalCompositeOperation = 'source-over';
+  return { cv: cv, ax: cx, ay: base, r: 11 };
+}
+
+function bakeFern(seed) {
+  var rnd = mulberry32(seed);
+  var W = 76, H = 62, cv = newCanvas(W, H), g = cv.getContext('2d');
+  var cx = W / 2, base = H - 6;
+  var n = 5 + (rnd() * 4 | 0);
+  for (var i = 0; i < n; i++) {
+    var a = -Math.PI / 2 + (i / (n - 1) - 0.5) * 1.9;
+    var len = 22 + rnd() * 18;
+    var ex = cx + Math.cos(a) * len, ey = base + Math.sin(a) * len;
+    g.strokeStyle = i % 2 ? 'rgba(46,102,80,.95)' : 'rgba(34,84,68,.95)';
+    g.lineWidth = 3.4; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(cx, base);
+    g.quadraticCurveTo(cx + Math.cos(a) * len * 0.5, base + Math.sin(a) * len * 0.75, ex, ey);
+    g.stroke();
+    g.fillStyle = 'rgba(62,124,94,.6)';
+    g.beginPath(); g.arc(ex, ey, 2.6, 0, TAU); g.fill();
+  }
+  return { cv: cv, ax: cx, ay: base };
+}
+
+/* ---- landmarks: 5 distinct silhouettes, anchored bottom-centre ---- */
+function bakeMark(type) {
+  var W = 190, H = 150, cv = newCanvas(W, H), g = cv.getContext('2d');
+  var cx = W / 2, base = H - 14;
+  function shadow(rx) {
+    var sh = g.createRadialGradient(cx, base + 3, 2, cx, base + 3, rx);
+    sh.addColorStop(0, 'rgba(4,12,14,.45)'); sh.addColorStop(1, 'rgba(4,12,14,0)');
+    g.fillStyle = sh; g.save(); g.translate(cx, base + 3); g.scale(1, 0.3);
+    g.beginPath(); g.arc(0, 0, rx, 0, TAU); g.fill(); g.restore();
+  }
+  if (type === 'log') {
+    shadow(70);
+    var lg = g.createLinearGradient(0, base - 44, 0, base);
+    lg.addColorStop(0, '#8a6a4c'); lg.addColorStop(0.55, '#6d5139'); lg.addColorStop(1, '#4a3628');
+    g.fillStyle = lg;
+    rr(g, cx - 62, base - 42, 124, 40, 19); g.fill();
+    g.fillStyle = '#a9855f';
+    g.beginPath(); g.ellipse(cx - 62, base - 22, 8, 20, 0, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(74,54,38,.85)'; g.lineWidth = 2;
+    for (var r = 4; r < 18; r += 5) { g.beginPath(); g.ellipse(cx - 62, base - 22, r * 0.4, r, 0, 0, TAU); g.stroke(); }
+    g.fillStyle = 'rgba(62,44,32,.5)';
+    for (var s = 0; s < 5; s++) { rr(g, cx - 44 + s * 22, base - 36 + (s % 2) * 12, 15, 3, 1.5); g.fill(); }
+    g.fillStyle = '#4f8f63';
+    g.beginPath();
+    g.moveTo(cx - 46, base - 42);
+    g.quadraticCurveTo(cx - 10, base - 54, cx + 30, base - 41);
+    g.quadraticCurveTo(cx - 6, base - 46, cx - 46, base - 42);
+    g.fill();
+    g.fillStyle = 'rgba(120,190,140,.55)';
+    for (var m = 0; m < 7; m++) { g.beginPath(); g.arc(cx - 40 + m * 12, base - 44 + (m % 3) * 2, 3.2, 0, TAU); g.fill(); }
+  } else if (type === 'stone') {
+    shadow(48);
+    var sg = g.createLinearGradient(cx - 30, 0, cx + 30, 0);
+    sg.addColorStop(0, '#8e94a0'); sg.addColorStop(0.42, '#b9bfc9'); sg.addColorStop(1, '#6d737e');
+    g.fillStyle = sg;
+    g.beginPath();
+    g.moveTo(cx - 25, base);
+    g.lineTo(cx - 20, base - 74);
+    g.quadraticCurveTo(cx - 4, base - 92, cx + 15, base - 78);
+    g.lineTo(cx + 24, base);
+    g.closePath(); g.fill();
+    g.fillStyle = 'rgba(40,48,56,.30)';
+    g.beginPath(); g.moveTo(cx + 6, base - 84); g.lineTo(cx + 15, base - 78); g.lineTo(cx + 24, base); g.lineTo(cx + 8, base); g.closePath(); g.fill();
+    g.fillStyle = 'rgba(126,176,120,.5)';
+    g.beginPath(); g.ellipse(cx - 12, base - 30, 9, 13, 0.3, 0, TAU); g.fill();
+    g.beginPath(); g.ellipse(cx + 8, base - 56, 6, 8, -0.4, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(50,58,66,.4)'; g.lineWidth = 2;
+    g.beginPath(); g.moveTo(cx - 14, base - 66); g.lineTo(cx + 4, base - 48); g.stroke();
+  } else if (type === 'bush') {
+    shadow(58);
+    var lobes = [[-30, -26, 28], [0, -38, 33], [28, -25, 26], [-14, -14, 25], [15, -13, 24]];
+    for (var pass2 = 0; pass2 < 2; pass2++) {
+      g.fillStyle = pass2 === 0 ? '#1e4d3b' : '#2c6a4a';
+      for (var L = 0; L < lobes.length; L++) {
+        var lo = lobes[L];
+        g.beginPath(); g.arc(cx + lo[0] - pass2 * 3, base + lo[1] - pass2 * 4, lo[2] * (pass2 ? 0.82 : 1), 0, TAU); g.fill();
+      }
+    }
+    g.fillStyle = 'rgba(120,190,145,.22)';
+    g.beginPath(); g.arc(cx - 14, base - 44, 20, 0, TAU); g.fill();
+    var bs = mulberry32(77);
+    for (var bqty = 0; bqty < 13; bqty++) {
+      var bx = cx - 40 + bs() * 80, by = base - 52 + bs() * 42;
+      g.fillStyle = '#c8384f';
+      g.beginPath(); g.arc(bx, by, 4.6, 0, TAU); g.fill();
+      g.fillStyle = 'rgba(255,190,190,.6)';
+      g.beginPath(); g.arc(bx - 1.4, by - 1.6, 1.5, 0, TAU); g.fill();
+    }
+  } else if (type === 'mushrooms') {
+    shadow(62);
+    var ms = mulberry32(31);
+    var caps = [];
+    for (var mi = 0; mi < 7; mi++) {
+      var ang = (mi / 7) * TAU;
+      caps.push({ x: cx + Math.cos(ang) * 46, y: base + Math.sin(ang) * 15, s: 0.62 + ms() * 0.5 });
+    }
+    caps.sort(function (a, b) { return a.y - b.y; });
+    for (var ci = 0; ci < caps.length; ci++) {
+      var c2 = caps[ci], sc = c2.s;
+      g.fillStyle = 'rgba(6,16,18,.30)';
+      g.save(); g.translate(c2.x, c2.y + 2); g.scale(1, 0.3); g.beginPath(); g.arc(0, 0, 15 * sc, 0, TAU); g.fill(); g.restore();
+      g.fillStyle = '#efe4cf';
+      rr(g, c2.x - 4.5 * sc, c2.y - 26 * sc, 9 * sc, 26 * sc, 4 * sc); g.fill();
+      var cg = g.createLinearGradient(c2.x, c2.y - 40 * sc, c2.x, c2.y - 18 * sc);
+      cg.addColorStop(0, '#e2604f'); cg.addColorStop(1, '#b83c34');
+      g.fillStyle = cg;
+      g.beginPath();
+      g.moveTo(c2.x - 17 * sc, c2.y - 22 * sc);
+      g.quadraticCurveTo(c2.x, c2.y - 46 * sc, c2.x + 17 * sc, c2.y - 22 * sc);
+      g.quadraticCurveTo(c2.x, c2.y - 15 * sc, c2.x - 17 * sc, c2.y - 22 * sc);
+      g.fill();
+      g.fillStyle = 'rgba(255,246,232,.9)';
+      for (var d2 = 0; d2 < 3; d2++) {
+        g.beginPath(); g.arc(c2.x - 8 * sc + d2 * 8 * sc, c2.y - 28 * sc - (d2 === 1 ? 4 * sc : 0), 2.6 * sc, 0, TAU); g.fill();
+      }
+    }
+  } else { /* pond */
+    var pg = g.createRadialGradient(cx - 12, base - 26, 4, cx, base - 20, 74);
+    pg.addColorStop(0, '#4e8fa8'); pg.addColorStop(0.5, '#2f6b86'); pg.addColorStop(1, '#1d4a60');
+    g.fillStyle = pg;
+    g.beginPath(); g.ellipse(cx, base - 20, 72, 30, 0, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(150,205,215,.45)'; g.lineWidth = 2.2;
+    g.beginPath(); g.ellipse(cx - 8, base - 26, 34, 12, 0, 0.2, Math.PI - 0.5); g.stroke();
+    g.beginPath(); g.ellipse(cx + 14, base - 14, 24, 8, 0, Math.PI + 0.3, TAU - 0.2); g.stroke();
+    g.strokeStyle = 'rgba(70,58,44,.55)'; g.lineWidth = 4;
+    g.beginPath(); g.ellipse(cx, base - 20, 74, 32, 0, 0, TAU); g.stroke();
+    g.strokeStyle = '#4a7d54'; g.lineWidth = 3.4; g.lineCap = 'round';
+    var rs = mulberry32(5);
+    for (var ri = 0; ri < 9; ri++) {
+      var a2 = rs() * TAU;
+      var rx2 = cx + Math.cos(a2) * 66, ry2 = base - 20 + Math.sin(a2) * 27;
+      g.beginPath(); g.moveTo(rx2, ry2);
+      g.quadraticCurveTo(rx2 + (rs() - 0.5) * 12, ry2 - 20, rx2 + (rs() - 0.5) * 22, ry2 - 36);
+      g.stroke();
+    }
+    g.fillStyle = '#2f6a4c';
+    for (var li = 0; li < 3; li++) {
+      var lx = cx - 30 + li * 30, ly = base - 26 + (li % 2) * 12;
+      g.beginPath(); g.ellipse(lx, ly, 12, 5.4, 0.2, 0, TAU); g.fill();
+    }
+  }
+  return { cv: cv, ax: cx, ay: base, r: type === 'pond' ? 0 : 22 };
+}
+
+function bakeGlove() {
+  var W = 60, H = 96, cv = newCanvas(W, H), g = cv.getContext('2d');
+  var cx = W / 2, base = H - 6;
+  g.fillStyle = 'rgba(6,16,18,.28)';
+  g.save(); g.translate(cx, base); g.scale(1, 0.32); g.beginPath(); g.arc(0, 0, 16, 0, TAU); g.fill(); g.restore();
+  g.strokeStyle = '#3f7a52'; g.lineWidth = 4; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(cx, base); g.quadraticCurveTo(cx - 5, base - 34, cx - 2, base - 74); g.stroke();
+  g.fillStyle = '#3f7a52';
+  g.beginPath(); g.ellipse(cx - 12, base - 12, 11, 5, -0.4, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(cx + 11, base - 20, 10, 4.6, 0.4, 0, TAU); g.fill();
+  var bells = [[-11, -32, 1], [-13, -46, 0.92], [-9, -58, 0.82], [-6, -68, 0.7]];
+  for (var i = 0; i < bells.length; i++) {
+    var b = bells[i], s = b[2];
+    var bg = g.createLinearGradient(cx + b[0] - 9 * s, base + b[1], cx + b[0] + 9 * s, base + b[1] + 16 * s);
+    bg.addColorStop(0, '#f6b6d6'); bg.addColorStop(0.55, '#e07ab2'); bg.addColorStop(1, '#b8548f');
+    g.fillStyle = bg;
+    g.save(); g.translate(cx + b[0], base + b[1]); g.rotate(0.35);
+    g.beginPath();
+    g.moveTo(-7 * s, 0);
+    g.quadraticCurveTo(-9.5 * s, 15 * s, 0, 18 * s);
+    g.quadraticCurveTo(9.5 * s, 15 * s, 7 * s, 0);
+    g.quadraticCurveTo(0, -5 * s, -7 * s, 0);
+    g.fill();
+    g.fillStyle = 'rgba(255,240,248,.55)';
+    g.beginPath(); g.ellipse(-2 * s, 6 * s, 2.4 * s, 5 * s, 0.2, 0, TAU); g.fill();
+    g.restore();
+  }
+  return { cv: cv, ax: cx, ay: base };
+}
+
+function bakeDen() {
+  var W = 260, H = 190, cv = newCanvas(W, H), g = cv.getContext('2d');
+  var cx = W / 2, base = H - 18;
+  g.fillStyle = 'rgba(4,12,14,.4)';
+  g.save(); g.translate(cx, base + 4); g.scale(1, 0.28); g.beginPath(); g.arc(0, 0, 96, 0, TAU); g.fill(); g.restore();
+  var mg = g.createLinearGradient(0, base - 96, 0, base);
+  mg.addColorStop(0, '#3c6a52'); mg.addColorStop(0.5, '#2c5340'); mg.addColorStop(1, '#1d3b2f');
+  g.fillStyle = mg;
+  g.beginPath();
+  g.moveTo(cx - 100, base);
+  g.quadraticCurveTo(cx - 66, base - 92, cx + 2, base - 88);
+  g.quadraticCurveTo(cx + 70, base - 84, cx + 100, base);
+  g.closePath(); g.fill();
+  /* grass tufts */
+  g.strokeStyle = 'rgba(120,180,130,.5)'; g.lineWidth = 2.6; g.lineCap = 'round';
+  var gs = mulberry32(404);
+  for (var i = 0; i < 22; i++) {
+    var tx = cx - 92 + gs() * 184;
+    var ty = base - 6 - Math.max(0, 72 - Math.abs(tx - cx) * 0.72) * gs();
+    g.beginPath(); g.moveTo(tx, ty); g.quadraticCurveTo(tx + (gs() - 0.5) * 6, ty - 9, tx + (gs() - 0.5) * 12, ty - 15); g.stroke();
+  }
+  /* entrance */
+  var eg = g.createRadialGradient(cx, base - 14, 3, cx, base - 10, 46);
+  eg.addColorStop(0, '#ffcf86'); eg.addColorStop(0.34, '#c98a48'); eg.addColorStop(0.62, '#4c331f'); eg.addColorStop(1, '#160d08');
+  g.fillStyle = eg;
+  g.beginPath();
+  g.moveTo(cx - 34, base);
+  g.quadraticCurveTo(cx - 32, base - 48, cx, base - 50);
+  g.quadraticCurveTo(cx + 32, base - 48, cx + 34, base);
+  g.closePath(); g.fill();
+  g.strokeStyle = 'rgba(30,22,14,.55)'; g.lineWidth = 4;
+  g.beginPath();
+  g.moveTo(cx - 34, base);
+  g.quadraticCurveTo(cx - 32, base - 48, cx, base - 50);
+  g.quadraticCurveTo(cx + 32, base - 48, cx + 34, base);
+  g.stroke();
+  /* two little stones by the door */
+  g.fillStyle = '#8b8f96';
+  g.beginPath(); g.ellipse(cx - 48, base - 6, 13, 9, 0.2, 0, TAU); g.fill();
+  g.fillStyle = '#767b84';
+  g.beginPath(); g.ellipse(cx + 50, base - 4, 11, 7.5, -0.2, 0, TAU); g.fill();
+  /* foxglove pair flanking the den — the name-drop */
+  return { cv: cv, ax: cx, ay: base, r: 0 };
+}
+
+function bakeRadial(inner, mid, midStop) {
+  var S = 256, cvv = newCanvas(S, S), g = cvv.getContext('2d');
+  var gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  gr.addColorStop(0, inner);
+  if (mid) gr.addColorStop(midStop, mid);
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, S, S);
+  return cvv;
+}
+
+/* Trim a baked sprite to its non-transparent bounds. Software rasterisers pay
+   for every transparent pixel blitted, and the tree canvases are mostly empty. */
+function trim(sprite) {
+  var cvv = sprite.cv, w = cvv.width, h = cvv.height;
+  var g = cvv.getContext('2d');
+  var data;
+  try { data = g.getImageData(0, 0, w, h).data; } catch (e) { return sprite; }
+  var minX = w, minY = h, maxX = -1, maxY = -1;
+  for (var y = 0; y < h; y++) {
+    var row = y * w * 4;
+    for (var x = 0; x < w; x++) {
+      if (data[row + x * 4 + 3] > 2) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < 0) return sprite;
+  var nw = maxX - minX + 1, nh = maxY - minY + 1;
+  if (nw === w && nh === h) return sprite;
+  var out = newCanvas(nw, nh);
+  out.getContext('2d').drawImage(cvv, minX, minY, nw, nh, 0, 0, nw, nh);
+  sprite.cv = out;
+  sprite.ax -= minX; sprite.ay -= minY;
+  return sprite;
+}
+
+function bakeArt() {
+  bakeNoiseTile();
+  Art.mist = bakeRadial('rgba(158,196,200,1)', 'rgba(158,196,200,.42)', 0.55);
+  Art.warmGlow = bakeRadial('rgba(255,205,132,1)', 'rgba(240,164,86,.42)', 0.45);
+  Art.pinkGlow = bakeRadial('rgba(244,166,208,1)', null, 0);
+  Art.foxGlow = bakeRadial('rgba(239,139,65,1)', null, 0);
+  for (var i = 0; i < 6; i++) Art.trees.push(trim(bakeTree(1200 + i * 37)));
+  for (var f = 0; f < 3; f++) Art.ferns.push(trim(bakeFern(90 + f * 13)));
+  var types = ['log', 'stone', 'bush', 'mushrooms', 'pond'];
+  for (var t = 0; t < types.length; t++) Art.marks[types[t]] = trim(bakeMark(types[t]));
+  Art.glove = trim(bakeGlove());
+  Art.den = trim(bakeDen());
+}
+
+/* ==================================================================== */
+/*  WORLD GENERATION                                                    */
+/* ==================================================================== */
+var MARK_TYPES = ['log', 'stone', 'bush', 'mushrooms', 'pond'];
+var PATH_HALF = 34;      /* half-width of a walkable corridor */
+var CLEARING_R = 84;     /* radius of a clearing at a node   */
+
+function generateWorld(seed, cfg) {
+  var rand = mulberry32(seed);
+  var cols = cfg.cols, rows = cfg.rows, cell = cfg.cell, margin = 330;
+  var W = margin * 2 + (cols - 1) * cell, H = margin * 2 + (rows - 1) * cell;
+  var nodes = [], i, j;
+
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      nodes.push({
+        id: nodes.length,
+        gx: i, gy: j,
+        x: margin + i * cell + (rand() - 0.5) * cell * 0.34,
+        y: margin + j * cell + (rand() - 0.5) * cell * 0.34,
+        adj: [], mark: null, glove: false
+      });
+    }
+  }
+  var idx = function (i2, j2) { return (i2 < 0 || j2 < 0 || i2 >= cols || j2 >= rows) ? -1 : j2 * cols + i2; };
+
+  /* candidate edges: grid neighbours plus a few diagonals for character */
+  var cand = [];
+  for (j = 0; j < rows; j++) {
+    for (i = 0; i < cols; i++) {
+      var a = idx(i, j);
+      var right = idx(i + 1, j), down = idx(i, j + 1);
+      if (right >= 0) cand.push([a, right]);
+      if (down >= 0) cand.push([a, down]);
+      if (rand() < 0.30) {
+        var dg = rand() < 0.5 ? idx(i + 1, j + 1) : idx(i - 1, j + 1);
+        if (dg >= 0) cand.push([a, dg]);
+      }
+    }
+  }
+  for (var c = 0; c < cand.length; c++) {
+    cand[c].w = dist(nodes[cand[c][0]].x, nodes[cand[c][0]].y, nodes[cand[c][1]].x, nodes[cand[c][1]].y);
+  }
+  cand.sort(function (p, q) { return p.w - q.w; });
+
+  /* Kruskal MST so the wood is always fully connected */
+  var parent = nodes.map(function (n) { return n.id; });
+  function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+  var edges = [], used = {};
+  function addEdge(e) {
+    var key = Math.min(e[0], e[1]) + ':' + Math.max(e[0], e[1]);
+    if (used[key]) return false;
+    used[key] = 1;
+    edges.push({ a: e[0], b: e[1], len: e.w });
+    nodes[e[0]].adj.push(e[1]); nodes[e[1]].adj.push(e[0]);
+    return true;
+  }
+  for (var k = 0; k < cand.length; k++) {
+    var ra = find(cand[k][0]), rb = find(cand[k][1]);
+    if (ra !== rb) { parent[ra] = rb; addEdge(cand[k]); }
+  }
+  /* extra loops so there is more than one sensible route */
+  var extras = Math.max(2, Math.round(cand.length * cfg.loopiness));
+  var tries = 0;
+  while (extras > 0 && tries < 400) {
+    tries++;
+    var e2 = cand[(rand() * cand.length) | 0];
+    if (addEdge(e2)) extras--;
+  }
+
+  /* Dijkstra from a node over the path graph */
+  function dijkstra(src) {
+    var d = new Float64Array(nodes.length).fill(Infinity);
+    var prev = new Int32Array(nodes.length).fill(-1);
+    var seen = new Uint8Array(nodes.length);
+    d[src] = 0;
+    for (var s = 0; s < nodes.length; s++) {
+      var best = -1, bd = Infinity;
+      for (var n2 = 0; n2 < nodes.length; n2++) if (!seen[n2] && d[n2] < bd) { bd = d[n2]; best = n2; }
+      if (best < 0) break;
+      seen[best] = 1;
+      var nb = nodes[best].adj;
+      for (var q2 = 0; q2 < nb.length; q2++) {
+        var to = nb[q2];
+        var nd = d[best] + dist(nodes[best].x, nodes[best].y, nodes[to].x, nodes[to].y);
+        if (nd < d[to]) { d[to] = nd; prev[to] = best; }
+      }
+    }
+    return { d: d, prev: prev };
+  }
+
+  /* den sits on an outer node, start is far away but not absurdly so */
+  var rim = nodes.filter(function (n) { return n.gx === 0 || n.gy === 0 || n.gx === cols - 1 || n.gy === rows - 1; });
+  var den = rim[(rand() * rim.length) | 0];
+  var dj = dijkstra(den.id);
+  var order = nodes.slice().sort(function (p, q) { return dj.d[q.id] - dj.d[p.id]; });
+  var wanted = cfg.targetPath;
+  var start = order[0];
+  var bestErr = Infinity;
+  for (var oi = 0; oi < order.length; oi++) {
+    var err = Math.abs(dj.d[order[oi].id] - wanted);
+    if (err < bestErr && dj.d[order[oi].id] > wanted * 0.55) { bestErr = err; start = order[oi]; }
+  }
+  var optimal = dj.d[start.id];
+
+  /* shortest path node list, for placing foxgloves nicely off it */
+  var onPath = {};
+  var cur = start.id;
+  while (cur >= 0) { onPath[cur] = 1; cur = dj.prev[cur]; }
+
+  /* landmarks: every junction gets one, plus a scattering elsewhere */
+  var shuffled = MARK_TYPES.slice();
+  for (var sh = shuffled.length - 1; sh > 0; sh--) { var t2 = (rand() * (sh + 1)) | 0; var tmp = shuffled[sh]; shuffled[sh] = shuffled[t2]; shuffled[t2] = tmp; }
+  var cursor = 0;
+  for (var ni = 0; ni < nodes.length; ni++) {
+    var nd2 = nodes[ni];
+    if (nd2 === den) continue;
+    var junction = nd2.adj.length >= 3;
+    if (junction || rand() < 0.45) {
+      /* avoid giving a neighbour the same symbol */
+      var pick = null;
+      for (var att = 0; att < 5; att++) {
+        var cand2 = shuffled[(cursor + att) % shuffled.length];
+        var clash = false;
+        for (var ai = 0; ai < nd2.adj.length; ai++) if (nodes[nd2.adj[ai]].mark === cand2) clash = true;
+        if (!clash) { pick = cand2; cursor = (cursor + att + 1) % shuffled.length; break; }
+      }
+      nd2.mark = pick || shuffled[cursor++ % shuffled.length];
+    }
+  }
+
+  /* foxgloves: prefer nodes just off the direct route, never start or den */
+  var gloveCandidates = nodes.filter(function (n) {
+    return n !== den && n !== start && dj.d[n.id] < optimal * 1.5;
+  });
+  gloveCandidates.sort(function (p, q) {
+    var pp = (onPath[p.id] ? 1 : 0) - (onPath[q.id] ? 1 : 0);
+    if (pp !== 0) return pp;
+    return rand() - 0.5;
+  });
+  var gloves = [];
+  for (var gi = 0; gi < gloveCandidates.length && gloves.length < cfg.gloves; gi++) {
+    var gn = gloveCandidates[gi];
+    var tooClose = false;
+    for (var gj = 0; gj < gloves.length; gj++) if (dist(gn.x, gn.y, gloves[gj].x, gloves[gj].y) < cell * 1.1) tooClose = true;
+    if (tooClose) continue;
+    gn.glove = true;
+    gloves.push({ x: gn.x, y: gn.y, taken: false, node: gn.id, bob: rand() * TAU });
+  }
+
+  /* ---- scatter trees and undergrowth outside the corridors ---- */
+  var noise = makeNoise(rand);
+  var trees = [], ferns = [];
+  var step = 50;
+  for (var py = margin * 0.25; py < H - margin * 0.15; py += step) {
+    for (var px = margin * 0.25; px < W - margin * 0.15; px += step) {
+      var x = px + (rand() - 0.5) * step * 0.95;
+      var y = py + (rand() - 0.5) * step * 0.95;
+      if (x < 12 || y < 12 || x > W - 12 || y > H - 12) continue;
+      var clear = Infinity;
+      for (var ei = 0; ei < edges.length; ei++) {
+        var e3 = edges[ei];
+        var dd = segDist(x, y, nodes[e3.a].x, nodes[e3.a].y, nodes[e3.b].x, nodes[e3.b].y);
+        if (dd < clear) clear = dd;
+        if (clear < 20) break;
+      }
+      var nearNode = Infinity;
+      for (var nn = 0; nn < nodes.length; nn++) {
+        var dn = dist(x, y, nodes[nn].x, nodes[nn].y);
+        if (dn < nearNode) nearNode = dn;
+      }
+      var free = Math.min(clear - PATH_HALF, nearNode - CLEARING_R);
+      if (free < 26) {
+        if (free > 4 && rand() < 0.45) ferns.push({ x: x, y: y, v: (rand() * 3) | 0, s: 0.62 + rand() * 0.38 });
+        continue;
+      }
+      var density = noise(x / 320, y / 320);
+      if (rand() > 0.24 + density * 0.60) {
+        if (rand() < 0.34) ferns.push({ x: x, y: y, v: (rand() * 3) | 0, s: 0.55 + rand() * 0.45 });
+        continue;
+      }
+      trees.push({ x: x, y: y, v: (rand() * 6) | 0, s: 0.72 + rand() * 0.4 });
+      if (rand() < 0.3) ferns.push({ x: x + (rand() - 0.5) * 40, y: y + 10 + rand() * 16, v: (rand() * 3) | 0, s: 0.55 + rand() * 0.45 });
+    }
+  }
+
+  return {
+    W: W, H: H, nodes: nodes, edges: edges, den: den, start: start,
+    optimal: optimal, gloves: gloves, trees: trees, ferns: ferns,
+    seed: seed, noise: noise
+  };
+}
+/* ---- place landmarks just off the clearing so junctions stay walkable ---- */
+var MARK_HIT = { log: 32, stone: 20, bush: 28, mushrooms: 0, pond: 50 };
+
+function placeMarks(world) {
+  var nodes = world.nodes;
+  var rand = mulberry32(world.seed ^ 0x5eed);
+  world.marks = [];
+
+  /* clearance from a point to the nearest walking corridor */
+  function edgeClear(x, y) {
+    var best = Infinity;
+    for (var e = 0; e < world.edges.length; e++) {
+      var ed = world.edges[e];
+      var d = segDist(x, y, nodes[ed.a].x, nodes[ed.a].y, nodes[ed.b].x, nodes[ed.b].y);
+      if (d < best) best = d;
+    }
+    return best;
+  }
+
+  for (var i = 0; i < nodes.length; i++) {
+    var n = nodes[i];
+    if (!n.mark) continue;
+    var radius = MARK_HIT[n.mark];
+    /* a landmark must never wall off a corridor, so candidate angles are tested
+       and the one with the most room around the paths wins */
+    var need = PATH_HALF + radius + 26;
+    var off = CLEARING_R * 0.72 + 26 + radius * 0.5;
+    var bestA = 0, bestScore = -Infinity, bestX = n.x, bestY = n.y;
+    for (var k = 0; k < 14; k++) {
+      var ang = (k / 14) * TAU + rand() * 0.16;
+      var mx = clamp(n.x + Math.cos(ang) * off, 60, world.W - 60);
+      var my = clamp(n.y + Math.sin(ang) * off, 60, world.H - 60);
+      var score = edgeClear(mx, my);
+      if (score > bestScore) { bestScore = score; bestA = ang; bestX = mx; bestY = my; }
+      if (score >= need) break;
+    }
+    /* if even the roomiest spot is tight, the landmark stays but stops blocking */
+    if (bestScore < need) radius = 0;
+    world.marks.push({ type: n.mark, x: bestX, y: bestY, node: n.id, r: radius, seen: false });
+  }
+  /* gloves sit in the clearing itself, slightly off-centre */
+  for (var g = 0; g < world.gloves.length; g++) {
+    var gl = world.gloves[g], nd = nodes[gl.node];
+    var ga = rand() * TAU;
+    gl.x = clamp(nd.x + Math.cos(ga) * 34, 40, world.W - 40);
+    gl.y = clamp(nd.y + Math.sin(ga) * 34, 40, world.H - 40);
+  }
+  /* clear scenery that would sit on top of a landmark or a foxglove */
+  function blocked(x, y, pad) {
+    for (var k = 0; k < world.marks.length; k++) {
+      var mk = world.marks[k];
+      if (dist(x, y, mk.x, mk.y) < 62 + pad) return true;
+    }
+    for (var q = 0; q < world.gloves.length; q++) {
+      if (dist(x, y, world.gloves[q].x, world.gloves[q].y) < 46 + pad) return true;
+    }
+    return dist(x, y, world.den.x, world.den.y) < 150 + pad;
+  }
+  world.trees = world.trees.filter(function (t) { return !blocked(t.x, t.y, 8); });
+  world.ferns = world.ferns.filter(function (f) { return !blocked(f.x, f.y, -12); });
+
+  /* collision grid */
+  var CS = 120;
+  var gw = Math.ceil(world.W / CS), gh = Math.ceil(world.H / CS);
+  var grid = new Array(gw * gh);
+  for (var c = 0; c < grid.length; c++) grid[c] = [];
+  function push(o) {
+    var cx0 = clamp(Math.floor((o.x - o.r) / CS), 0, gw - 1);
+    var cx1 = clamp(Math.floor((o.x + o.r) / CS), 0, gw - 1);
+    var cy0 = clamp(Math.floor((o.y - o.r) / CS), 0, gh - 1);
+    var cy1 = clamp(Math.floor((o.y + o.r) / CS), 0, gh - 1);
+    for (var yy = cy0; yy <= cy1; yy++) for (var xx = cx0; xx <= cx1; xx++) grid[yy * gw + xx].push(o);
+  }
+  for (var t2 = 0; t2 < world.trees.length; t2++) {
+    var tr = world.trees[t2];
+    push({ x: tr.x, y: tr.y, r: 11 * tr.s });
+  }
+  for (var m2 = 0; m2 < world.marks.length; m2++) {
+    var mm = world.marks[m2];
+    if (mm.r > 0) push({ x: mm.x, y: mm.y, r: mm.r });
+  }
+  world.grid = { cells: grid, gw: gw, gh: gh, cs: CS };
+}
+
+function solidsNear(world, x, y) {
+  var G = world.grid;
+  var cx = clamp(Math.floor(x / G.cs), 0, G.gw - 1);
+  var cy = clamp(Math.floor(y / G.cs), 0, G.gh - 1);
+  return G.cells[cy * G.gw + cx];
+}
+
+/* ==================================================================== */
+/*  GROUND BAKE                                                         */
+/* ==================================================================== */
+/* The ground is soft and organic, so it is baked at reduced resolution and
+   blitted back up. Halves the memory of a big wood for no visible cost. */
+var GROUND_SCALE = 0.72;
+
+function bakeGround(world) {
+  var W = world.W, H = world.H;
+  var cv = newCanvas(W * GROUND_SCALE, H * GROUND_SCALE), g = cv.getContext('2d');
+  g.scale(GROUND_SCALE, GROUND_SCALE);
+  var rand = mulberry32(world.seed ^ 0x1234);
+
+  var bg = g.createLinearGradient(0, 0, W * 0.3, H);
+  bg.addColorStop(0, '#16332f');
+  bg.addColorStop(0.5, '#12292c');
+  bg.addColorStop(1, '#0f2226');
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+
+  /* mottled undergrowth from the noise tile */
+  var pat = g.createPattern(Art.noiseTile, 'repeat');
+  g.save();
+  g.globalAlpha = 0.22; g.globalCompositeOperation = 'overlay';
+  g.scale(2.4, 2.4); g.fillStyle = pat; g.fillRect(0, 0, W / 2.4, H / 2.4);
+  g.restore();
+  g.save();
+  g.globalAlpha = 0.13; g.globalCompositeOperation = 'overlay';
+  g.scale(0.8, 0.8); g.fillStyle = pat; g.fillRect(0, 0, W / 0.8, H / 0.8);
+  g.restore();
+
+  /* darker patches of deep wood */
+  var n2 = world.noise;
+  g.globalAlpha = 1;
+  for (var i = 0; i < 90; i++) {
+    var x = rand() * W, y = rand() * H;
+    var v = n2(x / 260, y / 260);
+    var r = 90 + rand() * 190;
+    var gr = g.createRadialGradient(x, y, 0, x, y, r);
+    var dark = v < 0.5;
+    gr.addColorStop(0, dark ? 'rgba(6,20,22,.20)' : 'rgba(58,110,84,.10)');
+    gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill();
+  }
+
+  /* --- the trodden paths --- */
+  function strokeAll(width, style) {
+    g.strokeStyle = style; g.lineWidth = width; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.beginPath();
+    for (var e = 0; e < world.edges.length; e++) {
+      var ed = world.edges[e], a = world.nodes[ed.a], b = world.nodes[ed.b];
+      g.moveTo(a.x, a.y);
+      var mx = (a.x + b.x) / 2 + (n2(a.x / 200, b.y / 200) - 0.5) * 34;
+      var my = (a.y + b.y) / 2 + (n2(b.x / 200, a.y / 200) - 0.5) * 34;
+      g.quadraticCurveTo(mx, my, b.x, b.y);
+    }
+    g.stroke();
+    for (var nn = 0; nn < world.nodes.length; nn++) {
+      var nd = world.nodes[nn];
+      g.fillStyle = style;
+      g.beginPath(); g.arc(nd.x, nd.y, CLEARING_R * 0.62 + width * 0.34, 0, TAU); g.fill();
+    }
+  }
+  strokeAll(PATH_HALF * 2 + 40, 'rgba(74,64,48,.14)');
+  strokeAll(PATH_HALF * 2 + 20, 'rgba(80,68,50,.26)');
+  strokeAll(PATH_HALF * 2 + 6, 'rgba(88,74,54,.48)');
+  strokeAll(PATH_HALF * 2 - 8, 'rgba(103,86,62,.86)');
+  strokeAll(PATH_HALF * 2 - 24, 'rgba(118,99,72,.55)');
+
+  /* dirt grain on the paths only */
+  g.save();
+  g.globalAlpha = 0.14; g.globalCompositeOperation = 'multiply';
+  g.scale(1.4, 1.4); g.fillStyle = pat; g.fillRect(0, 0, W / 1.4, H / 1.4);
+  g.restore();
+
+  /* pebbles, twigs and fallen leaves, scaled to the size of the wood */
+  var pebbles = Math.round(W * H / 1900);
+  for (var p = 0; p < pebbles; p++) {
+    var px = rand() * W, py = rand() * H;
+    var near = Infinity;
+    for (var e2 = 0; e2 < world.edges.length; e2++) {
+      var ed2 = world.edges[e2];
+      var dd = segDist(px, py, world.nodes[ed2.a].x, world.nodes[ed2.a].y, world.nodes[ed2.b].x, world.nodes[ed2.b].y);
+      if (dd < near) near = dd;
+      if (near < PATH_HALF) break;
+    }
+    var onPath = near < PATH_HALF + 6;
+    if (rand() < 0.55) {
+      g.fillStyle = onPath ? 'rgba(150,132,102,.34)' : 'rgba(70,120,92,.20)';
+      g.beginPath(); g.ellipse(px, py, 2 + rand() * 4, 1.4 + rand() * 2.6, rand() * TAU, 0, TAU); g.fill();
+    } else if (onPath) {
+      g.strokeStyle = 'rgba(92,74,52,.34)'; g.lineWidth = 1.6; g.lineCap = 'round';
+      var ta = rand() * TAU, tl = 6 + rand() * 12;
+      g.beginPath(); g.moveTo(px, py); g.lineTo(px + Math.cos(ta) * tl, py + Math.sin(ta) * tl); g.stroke();
+    }
+  }
+  /* vignette at the world's rim so the edges read as deeper wood */
+  var vg = g.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.32, W / 2, H / 2, Math.max(W, H) * 0.62);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(3,10,12,.55)');
+  g.fillStyle = vg; g.fillRect(0, 0, W, H);
+
+  /* and a hard fade to the exact colour painted beyond the world, so if a child
+     does reach the border it looks like the wood going dark, not a cut edge */
+  var EDGE = 150;
+  var sides = [
+    [0, 0, EDGE, H, 'h', 1], [W - EDGE, 0, EDGE, H, 'h', -1],
+    [0, 0, W, EDGE, 'v', 1], [0, H - EDGE, W, EDGE, 'v', -1]
+  ];
+  for (var si = 0; si < sides.length; si++) {
+    var sd = sides[si];
+    var lg2 = sd[4] === 'h'
+      ? g.createLinearGradient(sd[5] > 0 ? 0 : W, 0, sd[5] > 0 ? EDGE : W - EDGE, 0)
+      : g.createLinearGradient(0, sd[5] > 0 ? 0 : H, 0, sd[5] > 0 ? EDGE : H - EDGE);
+    lg2.addColorStop(0, '#0e2125');
+    lg2.addColorStop(0.45, 'rgba(14,33,37,.72)');
+    lg2.addColorStop(1, 'rgba(14,33,37,0)');
+    g.fillStyle = lg2; g.fillRect(sd[0], sd[1], sd[2], sd[3]);
+  }
+  return cv;
+}
+
+/* ==================================================================== */
+/*  MAP BAKE — an aged paper chart of the whole wood                    */
+/* ==================================================================== */
+var MAP_S = 760;
+function bakeMap(world) {
+  var cv = newCanvas(MAP_S, MAP_S), g = cv.getContext('2d');
+  /* the map is scaled to what is actually *on* it, not to the padded world,
+     so the paper is well filled however wide the surrounding wood is */
+  var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  function grow(x, y) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  for (var ni2 = 0; ni2 < world.nodes.length; ni2++) grow(world.nodes[ni2].x, world.nodes[ni2].y);
+  for (var mi2 = 0; mi2 < world.marks.length; mi2++) grow(world.marks[mi2].x, world.marks[mi2].y);
+  for (var gi2 = 0; gi2 < world.gloves.length; gi2++) grow(world.gloves[gi2].x, world.gloves[gi2].y);
+  var PAD = 110;
+  minX -= PAD; minY -= PAD; maxX += PAD; maxY += PAD;
+  var bw = maxX - minX, bh = maxY - minY;
+  var ox = (minX + maxX) / 2, oy = (minY + maxY) / 2;
+  var diag = Math.hypot(bw, bh);
+  var s = MAP_S * 0.955 / diag;
+  var cx = MAP_S / 2, cy = MAP_S / 2;
+  var rand = mulberry32(world.seed ^ 0xa11);
+  function P(x, y) { return [cx + (x - ox) * s, cy + (y - oy) * s]; }
+
+  /* paper */
+  var pg = g.createRadialGradient(cx - 40, cy - 50, 30, cx, cy, MAP_S * 0.62);
+  pg.addColorStop(0, '#f7ecd2');
+  pg.addColorStop(0.62, '#eeddb8');
+  pg.addColorStop(1, '#d9c294');
+  g.fillStyle = pg; g.fillRect(0, 0, MAP_S, MAP_S);
+  g.save();
+  g.globalAlpha = 0.16; g.globalCompositeOperation = 'multiply';
+  g.scale(1.9, 1.9); g.fillStyle = g.createPattern(Art.noiseTile, 'repeat');
+  g.fillRect(0, 0, MAP_S / 1.9, MAP_S / 1.9);
+  g.restore();
+  for (var st = 0; st < 7; st++) {
+    var sx = rand() * MAP_S, sy = rand() * MAP_S, sr = 40 + rand() * 110;
+    var sg = g.createRadialGradient(sx, sy, sr * 0.2, sx, sy, sr);
+    sg.addColorStop(0, 'rgba(160,124,72,.09)');
+    sg.addColorStop(0.8, 'rgba(160,124,72,.05)');
+    sg.addColorStop(1, 'rgba(160,124,72,0)');
+    g.fillStyle = sg; g.beginPath(); g.arc(sx, sy, sr, 0, TAU); g.fill();
+  }
+
+  /* faint hand-ruled wood boundary */
+  var c0 = P(minX + 30, minY + 30), c1 = P(maxX - 30, maxY - 30);
+  g.strokeStyle = 'rgba(122,96,58,.28)'; g.lineWidth = 2.6;
+  g.setLineDash([9, 7]);
+  rr(g, c0[0], c0[1], c1[0] - c0[0], c1[1] - c0[1], 26); g.stroke();
+  g.setLineDash([]);
+
+  /* paths, drawn with a wobble so they look inked by hand */
+  g.strokeStyle = 'rgba(96,72,44,.72)';
+  g.lineWidth = 3.4; g.lineCap = 'round'; g.lineJoin = 'round';
+  for (var e = 0; e < world.edges.length; e++) {
+    var ed = world.edges[e], a = world.nodes[ed.a], b = world.nodes[ed.b];
+    var pa = P(a.x, a.y), pb = P(b.x, b.y);
+    var midx = (pa[0] + pb[0]) / 2 + (rand() - 0.5) * 9;
+    var midy = (pa[1] + pb[1]) / 2 + (rand() - 0.5) * 9;
+    g.beginPath(); g.moveTo(pa[0], pa[1]); g.quadraticCurveTo(midx, midy, pb[0], pb[1]); g.stroke();
+  }
+  g.strokeStyle = 'rgba(150,120,78,.30)'; g.lineWidth = 8;
+  for (var e2 = 0; e2 < world.edges.length; e2++) {
+    var ed2 = world.edges[e2], a2 = world.nodes[ed2.a], b2 = world.nodes[ed2.b];
+    var pa2 = P(a2.x, a2.y), pb2 = P(b2.x, b2.y);
+    g.beginPath(); g.moveTo(pa2[0], pa2[1]); g.lineTo(pb2[0], pb2[1]); g.stroke();
+  }
+  /* a clearing dot at every junction, so no path ever appears to stop in mid-air */
+  for (var nq = 0; nq < world.nodes.length; nq++) {
+    var nq2 = world.nodes[nq];
+    if (nq2 === world.den) continue;
+    var pn = P(nq2.x, nq2.y);
+    g.fillStyle = 'rgba(238,224,192,.9)';
+    g.beginPath(); g.arc(pn[0], pn[1], 5.4, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(96,72,44,.6)'; g.lineWidth = 2;
+    g.beginPath(); g.arc(pn[0], pn[1], 5.4, 0, TAU); g.stroke();
+  }
+
+  /* landmark glyphs */
+  for (var m = 0; m < world.marks.length; m++) {
+    var mk = world.marks[m], pm = P(mk.x, mk.y);
+    drawMapGlyph(g, mk.type, pm[0], pm[1], 1);
+  }
+  /* foxgloves */
+  for (var q = 0; q < world.gloves.length; q++) {
+    var gl = world.gloves[q], pq = P(gl.x, gl.y);
+    drawMapGlyph(g, 'glove', pq[0], pq[1], 1);
+  }
+  /* the den — the thing you are looking for */
+  var pd = P(world.den.x, world.den.y);
+  drawMapGlyph(g, 'den', pd[0], pd[1], 1);
+
+  /* compass rose — rotates with the paper, which is the whole point */
+  var rx = cx + (minX - ox) * s + 60, ry = cy + (minY - oy) * s + 60;
+  drawCompassRose(g, rx, ry, 36, 'rgba(96,72,44,.78)', 'rgba(150,120,78,.35)');
+
+  return { cv: cv, s: s, cx: cx, cy: cy, ox: ox, oy: oy, world: world };
+}
+
+function drawCompassRose(g, x, y, R, ink, faint) {
+  g.save();
+  g.translate(x, y);
+  g.strokeStyle = faint; g.lineWidth = 2;
+  g.beginPath(); g.arc(0, 0, R, 0, TAU); g.stroke();
+  g.beginPath(); g.arc(0, 0, R * 0.72, 0, TAU); g.stroke();
+  for (var i = 0; i < 4; i++) {
+    g.save(); g.rotate(i * Math.PI / 2);
+    g.fillStyle = i === 0 ? ink : faint;
+    g.beginPath();
+    g.moveTo(0, -R * 0.95); g.lineTo(R * 0.15, 0); g.lineTo(0, R * 0.12); g.lineTo(-R * 0.15, 0);
+    g.closePath(); g.fill();
+    g.restore();
+  }
+  for (var j = 0; j < 4; j++) {
+    g.save(); g.rotate(Math.PI / 4 + j * Math.PI / 2);
+    g.fillStyle = faint;
+    g.beginPath(); g.moveTo(0, -R * 0.55); g.lineTo(R * 0.09, 0); g.lineTo(-R * 0.09, 0); g.closePath(); g.fill();
+    g.restore();
+  }
+  g.fillStyle = ink;
+  g.font = '800 ' + (R * 0.5).toFixed(0) + 'px "Baloo 2", system-ui, sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('N', 0, -R * 1.32);
+  g.restore();
+}
+
+/* the ink symbols. Same silhouette family as the world objects. */
+function drawMapGlyph(g, type, x, y, k) {
+  g.save();
+  g.translate(x, y); g.scale(k, k);
+  var ink = 'rgba(84,62,38,.9)';
+  g.strokeStyle = ink; g.fillStyle = ink;
+  g.lineWidth = 2.4; g.lineCap = 'round'; g.lineJoin = 'round';
+  if (type === 'log') {
+    g.beginPath(); rr(g, -13, -5, 26, 10, 5); g.stroke();
+    g.beginPath(); g.ellipse(-13, 0, 3.4, 5, 0, 0, TAU); g.stroke();
+    g.beginPath(); g.moveTo(-4, -5); g.lineTo(-2, -9); g.moveTo(3, -5); g.lineTo(6, -9); g.stroke();
+  } else if (type === 'stone') {
+    g.beginPath();
+    g.moveTo(-8, 9); g.lineTo(-6, -8); g.quadraticCurveTo(0, -14, 6, -8); g.lineTo(8, 9);
+    g.closePath(); g.stroke();
+    g.beginPath(); g.moveTo(-4, -1); g.lineTo(2, 4); g.stroke();
+  } else if (type === 'bush') {
+    g.beginPath();
+    g.moveTo(-12, 8);
+    g.quadraticCurveTo(-13, -4, -5, -6);
+    g.quadraticCurveTo(-2, -13, 4, -8);
+    g.quadraticCurveTo(12, -8, 12, 8);
+    g.closePath(); g.stroke();
+    g.beginPath(); g.arc(-4, 0, 1.7, 0, TAU); g.fill();
+    g.beginPath(); g.arc(4, 3, 1.7, 0, TAU); g.fill();
+    g.beginPath(); g.arc(1, -3, 1.7, 0, TAU); g.fill();
+  } else if (type === 'mushrooms') {
+    for (var i = 0; i < 3; i++) {
+      var mx = -8 + i * 8, my = 6 - (i === 1 ? 5 : 0);
+      g.beginPath(); g.moveTo(mx, my); g.lineTo(mx, my - 5); g.stroke();
+      g.beginPath();
+      g.moveTo(mx - 5, my - 5); g.quadraticCurveTo(mx, my - 12, mx + 5, my - 5);
+      g.closePath(); g.stroke();
+    }
+  } else if (type === 'pond') {
+    g.beginPath();
+    g.moveTo(-13, 0);
+    g.quadraticCurveTo(-11, -8, 0, -8);
+    g.quadraticCurveTo(13, -8, 13, 1);
+    g.quadraticCurveTo(11, 9, -2, 8);
+    g.quadraticCurveTo(-13, 7, -13, 0);
+    g.closePath(); g.stroke();
+    g.lineWidth = 1.8;
+    g.beginPath(); g.moveTo(-6, 0); g.quadraticCurveTo(-3, -2.6, 0, 0); g.quadraticCurveTo(3, 2.6, 6, 0); g.stroke();
+    g.beginPath(); g.moveTo(-4, 4); g.quadraticCurveTo(-1, 1.6, 2, 4); g.stroke();
+  } else if (type === 'glove') {
+    g.strokeStyle = 'rgba(178,72,124,.92)'; g.fillStyle = 'rgba(178,72,124,.92)';
+    g.beginPath(); g.moveTo(0, 9); g.quadraticCurveTo(-3, 0, -2, -9); g.stroke();
+    for (var b = 0; b < 3; b++) {
+      g.beginPath();
+      g.ellipse(-5 - b * 0.6, 2 - b * 5.5, 3.1 - b * 0.3, 4.2 - b * 0.4, 0.4, 0, TAU);
+      g.fill();
+    }
+  } else if (type === 'den') {
+    g.lineWidth = 3;
+    g.strokeStyle = 'rgba(70,50,28,.95)';
+    g.beginPath();
+    g.moveTo(-17, 10); g.quadraticCurveTo(-12, -12, 0, -12); g.quadraticCurveTo(12, -12, 17, 10);
+    g.stroke();
+    g.fillStyle = 'rgba(70,50,28,.95)';
+    g.beginPath();
+    g.moveTo(-6, 10); g.quadraticCurveTo(-6, -2, 0, -2); g.quadraticCurveTo(6, -2, 6, 10);
+    g.closePath(); g.fill();
+    g.strokeStyle = 'rgba(198,86,54,.92)'; g.lineWidth = 2.6;
+    g.setLineDash([5, 5]);
+    g.beginPath(); g.arc(0, 0, 27, 0, TAU); g.stroke();
+    g.setLineDash([]);
+    /* a small cross-hatched X above so it reads as "the goal" */
+    g.strokeStyle = 'rgba(198,86,54,.9)'; g.lineWidth = 3;
+    g.beginPath();
+    g.moveTo(-5, -22); g.lineTo(5, -32); g.moveTo(5, -22); g.lineTo(-5, -32);
+    g.stroke();
+  }
+  g.restore();
+}
+/* ==================================================================== */
+/*  THE FOX                                                             */
+/* ==================================================================== */
+function drawFox(g, heading, t, moving, scale) {
+  g.save();
+  g.rotate(heading);
+  g.scale(scale, scale);
+
+  var gait = moving ? Math.sin(t * 13) : 0;
+  var gait2 = moving ? Math.sin(t * 13 + Math.PI) : 0;
+  var bob = moving ? Math.sin(t * 26) * 0.6 : Math.sin(t * 2.2) * 0.5;
+
+  /* legs */
+  g.fillStyle = '#a9541f';
+  var legs = [[-6, -10, gait], [-6, 10, gait2], [8, -9, gait2], [8, 9, gait]];
+  for (var i = 0; i < legs.length; i++) {
+    var L = legs[i];
+    g.save(); g.translate(L[0] + L[2] * 3.4, L[1] + L[2] * 1.2);
+    g.beginPath(); g.ellipse(0, 0, 5.4, 3.6, 0, 0, TAU); g.fill();
+    g.restore();
+  }
+
+  /* tail */
+  var sway = Math.sin(t * (moving ? 8 : 2.4)) * (moving ? 0.34 : 0.18);
+  g.save();
+  g.translate(-15, 0);
+  g.rotate(sway);
+  var tg = g.createLinearGradient(0, 0, -24, 0);
+  tg.addColorStop(0, '#e07c33');
+  tg.addColorStop(0.58, '#ef9a53');
+  tg.addColorStop(0.78, '#f6c391');
+  tg.addColorStop(1, '#fff4e6');
+  g.fillStyle = tg;
+  g.beginPath();
+  g.moveTo(2, -7);
+  g.quadraticCurveTo(-11, -11.5, -19, -6.5);
+  g.quadraticCurveTo(-25, -1.5, -25, 0);
+  g.quadraticCurveTo(-25, 1.5, -19, 6.5);
+  g.quadraticCurveTo(-11, 11.5, 2, 7);
+  g.closePath(); g.fill();
+  g.restore();
+
+  /* body */
+  g.translate(0, bob * 0.4);
+  var bg = g.createLinearGradient(0, -13, 0, 13);
+  bg.addColorStop(0, '#f6a45c'); bg.addColorStop(0.42, '#ef8b41'); bg.addColorStop(1, '#cd6a26');
+  g.fillStyle = bg;
+  g.beginPath(); g.ellipse(-1, 0, 18, 12.4, 0, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(150,70,24,.38)';
+  g.beginPath(); g.ellipse(-4, 0, 12, 4.4, 0, 0, TAU); g.fill();
+
+  /* head */
+  g.save();
+  g.translate(15, 0);
+  g.rotate(moving ? Math.sin(t * 6.5) * 0.07 : 0);
+  /* ears */
+  g.fillStyle = '#e07c33';
+  g.beginPath(); g.moveTo(-2, -8.4); g.lineTo(-9, -13.5); g.lineTo(0.5, -12); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(-2, 8.4); g.lineTo(-9, 13.5); g.lineTo(0.5, 12); g.closePath(); g.fill();
+  g.fillStyle = '#3a2116';
+  g.beginPath(); g.moveTo(-3.6, -9.6); g.lineTo(-7.6, -12.4); g.lineTo(-1.6, -11.4); g.closePath(); g.fill();
+  g.beginPath(); g.moveTo(-3.6, 9.6); g.lineTo(-7.6, 12.4); g.lineTo(-1.6, 11.4); g.closePath(); g.fill();
+  var hg = g.createLinearGradient(0, -10, 0, 10);
+  hg.addColorStop(0, '#f8ab63'); hg.addColorStop(0.5, '#f0913f'); hg.addColorStop(1, '#d3721f');
+  g.fillStyle = hg;
+  g.beginPath(); g.ellipse(0, 0, 10.6, 9.4, 0, 0, TAU); g.fill();
+  /* muzzle */
+  g.fillStyle = '#fff3e2';
+  g.beginPath();
+  g.moveTo(4, -5.2); g.quadraticCurveTo(14.5, -2.4, 15.6, 0);
+  g.quadraticCurveTo(14.5, 2.4, 4, 5.2);
+  g.quadraticCurveTo(7, 0, 4, -5.2);
+  g.fill();
+  g.fillStyle = '#2c1a12';
+  g.beginPath(); g.ellipse(15.2, 0, 2.1, 1.7, 0, 0, TAU); g.fill();
+  /* eyes */
+  g.fillStyle = '#2b1a12';
+  g.beginPath(); g.ellipse(4.4, -5.0, 2.0, 2.3, 0, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(4.4, 5.0, 2.0, 2.3, 0, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.85)';
+  g.beginPath(); g.arc(5.1, -5.7, 0.8, 0, TAU); g.fill();
+  g.beginPath(); g.arc(5.1, 4.3, 0.8, 0, TAU); g.fill();
+  g.restore();
+
+  g.restore();
+}
+
+/* ==================================================================== */
+/*  GAME                                                                */
+/* ==================================================================== */
+var cv = document.getElementById('c');
+var ctx = cv.getContext('2d');
+var hudEl = document.getElementById('hud');
+var veil = document.getElementById('parentVeil');
+var fogFill = document.getElementById('fogfill');
+var fogBar = document.getElementById('fogbar');
+var glovesEl = document.getElementById('gloves');
+var nightNumEl = document.getElementById('nightNum');
+var readoutEl = document.getElementById('readout');
+
+var VW = 0, VH = 0, DPR = 1, ZOOM = 1;
+var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var NIGHTS = 3;
+var G = {
+  state: 'title',
+  paused: false,
+  t: 0,
+  night: 1,
+  world: null, ground: null, map: null,
+  fox: { x: 0, y: 0, vx: 0, vy: 0, heading: -Math.PI / 2, moving: false, stepPhase: 0 },
+  cam: { x: 0, y: 0 },
+  mapRot: 0,
+  vision: 250,
+  sniffCharge: 1, sniffTime: 0, sniffCd: 6,
+  timeLeft: 60, timeTotal: 60, owlMode: false, owlTimer: 0, owlElapsed: 0,
+  walked: 0, gloves: 0, glovesTotal: 0,
+  trail: [], trailTimer: 0,
+  toast: null,
+  screenT: 0,
+  results: [],
+  jam: 0,
+  assist: 1
+};
+window.__FG = G;
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  VW = window.innerWidth; VH = window.innerHeight;
+  cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
+  ZOOM = clamp(Math.min(VW / 1180, VH / 720), 0.62, 1.32);
+  if (fogCache) fogCache.key = '';   /* DPR may have changed; rebuild the fog */
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---- difficulty profile derived from the rolling skill estimate ---- */
+function nightConfig(night, skill) {
+  var base = [
+    { cols: 5, rows: 3, cell: 430, gloves: 2, loopiness: 0.10, rot: 0 },
+    { cols: 5, rows: 4, cell: 424, gloves: 3, loopiness: 0.16, rot: 90 },
+    { cols: 6, rows: 4, cell: 418, gloves: 3, loopiness: 0.22, rot: 155 }
+  ][night - 1];
+  var cfg = {
+    cols: base.cols + (skill > 0.72 && night === 3 ? 1 : 0),
+    rows: base.rows,
+    cell: base.cell,
+    gloves: base.gloves,
+    loopiness: base.loopiness,
+    targetPath: (2100 + night * 620) * (0.88 + skill * 0.26)
+  };
+  /* the map's angle: gentle for a beginner, full tilt for a confident child */
+  var deg = base.rot * (0.42 + skill * 0.58);
+  if (night === 1 && skill > 0.5) deg = 34 * skill;
+  cfg.rotDeg = deg;
+  return cfg;
+}
+
+function startRun() {
+  G.night = 1;
+  G.results = [];
+  startNight(1);
+}
+
+function startNight(n) {
+  G.night = n;
+  var skill = prefs.skill;
+  var cfg = nightConfig(n, skill);
+  var seed = (Math.random() * 1e9) | 0;
+  var w = generateWorld(seed, cfg);
+  placeMarks(w);
+  G.world = w;
+  G.ground = bakeGround(w);
+  G.map = bakeMap(w);
+  var sign = Math.random() < 0.5 ? -1 : 1;
+  G.mapRot = cfg.rotDeg * Math.PI / 180 * sign;
+
+  G.assist = clamp(1 - skill, 0, 1);
+  G.vision = 232 + G.assist * 98;
+  G.sniffCd = 7.2 - G.assist * 3.4;
+  G.sniffDur = 2.2 + G.assist * 1.6;
+  G.sniffCharge = 1; G.sniffTime = 0;
+
+  G.fox.x = w.start.x; G.fox.y = w.start.y;
+  G.fox.vx = G.fox.vy = 0;
+  var dx = w.den.x - w.start.x, dy = w.den.y - w.start.y;
+  G.fox.heading = Math.atan2(dy, dx) + (Math.random() - 0.5) * 2.2;
+  G.cam.x = w.start.x; G.cam.y = w.start.y;
+
+  G.timeTotal = w.optimal / 122 + 16 + G.assist * 12;
+  G.timeLeft = G.timeTotal;
+  G.owlMode = false; G.owlTimer = 0; G.owlElapsed = 0;
+  G.walked = 0; G.gloves = 0; G.glovesTotal = w.gloves.length;
+  G.trail = []; G.trailTimer = 0;
+  G.toast = null; G.jam = 0;
+  G.state = 'brief'; G.screenT = 0;
+  updateHud();
+}
+
+function beginPlay() {
+  G.state = 'play';
+  G.screenT = 0;
+  hudEl.classList.add('on');
+}
+
+function finishNight() {
+  var w = G.world;
+  var eff = clamp(w.optimal / Math.max(G.walked, w.optimal), 0, 1);
+  var stars = eff >= 0.74 ? 3 : eff >= 0.52 ? 2 : 1;
+  if (G.owlMode) stars = Math.min(stars, 2);
+  G.results.push({ eff: eff, stars: stars, gloves: G.gloves, total: G.glovesTotal, owl: G.owlMode, time: G.timeTotal - G.timeLeft });
+  var target = clamp(eff * 0.78 + (G.owlMode ? 0 : 0.22), 0, 1);
+  prefs.skill = clamp(prefs.skill * 0.72 + target * 0.28, 0.05, 0.97);
+  savePrefs(prefs);
+  G.state = 'arrive'; G.screenT = 0;
+  hudEl.classList.remove('on');
+  Snd.arrive();
+}
+
+function endRun() {
+  prefs.runs = (prefs.runs || 0) + 1;
+  var got = 0, tot = 0;
+  for (var i = 0; i < G.results.length; i++) { got += G.results[i].gloves; tot += G.results[i].total; }
+  prefs.bestGloves = Math.max(prefs.bestGloves || 0, got);
+  savePrefs(prefs);
+  G.state = 'result'; G.screenT = 0;
+  Snd.fanfare();
+}
+
+/* ---------------------------------------------------------------- HUD */
+var GLOVE_SVG = '<svg viewBox="0 0 14 19" aria-hidden="true"><path d="M7 19V7" stroke="#5f9c72" stroke-width="2" fill="none" stroke-linecap="round"/><ellipse cx="5" cy="9" rx="3.3" ry="4.2" fill="#e07ab2"/><ellipse cx="4.4" cy="4.6" rx="2.9" ry="3.6" fill="#eb96c6"/><ellipse cx="4.6" cy="1.6" rx="2.2" ry="2.4" fill="#f6b6d6"/></svg>';
+function updateHud() {
+  nightNumEl.textContent = String(G.night);
+  var html = '';
+  for (var i = 0; i < G.glovesTotal; i++) {
+    html += GLOVE_SVG.replace('<svg ', '<svg class="' + (i < G.gloves ? '' : 'off') + '" ');
+  }
+  if (!G.glovesTotal) html = '<span style="opacity:.5">&mdash;</span>';
+  glovesEl.innerHTML = html;
+}
+function updateFogBar() {
+  var f = clamp(G.timeLeft / G.timeTotal, 0, 1);
+  fogFill.style.transform = 'scaleX(' + f.toFixed(3) + ')';
+  fogBar.classList.toggle('low', f < 0.34);
+}
+/* ---------------------------------------------------------------- input */
+var keys = {};
+var MARK_NAMES = { log: 'Fallen Log', stone: 'Standing Stone', bush: 'Berry Bush', mushrooms: 'Mushroom Ring', pond: 'Little Pond' };
+
+function onSpace() {
+  if (G.state === 'title') { Snd.ui(); G.state = 'brief'; G.screenT = 0; }
+  else if (G.state === 'brief') { Snd.ui(); beginPlay(); }
+  else if (G.state === 'play') { doSniff(); }
+  else if (G.state === 'arrive') {
+    Snd.ui();
+    if (G.night < NIGHTS) startNight(G.night + 1); else endRun();
+  } else if (G.state === 'result') { Snd.ui(); startRun(); }
+}
+function doSniff() {
+  if (G.sniffCharge >= 1) {
+    G.sniffCharge = 0;
+    G.sniffTime = G.sniffDur;
+    Snd.sniff();
+  } else {
+    Snd.sniffEmpty();
+  }
+}
+function toggleParent() {
+  G.paused = !G.paused;
+  veil.classList.toggle('on', G.paused);
+  if (G.paused) { refreshReadout(); veil.scrollTop = 0; }
+  Snd.ui();
+}
+function refreshReadout() {
+  var pct = Math.round(prefs.skill * 100);
+  var deg = Math.round(Math.abs(G.mapRot) * 180 / Math.PI);
+  var bits = [];
+  bits.push('<b>Trail-reading estimate:</b> ' + pct + '%');
+  bits.push('<b>Map turned:</b> ' + deg + '&deg; tonight');
+  bits.push('<b>Circle of sight:</b> ' + Math.round(G.vision) + ' paces');
+  bits.push('<b>Sniff recharges in:</b> ' + G.sniffCd.toFixed(1) + 's');
+  bits.push('<b>Breadcrumb trail on the map:</b> ' + (G.assist > 0.45 ? 'on (scaffold)' : 'off'));
+  bits.push('<b>Rounds played on this browser:</b> ' + (prefs.runs || 0));
+  readoutEl.innerHTML = bits.join('<br>');
+}
+
+window.addEventListener('keydown', function (e) {
+  var k = e.key;
+  if (k === 'ArrowLeft' || k === 'ArrowRight' || k === 'ArrowUp' || k === 'ArrowDown' || k === ' ' || k === 'Spacebar') e.preventDefault();
+  if (!Snd.ready) Snd.init();
+  Snd.resume();
+  if (k === 'q' || k === 'Q') { toggleParent(); return; }
+  if (G.paused) return;
+  if (k === ' ' || k === 'Spacebar') { if (!keys.space) onSpace(); keys.space = true; return; }
+  if (k === 'ArrowLeft') keys.l = true;
+  else if (k === 'ArrowRight') keys.r = true;
+  else if (k === 'ArrowUp') keys.u = true;
+  else if (k === 'ArrowDown') keys.d = true;
+});
+window.addEventListener('keyup', function (e) {
+  var k = e.key;
+  if (k === ' ' || k === 'Spacebar') keys.space = false;
+  else if (k === 'ArrowLeft') keys.l = false;
+  else if (k === 'ArrowRight') keys.r = false;
+  else if (k === 'ArrowUp') keys.u = false;
+  else if (k === 'ArrowDown') keys.d = false;
+});
+window.addEventListener('blur', function () { keys = {}; });
+
+/* ---------------------------------------------------------------- physics */
+var FOX_R = 13, SPEED = 178, ACCEL = 1400, DRAG = 9.5;
+var stamp = 0;
+
+function resolveCollisions(p) {
+  var w = G.world, Gr = w.grid;
+  stamp++;
+  var c0x = clamp(Math.floor((p.x - FOX_R) / Gr.cs) - 1, 0, Gr.gw - 1);
+  var c1x = clamp(Math.floor((p.x + FOX_R) / Gr.cs) + 1, 0, Gr.gw - 1);
+  var c0y = clamp(Math.floor((p.y - FOX_R) / Gr.cs) - 1, 0, Gr.gh - 1);
+  var c1y = clamp(Math.floor((p.y + FOX_R) / Gr.cs) + 1, 0, Gr.gh - 1);
+  for (var cy = c0y; cy <= c1y; cy++) {
+    for (var cx = c0x; cx <= c1x; cx++) {
+      var cell = Gr.cells[cy * Gr.gw + cx];
+      for (var i = 0; i < cell.length; i++) {
+        var o = cell[i];
+        if (o.stamp === stamp) continue;
+        o.stamp = stamp;
+        var dx = p.x - o.x, dy = p.y - o.y;
+        var d = Math.hypot(dx, dy);
+        var min = o.r + FOX_R;
+        if (d < min && d > 0.0001) {
+          var push = (min - d);
+          p.x += (dx / d) * push; p.y += (dy / d) * push;
+          var nx = dx / d, ny = dy / d;
+          var dot = p.vx * nx + p.vy * ny;
+          if (dot < 0) { p.vx -= nx * dot; p.vy -= ny * dot; }
+        }
+      }
+    }
+  }
+  p.x = clamp(p.x, 70, w.W - 70);
+  p.y = clamp(p.y, 70, w.H - 70);
+}
+
+function worldToScreen(x, y) {
+  return { x: (x - G.cam.x) * ZOOM + VW / 2, y: (y - G.cam.y) * ZOOM + VH / 2 };
+}
+function panOf(x) {
+  return clamp((x - G.fox.x) / 620, -0.85, 0.85);
+}
+function toast(text, sub) { G.toast = { text: text, sub: sub || '', t: 0 }; }
+
+/* ---------------------------------------------------------------- update */
+function update(dt) {
+  G.t += dt;
+  G.screenT += dt;
+  var w = G.world;
+  if (!w) return;
+
+  if (G.state === 'play') {
+    var f = G.fox;
+    var dx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
+    var dy = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+    var mag = Math.hypot(dx, dy);
+    if (mag > 0) {
+      dx /= mag; dy /= mag;
+      /* If a child holds a direction and the fox has not budged, the fox is
+         wedged between two obstacles. Ease the push sideways until it slips
+         free, alternating sides so it always escapes. */
+      if (G.jam > 0.42) {
+        var turn = (Math.floor(G.jam * 1.6) % 2 ? 1 : -1) * 0.72;
+        var cs = Math.cos(turn), sn = Math.sin(turn);
+        var rx2 = dx * cs - dy * sn, ry2 = dx * sn + dy * cs;
+        dx = rx2; dy = ry2;
+      }
+      f.vx += dx * ACCEL * dt; f.vy += dy * ACCEL * dt;
+      var sp = Math.hypot(f.vx, f.vy);
+      if (sp > SPEED) { f.vx = f.vx / sp * SPEED; f.vy = f.vy / sp * SPEED; }
+      f.heading = angLerp(f.heading, Math.atan2(f.vy, f.vx), Math.min(1, dt * 12));
+    } else {
+      var k = Math.max(0, 1 - DRAG * dt);
+      f.vx *= k; f.vy *= k;
+    }
+    var before = { x: f.x, y: f.y };
+    f.x += f.vx * dt; f.y += f.vy * dt;
+    resolveCollisions(f);
+    var moved = dist(before.x, before.y, f.x, f.y);
+    if (mag > 0 && moved < SPEED * dt * 0.28) G.jam += dt; else G.jam = 0;
+    G.walked += moved;
+    var speed = moved / Math.max(dt, 0.0001);
+    f.moving = speed > 25;
+
+    /* footfalls */
+    if (f.moving) {
+      f.stepPhase += speed * dt;
+      if (f.stepPhase > 46) { f.stepPhase = 0; Snd.step(); }
+    }
+
+    /* breadcrumbs */
+    G.trailTimer -= dt;
+    if (G.trailTimer <= 0) {
+      G.trailTimer = 0.28;
+      var lastP = G.trail[G.trail.length - 1];
+      if (!lastP || dist(lastP.x, lastP.y, f.x, f.y) > 16) {
+        G.trail.push({ x: f.x, y: f.y });
+        if (G.trail.length > 260) G.trail.shift();
+      }
+    }
+
+    /* sniff */
+    G.sniffCharge = clamp(G.sniffCharge + dt / G.sniffCd, 0, 1);
+    if (G.sniffTime > 0) G.sniffTime -= dt;
+
+    /* landmarks noticed */
+    for (var m = 0; m < w.marks.length; m++) {
+      var mk = w.marks[m];
+      if (mk.seen) { mk.ping = Math.max(0, (mk.ping || 0) - dt); continue; }
+      if (dist(f.x, f.y, mk.x, mk.y) < 132) {
+        mk.seen = true; mk.ping = 2.6;
+        Snd.landmark(panOf(mk.x));
+        toast(MARK_NAMES[mk.type], 'find it on your map');
+      }
+    }
+    /* foxgloves */
+    for (var gi = 0; gi < w.gloves.length; gi++) {
+      var gl = w.gloves[gi];
+      if (gl.taken) continue;
+      if (dist(f.x, f.y, gl.x, gl.y) < 38) {
+        gl.taken = true; G.gloves++;
+        Snd.glove(G.gloves - 1);
+        toast('Foxglove picked!', G.gloves + ' of ' + G.glovesTotal);
+        updateHud();
+      }
+    }
+
+    /* fog clock */
+    if (!G.owlMode) {
+      G.timeLeft -= dt;
+      if (G.timeLeft <= 0) {
+        G.timeLeft = 0; G.owlMode = true; G.owlElapsed = 0; G.owlTimer = 0.4;
+        toast('An owl is calling from the den', 'follow the sound and the glow');
+      }
+    } else {
+      G.owlElapsed += dt;
+    }
+    G.owlTimer -= dt;
+    if (G.owlMode && G.owlTimer <= 0) {
+      G.owlTimer = 6.5;
+      Snd.owl(panOf(w.den.x));
+    } else if (!G.owlMode && G.walked > w.optimal * 1.7 && G.owlTimer <= 0) {
+      G.owlTimer = 13;
+      Snd.owl(panOf(w.den.x));
+    }
+
+    /* home? */
+    var dd = dist(f.x, f.y, w.den.x, w.den.y);
+    if (dd < 74) finishNight();
+
+    Snd.wind(1 - clamp(G.timeLeft / G.timeTotal, 0, 1));
+    updateFogBar();
+  } else {
+    G.fox.vx *= 0.9; G.fox.vy *= 0.9;
+  }
+
+  /* camera — always centred on the fox, so "you are here" is always the middle
+     of the screen. Clamping to the world edge would break that contract. */
+  var lerpK = Math.min(1, dt * (reduceMotion ? 9 : 5.4));
+  G.cam.x += (G.fox.x - G.cam.x) * lerpK;
+  G.cam.y += (G.fox.y - G.cam.y) * lerpK;
+
+  if (G.toast) { G.toast.t += dt; if (G.toast.t > 3.1) G.toast = null; }
+}
+
+/* ---------------------------------------------------------------- render */
+function visionNow() {
+  if (G.state !== 'play') return G.vision * 0.92;
+  /* once the fog has closed in, the moon slowly comes out: the longer a child
+     takes to find home, the further they can see. No one gets stranded. */
+  if (G.owlMode) return G.vision * clamp(0.86 + G.owlElapsed * 0.016, 0.86, 1.7);
+  var frac = clamp(G.timeLeft / G.timeTotal, 0, 1);
+  return G.vision * lerp(0.68, 1, frac);
+}
+
+function fogQuant() {
+  var R = visionNow() * ZOOM;
+  return { R: R, Rq: Math.ceil(R / 16) * 16 + 16 };
+}
+
+function drawWorld() {
+  var w = G.world;
+  ctx.save();
+  ctx.translate(VW / 2, VH / 2); ctx.scale(ZOOM, ZOOM); ctx.translate(-G.cam.x, -G.cam.y);
+
+  /* everything outside the circle of sight is painted over by the fog,
+     so only the lit square is ever worth drawing */
+  var hw = fogQuant().Rq / ZOOM;
+  var bx0 = G.fox.x - hw, bx1 = G.fox.x + hw, by0 = G.fox.y - hw, by1 = G.fox.y + hw;
+  /* the deep wood continues past the generated area, so fill first and then
+     blit the baked ground over it — no hard edge at the world border */
+  ctx.fillStyle = '#0e2125';
+  ctx.fillRect(bx0, by0, bx1 - bx0, by1 - by0);
+  var x0 = clamp(bx0, 0, w.W), y0 = clamp(by0, 0, w.H);
+  var x1 = clamp(bx1, 0, w.W), y1 = clamp(by1, 0, w.H);
+  if (x1 > x0 && y1 > y0) {
+    ctx.drawImage(G.ground,
+      x0 * GROUND_SCALE, y0 * GROUND_SCALE, (x1 - x0) * GROUND_SCALE, (y1 - y0) * GROUND_SCALE,
+      x0, y0, x1 - x0, y1 - y0);
+  }
+
+  /* sprites are anchored at their base and grow upwards, hence the lopsided margins */
+  function vis(o) { return o.x > bx0 - 80 && o.x < bx1 + 80 && o.y > by0 - 20 && o.y < by1 + 150; }
+
+  /* ferns sit under everything else */
+  for (var i = 0; i < w.ferns.length; i++) {
+    var fn = w.ferns[i];
+    if (!vis(fn)) continue;
+    var af = Art.ferns[fn.v];
+    ctx.drawImage(af.cv, fn.x - af.ax * fn.s, fn.y - af.ay * fn.s, af.cv.width * fn.s, af.cv.height * fn.s);
+  }
+
+  var items = [];
+  for (var t = 0; t < w.trees.length; t++) if (vis(w.trees[t])) items.push({ k: 't', o: w.trees[t], y: w.trees[t].y });
+  for (var m = 0; m < w.marks.length; m++) if (vis(w.marks[m])) items.push({ k: 'm', o: w.marks[m], y: w.marks[m].y });
+  for (var g2 = 0; g2 < w.gloves.length; g2++) if (!w.gloves[g2].taken && vis(w.gloves[g2])) items.push({ k: 'g', o: w.gloves[g2], y: w.gloves[g2].y });
+  if (vis(w.den)) items.push({ k: 'd', o: w.den, y: w.den.y });
+  items.sort(function (a, b) { return a.y - b.y; });
+
+  for (var q = 0; q < items.length; q++) {
+    var it = items[q], o = it.o, a;
+    /* anything that would sit on top of the fox turns translucent, so she is
+       never lost behind a canopy — a child must always see what they control */
+    var fade = 1;
+    if (it.y > G.fox.y) {
+      var ddx = Math.abs(o.x - G.fox.x), ddy = o.y - G.fox.y;
+      if (ddx < 58 && ddy < 88) fade = 0.30 + 0.70 * clamp(Math.max(ddx / 58, ddy / 88), 0, 1);
+    }
+    if (fade < 1) ctx.globalAlpha = fade;
+    if (it.k === 't') {
+      a = Art.trees[o.v];
+      ctx.drawImage(a.cv, o.x - a.ax * o.s, o.y - a.ay * o.s, a.cv.width * o.s, a.cv.height * o.s);
+    } else if (it.k === 'm') {
+      a = Art.marks[o.type];
+      ctx.drawImage(a.cv, o.x - a.ax, o.y - a.ay);
+    } else if (it.k === 'g') {
+      a = Art.glove;
+      var bob = Math.sin(G.t * 1.9 + o.bob) * 3;
+      ctx.drawImage(a.cv, o.x - a.ax, o.y - a.ay + bob);
+    } else {
+      a = Art.den;
+      ctx.drawImage(a.cv, o.x - a.ax, o.y - a.ay);
+    }
+    if (fade < 1) ctx.globalAlpha = 1;
+  }
+
+  /* the fox is drawn last, always. She is the one thing that must never be hidden. */
+  ctx.save();
+  ctx.translate(G.fox.x, G.fox.y);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.42;
+  ctx.drawImage(Art.foxGlow, -74, -68, 148, 148);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(4,12,14,.38)';
+  ctx.save(); ctx.translate(0, 11); ctx.scale(1, 0.36);
+  ctx.beginPath(); ctx.arc(0, 0, 23, 0, TAU); ctx.fill(); ctx.restore();
+  drawFox(ctx, G.fox.heading, G.t, G.fox.moving, 1.22);
+  ctx.restore();
+
+  /* low mist rolling through the trees, drawn in world space so it sits still
+     when the camera moves and drifts only on its own account */
+  ctx.globalAlpha = 0.085;
+  var drift = G.t * 9;
+  for (var mi = 0; mi < 6; mi++) {
+    var mw = ((mi * 617 + drift) % (w.W + 700)) - 350;
+    var mh = ((mi * 389 + Math.sin(G.t * 0.11 + mi) * 70) % (w.H + 500)) - 250;
+    var mr = 170 + mi * 32;
+    if (mw < bx0 - mr || mw > bx1 + mr || mh < by0 - mr || mh > by1 + mr) continue;
+    ctx.drawImage(Art.mist, mw - mr, mh - mr, mr * 2, mr * 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+var DARK_FOG = '#06161a';
+var fogCache = { key: '', cv: null, D: 0, Rq: 0 };
+
+/* The fog is a dark square with a soft hole punched in it. It depends only on
+   the radius, so it is rebuilt when the radius crosses a 16px step, not per frame. */
+function fogSprite(R, Rq) {
+  var key = Rq + '|' + Math.round(R) + '|' + DPR.toFixed(2);
+  if (fogCache.key === key) return fogCache;
+  var D = Rq * 2;
+  var cvv = (fogCache.cv && fogCache.D === D) ? fogCache.cv : newCanvas(D * DPR, D * DPR);
+  var g = cvv.getContext('2d');
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, D, D);
+  g.fillStyle = DARK_FOG;
+  g.fillRect(0, 0, D, D);
+  g.globalCompositeOperation = 'destination-out';
+  var gr = g.createRadialGradient(Rq, Rq, R * 0.30, Rq, Rq, R);
+  gr.addColorStop(0, 'rgba(0,0,0,1)');
+  gr.addColorStop(0.55, 'rgba(0,0,0,.92)');
+  gr.addColorStop(0.82, 'rgba(0,0,0,.45)');
+  gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr;
+  g.beginPath(); g.arc(Rq, Rq, R, 0, TAU); g.fill();
+  g.globalCompositeOperation = 'source-over';
+  fogCache = { key: key, cv: cvv, D: D, Rq: Rq };
+  return fogCache;
+}
+
+function drawFogLayer() {
+  var fs = worldToScreen(G.fox.x, G.fox.y);
+  var fq = fogQuant();
+  var sp = fogSprite(fq.R, fq.Rq);
+  var D = sp.D;
+  var x0 = fs.x - sp.Rq, y0 = fs.y - sp.Rq, x1 = x0 + D, y1 = y0 + D;
+
+  /* flat dark everywhere the circle of sight cannot reach */
+  ctx.fillStyle = DARK_FOG;
+  if (y0 > 0) ctx.fillRect(0, 0, VW, Math.ceil(y0));
+  if (y1 < VH) ctx.fillRect(0, Math.floor(y1), VW, VH - Math.floor(y1));
+  var by0 = Math.max(0, Math.floor(y0)), by1 = Math.min(VH, Math.ceil(y1));
+  if (by1 > by0) {
+    if (x0 > 0) ctx.fillRect(0, by0, Math.ceil(x0), by1 - by0);
+    if (x1 < VW) ctx.fillRect(Math.floor(x1), by0, VW - Math.floor(x1), by1 - by0);
+  }
+  ctx.drawImage(sp.cv, x0, y0, D, D);
+}
+
+function drawGlows() {
+  var w = G.world;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  /* the den, warm and welcoming, seen through the fog */
+  var dd = dist(G.fox.x, G.fox.y, w.den.x, w.den.y);
+  var range = G.owlMode ? 1600 : 620;
+  var a = clamp(1 - dd / range, 0, 1);
+  if (a > 0.004) {
+    a = Math.pow(a, G.owlMode ? 1.0 : 1.4);
+    var ds = worldToScreen(w.den.x, w.den.y - 26);
+    var r = (150 + 110 * a) * ZOOM * (1 + Math.sin(G.t * 1.6) * 0.03);
+    ctx.globalAlpha = clamp(0.42 * a, 0, 1);
+    ctx.drawImage(Art.warmGlow, ds.x - r, ds.y - r, r * 2, r * 2);
+  }
+  /* foxgloves glimmer just beyond the circle of sight */
+  for (var i = 0; i < w.gloves.length; i++) {
+    var gl = w.gloves[i];
+    if (gl.taken) continue;
+    var gd = dist(G.fox.x, G.fox.y, gl.x, gl.y);
+    var ga = clamp(1 - gd / 380, 0, 1);
+    if (ga < 0.02) continue;
+    var gs = worldToScreen(gl.x, gl.y - 30);
+    var gr2 = 62 * ZOOM;
+    var pulse2 = 0.55 + Math.sin(G.t * 2.2 + gl.bob) * 0.2;
+    ctx.globalAlpha = clamp(0.34 * ga * pulse2, 0, 1);
+    ctx.drawImage(Art.pinkGlow, gs.x - gr2, gs.y - gr2, gr2 * 2, gr2 * 2);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  /* when the fog has closed in, a soft glow at the screen edge points home */
+  if (G.owlMode && G.state === 'play') {
+    var ang = Math.atan2(w.den.y - G.fox.y, w.den.x - G.fox.x);
+    var rad = Math.min(VW, VH) * 0.35;
+    var cxp = VW / 2 + Math.cos(ang) * rad, cyp = VH / 2 + Math.sin(ang) * rad;
+    var pa = 0.30 + Math.sin(G.t * 2.4) * 0.10;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(cxp, cyp); ctx.rotate(ang);
+    ctx.globalAlpha = pa;
+    ctx.drawImage(Art.warmGlow, -78, -78, 156, 156);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = 'rgba(255,226,176,' + (pa + 0.3).toFixed(3) + ')';
+    ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(-12, -14); ctx.lineTo(10, 0); ctx.lineTo(-12, 14); ctx.stroke();
+    ctx.restore();
+  }
+}
+/* ---------------------------------------------------------------- the map */
+function mapAtSize(m, D) {
+  var q = Math.max(96, Math.ceil(D / 32) * 32);
+  if (m.smallKey === q) return m.small;
+  var out = newCanvas(q, q);
+  var g = out.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(m.cv, 0, 0, q, q);
+  m.small = out; m.smallKey = q;
+  return out;
+}
+
+function drawMapDisc(cx, cy, R, opts) {
+  if (!G.map) return;
+  var w = G.world, m = G.map;
+  var small = mapAtSize(m, 2 * R);
+  var SS = small.width;
+  var k = (2 * R) / SS;
+
+  ctx.save();
+  /* rim and shadow */
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 8;
+  ctx.fillStyle = '#2a2118';
+  ctx.beginPath(); ctx.arc(cx, cy, R + 8, 0, TAU); ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.clip();
+  ctx.translate(cx, cy);
+  ctx.rotate(G.mapRot);
+  ctx.scale(k, k);
+  ctx.drawImage(small, -SS / 2, -SS / 2);
+
+  var s = m.s * (SS / MAP_S);
+  function L(x, y) { return [(x - m.ox) * s, (y - m.oy) * s]; }
+
+  /* breadcrumb trail — a scaffold that fades out as the child improves */
+  if (opts.trail && G.trail.length > 1) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(214,118,58,' + (0.20 + 0.34 * G.assist).toFixed(2) + ')';
+    ctx.lineWidth = 3.4 / k; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.setLineDash([7 / k, 7 / k]);
+    ctx.beginPath();
+    var p0 = L(G.trail[0].x, G.trail[0].y);
+    ctx.moveTo(p0[0], p0[1]);
+    for (var i = 1; i < G.trail.length; i++) {
+      var p = L(G.trail[i].x, G.trail[i].y);
+      ctx.lineTo(p[0], p[1]);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* a landmark just noticed gets a ring so the two pictures link up */
+  for (var mi = 0; mi < w.marks.length; mi++) {
+    var mk = w.marks[mi];
+    if (!mk.ping || mk.ping <= 0) continue;
+    var pm = L(mk.x, mk.y);
+    var f2 = 1 - clamp(mk.ping / 2.6, 0, 1);
+    var rr2 = (16 + f2 * 26) / k;
+    ctx.strokeStyle = 'rgba(200,96,58,' + (0.85 * (1 - f2)).toFixed(3) + ')';
+    ctx.lineWidth = 3.2 / k;
+    ctx.beginPath(); ctx.arc(pm[0], pm[1], rr2, 0, TAU); ctx.stroke();
+  }
+
+  /* the den keeps a slow heartbeat so it is always findable */
+  var pd = L(w.den.x, w.den.y);
+  var beat = (G.t * 0.55) % 1;
+  ctx.strokeStyle = 'rgba(214,104,64,' + (0.55 * (1 - beat)).toFixed(3) + ')';
+  ctx.lineWidth = 3 / k;
+  ctx.beginPath(); ctx.arc(pd[0], pd[1], (26 + beat * 20) / k, 0, TAU); ctx.stroke();
+
+  /* you are here */
+  var showFox = opts.showFox;
+  if (showFox > 0.001) {
+    var pf = L(G.fox.x, G.fox.y);
+    var pr = (10 + Math.sin(G.t * 5) * 1.6) / k;
+    ctx.save();
+    ctx.globalAlpha = showFox;
+    var glowR = 34 / k;
+    ctx.drawImage(Art.foxGlow, pf[0] - glowR, pf[1] - glowR, glowR * 2, glowR * 2);
+    ctx.globalAlpha = showFox;
+    ctx.fillStyle = '#ef8b41';
+    ctx.beginPath(); ctx.arc(pf[0], pf[1], pr, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(60,40,22,.85)'; ctx.lineWidth = 2.4 / k;
+    ctx.beginPath(); ctx.arc(pf[0], pf[1], pr, 0, TAU); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  /* rim highlight */
+  ctx.strokeStyle = 'rgba(226,200,150,.55)'; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.arc(cx, cy, R + 1.6, 0, TAU); ctx.stroke();
+  ctx.strokeStyle = 'rgba(20,14,8,.55)'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(cx, cy, R + 6, 0, TAU); ctx.stroke();
+
+  /* sniff meter drawn as a slim arc on the rim */
+  if (opts.meter) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.arc(cx, cy, R + 13, -Math.PI * 0.5, Math.PI * 1.5); ctx.stroke();
+    var ready = G.sniffCharge >= 1;
+    ctx.strokeStyle = ready ? 'rgba(255,208,138,.95)' : 'rgba(140,196,180,.8)';
+    ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, cy, R + 13, -Math.PI * 0.5, -Math.PI * 0.5 + TAU * G.sniffCharge);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  /* scaffold: which way on the paper is "up the screen". Drawn just inside the
+     rim so it never collides with the text around the disc. */
+  var scaff = clamp((0.62 - prefs.skill) / 0.45, 0, 1);
+  if (opts.scaffold && scaff > 0.02) {
+    var ux = Math.sin(G.mapRot), uy = -Math.cos(G.mapRot);
+    var px2 = cx + ux * (R - 19), py2 = cy + uy * (R - 19);
+    ctx.save();
+    ctx.globalAlpha = 0.4 + 0.5 * scaff;
+    ctx.translate(px2, py2); ctx.rotate(Math.atan2(uy, ux) + Math.PI / 2);
+    ctx.fillStyle = '#e0761f';
+    ctx.beginPath(); ctx.moveTo(0, -10); ctx.lineTo(7.5, 6); ctx.lineTo(0, 2.5); ctx.lineTo(-7.5, 6); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+
+/* ---------------------------------------------------------------- chrome */
+function drawToast() {
+  if (!G.toast) return;
+  var a = G.toast.t < 0.25 ? G.toast.t / 0.25 : G.toast.t > 2.5 ? clamp((3.1 - G.toast.t) / 0.6, 0, 1) : 1;
+  var y = 96 - (1 - a) * 8;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = '800 20px "Baloo 2", system-ui, sans-serif';
+  var wTxt = ctx.measureText(G.toast.text).width;
+  ctx.font = '700 13.5px Nunito, system-ui, sans-serif';
+  var wSub = G.toast.sub ? ctx.measureText(G.toast.sub).width : 0;
+  var wBox = Math.max(wTxt, wSub) + 44;
+  var hBox = G.toast.sub ? 62 : 44;
+  ctx.fillStyle = 'rgba(11,26,32,.74)';
+  ctx.strokeStyle = 'rgba(226,206,166,.22)'; ctx.lineWidth = 1.5;
+  rr(ctx, VW / 2 - wBox / 2, y, wBox, hBox, 16);
+  ctx.fill(); ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#f6ecd8';
+  ctx.font = '800 20px "Baloo 2", system-ui, sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(G.toast.text, VW / 2, y + (G.toast.sub ? 22 : 22));
+  if (G.toast.sub) {
+    ctx.fillStyle = 'rgba(198,214,206,.9)';
+    ctx.font = '700 13.5px Nunito, system-ui, sans-serif';
+    ctx.fillText(G.toast.sub, VW / 2, y + 44);
+  }
+  ctx.restore();
+}
+
+function scrim(alpha) {
+  var g2 = ctx.createRadialGradient(VW / 2, VH * 0.44, 40, VW / 2, VH * 0.5, Math.max(VW, VH) * 0.75);
+  g2.addColorStop(0, 'rgba(10,26,30,' + (alpha * 0.82).toFixed(3) + ')');
+  g2.addColorStop(1, 'rgba(4,12,15,' + alpha.toFixed(3) + ')');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, VW, VH);
+}
+function paperCard(x, y, w, h) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,.5)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14;
+  var g2 = ctx.createLinearGradient(0, y, 0, y + h);
+  g2.addColorStop(0, '#f7eeda'); g2.addColorStop(1, '#e8d8b7');
+  ctx.fillStyle = g2;
+  rr(ctx, x, y, w, h, 24); ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = 'rgba(90,70,45,.28)'; ctx.lineWidth = 1.6;
+  rr(ctx, x + 0.8, y + 0.8, w - 1.6, h - 1.6, 24); ctx.stroke();
+}
+function text(str, x, y, font, color, align) {
+  ctx.font = font; ctx.fillStyle = color;
+  ctx.textAlign = align || 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(str, x, y);
+}
+function drawStars(x, y, n, size) {
+  for (var i = 0; i < 3; i++) {
+    var on = i < n;
+    ctx.save();
+    ctx.translate(x + (i - 1) * size * 2.4, y);
+    ctx.beginPath();
+    for (var p = 0; p < 10; p++) {
+      var ang = -Math.PI / 2 + p * Math.PI / 5;
+      var r = p % 2 ? size * 0.45 : size;
+      ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
+    }
+    ctx.closePath();
+    ctx.fillStyle = on ? '#e8a33e' : 'rgba(120,98,66,.20)';
+    ctx.fill();
+    if (on) { ctx.strokeStyle = 'rgba(140,90,30,.5)'; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.restore();
+  }
+}
+function pulse(min, max, speed) {
+  return min + (max - min) * (0.5 + 0.5 * Math.sin(G.t * speed));
+}
+
+/* ---------------------------------------------------------------- screens */
+function screenTitle() {
+  scrim(0.93);
+  var cy = VH * 0.5;
+  ctx.save();
+  ctx.translate(VW / 2, cy - 152);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.5;
+  ctx.drawImage(Art.warmGlow, -150, -140, 300, 300);
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.scale(2.2, 2.2);
+  ctx.fillStyle = 'rgba(0,0,0,.28)';
+  ctx.save(); ctx.translate(0, 11); ctx.scale(1, 0.34); ctx.beginPath(); ctx.arc(0, 0, 21, 0, TAU); ctx.fill(); ctx.restore();
+  drawFox(ctx, 0, G.t, true, 1);
+  ctx.restore();
+
+  text('Foxglove Trail', VW / 2, cy - 34, '800 ' + Math.round(clamp(VW * 0.062, 38, 68)) + 'px "Baloo 2", system-ui, sans-serif', '#f7ecd6');
+  text('Get the fox home before the fog closes in.', VW / 2, cy + 22, '700 19px Nunito, system-ui, sans-serif', 'rgba(214,228,220,.92)');
+  text('Your map shows the whole wood \u2014 but it does not turn when you do.', VW / 2, cy + 50, '700 19px Nunito, system-ui, sans-serif', 'rgba(214,228,220,.92)');
+
+  ctx.save();
+  ctx.globalAlpha = pulse(0.68, 1, 3.2);
+  text('Press  SPACE  to set off', VW / 2, cy + 112, '800 24px "Baloo 2", system-ui, sans-serif', '#ffd28a');
+  ctx.restore();
+  text('\u2190 \u2191 \u2193 \u2192  run     SPACE  sniff     Q  grown-ups', VW / 2, cy + 158, '700 15px Nunito, system-ui, sans-serif', 'rgba(180,200,192,.75)');
+}
+
+function screenBrief() {
+  scrim(0.88);
+  var R = clamp(Math.min(VW * 0.28, (VH - 268) * 0.5), 92, 220);
+  var cyM = VH * 0.5 + 10;
+  drawMapDisc(VW / 2, cyM, R, { showFox: pulse(0.55, 1, 4), trail: false, meter: false, scaffold: true });
+
+  text('Night ' + G.night + ' of ' + NIGHTS, VW / 2, cyM - R - 76, '800 30px "Baloo 2", system-ui, sans-serif', '#f7ecd6');
+  var deg = Math.round(Math.abs(G.mapRot) * 180 / Math.PI);
+  var line = deg < 8
+    ? 'Find the den \u2014 the dotted ring on the paper.'
+    : 'The map is pinned at an angle tonight. Turn it in your head.';
+  text(line, VW / 2, cyM - R - 40, '700 17px Nunito, system-ui, sans-serif', 'rgba(214,228,220,.92)');
+
+  text('The orange dot is you. Landmarks are drawn on the map and in the wood.',
+    VW / 2, cyM + R + 44, '700 15.5px Nunito, system-ui, sans-serif', 'rgba(198,214,206,.82)');
+  ctx.save();
+  ctx.globalAlpha = pulse(0.66, 1, 3.4);
+  text('SPACE  \u2014  set off', VW / 2, cyM + R + 84, '800 23px "Baloo 2", system-ui, sans-serif', '#ffd28a');
+  ctx.restore();
+}
+
+var TIPS = [
+  'Look for a landmark, then find its picture on the map.',
+  'Sniff at a junction \u2014 that is where it tells you most.',
+  'Turn the map in your head before you start running.',
+  'The dotted ring is home. The little \u2715 marks it too.',
+  'Foxgloves are a detour. Take them if there is time.'
+];
+function screenArrive() {
+  scrim(0.84);
+  var r = G.results[G.results.length - 1];
+  var w = Math.min(VW * 0.82, 520), h = 322;
+  var x = VW / 2 - w / 2, y = VH / 2 - h / 2;
+  paperCard(x, y, w, h);
+  text(r.owl ? 'Home with the owl\u2019s help' : 'Home safe!', VW / 2, y + 52, '800 34px "Baloo 2", system-ui, sans-serif', '#3b2d1e');
+  drawStars(VW / 2, y + 112, r.stars, 19);
+  var pct = Math.round(r.eff * 100);
+  text('You read the trail ' + pct + '% straight', VW / 2, y + 158, '800 19px "Baloo 2", system-ui, sans-serif', '#6d5433');
+  text('Foxgloves picked: ' + r.gloves + ' of ' + r.total + '   \u00b7   ' + r.time.toFixed(0) + ' seconds',
+    VW / 2, y + 188, '700 15.5px Nunito, system-ui, sans-serif', '#5a452c');
+  text(TIPS[(G.night - 1 + (r.stars === 3 ? 2 : 0)) % TIPS.length], VW / 2, y + 226, '700 14.5px Nunito, system-ui, sans-serif', 'rgba(120,95,55,.9)');
+  ctx.save();
+  ctx.globalAlpha = pulse(0.62, 1, 3.4);
+  text(G.night < NIGHTS ? 'SPACE  \u2014  night ' + (G.night + 1) : 'SPACE  \u2014  see how you did',
+    VW / 2, y + 278, '800 22px "Baloo 2", system-ui, sans-serif', '#a2601f');
+  ctx.restore();
+}
+
+function screenResult() {
+  scrim(0.86);
+  var stars = 0, gl = 0, tot = 0, eff = 0;
+  for (var i = 0; i < G.results.length; i++) {
+    stars += G.results[i].stars; gl += G.results[i].gloves; tot += G.results[i].total; eff += G.results[i].eff;
+  }
+  eff = G.results.length ? eff / G.results.length : 0;
+  var w = Math.min(VW * 0.86, 560), h = 366;
+  var x = VW / 2 - w / 2, y = VH / 2 - h / 2;
+  paperCard(x, y, w, h);
+  text('Three nights, home every time', VW / 2, y + 50, '800 29px "Baloo 2", system-ui, sans-serif', '#3b2d1e');
+  text('\u2605 ' + stars + ' of 9   \u00b7   ' + gl + ' of ' + tot + ' foxgloves', VW / 2, y + 92, '800 21px "Baloo 2", system-ui, sans-serif', '#8a6a3f');
+
+  /* skill bar */
+  var bw = w - 120, bx = VW / 2 - bw / 2, by = y + 140;
+  text('Trail reading', VW / 2, by - 20, '800 13px Nunito, system-ui, sans-serif', 'rgba(120,95,55,.9)');
+  ctx.fillStyle = 'rgba(120,95,55,.16)';
+  rr(ctx, bx, by, bw, 14, 7); ctx.fill();
+  var gg = ctx.createLinearGradient(bx, 0, bx + bw, 0);
+  gg.addColorStop(0, '#7fb08a'); gg.addColorStop(1, '#e8a33e');
+  ctx.fillStyle = gg;
+  rr(ctx, bx, by, Math.max(14, bw * prefs.skill), 14, 7); ctx.fill();
+  text(Math.round(prefs.skill * 100) + '%', VW / 2, by + 38, '800 16px "Baloo 2", system-ui, sans-serif', '#6d5433');
+
+  var note = prefs.skill > 0.72
+    ? 'The map will be turned further next time.'
+    : prefs.skill > 0.45
+      ? 'Nicely done \u2014 next time the map tips a little more.'
+      : 'The wood will keep its helpers out for you.';
+  text(note, VW / 2, y + 232, '700 15px Nunito, system-ui, sans-serif', '#5a452c');
+  text('Average straightness ' + Math.round(eff * 100) + '%', VW / 2, y + 258, '700 14px Nunito, system-ui, sans-serif', 'rgba(120,95,55,.85)');
+
+  ctx.save();
+  ctx.globalAlpha = pulse(0.62, 1, 3.4);
+  text('SPACE  \u2014  a new wood', VW / 2, y + 316, '800 22px "Baloo 2", system-ui, sans-serif', '#a2601f');
+  ctx.restore();
+}
+
+/* ---------------------------------------------------------------- frame */
+function render() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingQuality = 'low';
+  ctx.clearRect(0, 0, VW, VH);
+  if (!G.world) return;
+  drawWorld();
+  drawFogLayer();
+  drawGlows();
+
+  if (G.state === 'play') {
+    var R = clamp(Math.min(VW, VH) * 0.155, 76, 124);
+    var mx = VW - R - 40, my = R + 44;
+    drawMapDisc(mx, my, R, {
+      showFox: clamp(G.sniffTime / 0.6, 0, 1) * (G.sniffTime > 0 ? 1 : 0),
+      trail: G.assist > 0.45,
+      meter: true,
+      scaffold: true
+    });
+    drawToast();
+  }
+  if (G.state === 'title') screenTitle();
+  else if (G.state === 'brief') screenBrief();
+  else if (G.state === 'arrive') screenArrive();
+  else if (G.state === 'result') screenResult();
+}
+
+var last = 0;
+function frame(now) {
+  if (!last) last = now;
+  var dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (!G.paused && !document.hidden) {
+    update(dt);
+    Snd.music(dt, G.state === 'play' ? 1 - clamp(G.timeLeft / G.timeTotal, 0, 1) : 0.15);
+  }
+  try { render(); } catch (err) {
+    /* never leave a child staring at a frozen screen */
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (window.console) console.error(err);
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------------------------------------------------------------- boot */
+function paintLoading() {
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  var g2 = ctx.createRadialGradient(VW / 2, VH * 0.44, 40, VW / 2, VH / 2, Math.max(VW, VH) * 0.7);
+  g2.addColorStop(0, '#153036'); g2.addColorStop(1, '#08151a');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, VW, VH);
+  text('Foxglove Trail', VW / 2, VH / 2 - 14, '800 ' + Math.round(clamp(VW * 0.055, 34, 58)) + 'px "Baloo 2", system-ui, sans-serif', '#f7ecd6');
+  text('drawing the map\u2026', VW / 2, VH / 2 + 32, '700 17px Nunito, system-ui, sans-serif', 'rgba(190,212,204,.72)');
+}
+paintLoading();
+setTimeout(function () {
+  bakeArt();
+  startNight(1);
+  G.state = 'title';
+  hudEl.classList.remove('on');
+  requestAnimationFrame(frame);
+}, 40);
+</script>
+</body>
+</html>
