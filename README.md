@@ -6,22 +6,27 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 
 | Game | Play | Ages | Round | Tech |
 | --- | --- | --- | --- | --- |
-| Comet Catch — Bloop's Sky Carnival | [play](https://psticea.github.io/games/comet-catch/) · [`comet-catch/`](comet-catch/index.html) | ~6–10 | 75s | 3D, three.js via CDN |
 | Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
 | Starbounce — Zip's Sky Rescue | [play](https://psticea.github.io/games/starbounce/) · [`starbounce/`](starbounce/index.html) | ~7–10 | 90s | 2D canvas, no dependencies |
 | Beacon Bridge | [play](https://psticea.github.io/games/beacon-bridge/) · [`beacon-bridge/`](beacon-bridge/index.html) | ~7–10 | 90s a crossing | 2D canvas, no dependencies |
 | Foxglove Trail | [play](https://psticea.github.io/games/foxglove-trail/) · [`foxglove-trail/`](foxglove-trail/index.html) | ~7–10 | 3 nights, <2 min | 2D canvas, no dependencies |
 
-All five use **arrow keys, Space and `Q` only** — no mouse — and none of them has a "Game Over".
-The root page is a picker linking to all five.
+All of them use **arrow keys, Space, `Q` and `H` only** — no mouse — and none of them has a "Game Over".
+`H` closes the game and comes straight back to the picker.
+The root page is a picker linking to those four.
+
+Comet Catch is still here and still playable — [play](https://psticea.github.io/games/comet-catch/) ·
+[`comet-catch/`](comet-catch/index.html) — it is just no longer listed on the picker, to keep the front page short.
 
 ---
 
 ## Comet Catch — Bloop's Sky Carnival
 
+> Not on the picker any more — reachable by link only: `comet-catch/index.html`.
+
 A single-file 3D browser game for roughly ages 6–10. Open `comet-catch/index.html` — no build step, no server, no keys.
 
-**Play:** `←` `→` move · `Space` jump (and start/restart) · `↓` skid to a stop · `Q` grown-ups menu.
+**Play:** `←` `→` move · `Space` jump (and start/restart) · `↓` skid to a stop · `Q` grown-ups menu · `H` back to all games.
 
 Bloop carries a basket. Three flower cannons fire comets in long, readable arcs; run to where each one will land and let it drop in. Rounds are 75 seconds by default.
 
@@ -47,7 +52,7 @@ The renderer degrades in small ordered steps if a frame genuinely costs too much
 
 A 60-second 2D catching game for roughly ages 7–10. Open `starfall-meadow/index.html` — it has no runtime dependencies and works offline.
 
-**Play:** `←` `→` run · `Space` hop (twice for a flutter-jump) · `↑` hop · `↓` dive · `Q` grown-ups menu.
+**Play:** `←` `→` run · `Space` hop (twice for a flutter-jump) · `↑` hop · `↓` dive · `Q` grown-ups menu · `H` back to all games.
 
 Star-sprites are flung in big looping arcs across the sky. You are Pip, and you run and hop underneath them to catch them before they land.
 
@@ -87,7 +92,7 @@ Gradients are baked into sprite caches and particles render in two batched passe
 
 A 90-second aim-and-launch game for roughly ages 7–10. Open `starbounce/index.html` — no runtime dependencies, works offline.
 
-**Play:** `←` `→` aim the cannon · `↑` `↓` power · `Space` launch · `Q` grown-ups menu.
+**Play:** `←` `→` aim the cannon · `↑` `↓` power · `Space` launch · `Q` grown-ups menu · `H` back to all games.
 
 Zip is a little star-comet. Aim a cannon, set its power, and launch Zip in an arc to pop the **golden stars** and free the sky-friends inside. Bank off the candy walls, jelly blobs and candy rails to reach the awkward ones. Popped stars are instantly replaced, so the sky never empties and there is always another shot worth taking.
 
@@ -123,7 +128,7 @@ Every arena is generated fresh, then a fan of real trajectories is swept once to
 
 A mental-rotation puzzle for roughly ages 7–10. Open `beacon-bridge/index.html` — no runtime dependencies, works offline.
 
-**Play:** `←` `→` slide the block · `↑` `↓` turn it a quarter turn · `Space` drop it into the gap · `Q` grown-ups menu.
+**Play:** `←` `→` slide the block · `↑` `↓` turn it a quarter turn · `Space` drop it into the gap · `Q` grown-ups menu · `H` back to all games.
 
 A fox has to cross a canyon before the light goes. Each of the three stone spans has a bite taken out of its deck, and **two** wooden blocks are needed to make it whole again — a lower one that slots into the notch, then an upper one that caps it off flush with the road. Three spans, six blocks, ninety seconds. Fill all three and the beacon on the far cliff lights up.
 
@@ -188,14 +193,15 @@ The render loop wraps update and draw so a stray exception unwinds the canvas st
 
 A map-reading game for roughly ages 7–10. Open `foxglove-trail/index.html` — no runtime dependencies, works offline.
 
-**Play:** `←` `↑` `↓` `→` run · `Space` sniff (and start/continue) · `Q` grown-ups menu. Those are the only keys — no mouse.
+**Play:** `←` `↑` `↓` `→` run · `Space` sniff (and start/continue) · `Q` grown-ups menu · `H` back to all games. Those are the only keys — no mouse.
 
-A fox has to get home to the den before the evening fog closes in. You can only see a few paces of wood — but a paper map in the corner shows the **whole** forest, with the den marked by a dotted ring. A round is three short nights and takes under two minutes.
+A fox has to get home to the den before the evening fog closes in. You can only see a few paces of wood — but a paper map in the corner shows the **whole** forest, with the den marked by a dotted ring. **The map never rotates** — up on the paper is up the screen — so the work is reading the trail system, not un-turning the page. A round is three short nights and takes under two minutes.
 
 ### The skill it builds
 
-The mechanic *is* the exercise: **allocentric → egocentric translation**, the real skill behind map reading and orienteering. The map does not turn when you do. On later nights it is pinned at an angle, so "the den is up-left on the paper" has to be converted into "so I run *that* way from here" — mental rotation of a whole layout, performed while steering.
+The mechanic *is* the exercise: **allocentric → egocentric translation**, the real skill behind map reading and orienteering. You hold a bird's-eye model of the wood in mind while moving through it at ground level, and turn "the den is up-left on the paper" into "so I run up-left from here".
 
+- **Route choice under branching** — difficulty is carried entirely by the trail system: a wider wood, more loop edges, more real junctions and a longer target path. Getting better makes the forest more tangled, never harder to orient.
 - **Landmark-based wayfinding** — a fallen log, standing stone, berry bush, mushroom ring and pond are drawn *both* in the wood and on the map, each with a distinct silhouette. Every junction carries one, and walking near a landmark rings it on the paper so the two pictures link up.
 - **Route planning and self-location** — sniffing pulses your position onto the map but recharges slowly, so a child learns to keep a running sense of where they are instead of checking constantly.
 - **Spatial working memory** — the map is studied on the briefing screen and stays small during play.
@@ -206,12 +212,13 @@ The game scores how *directly* each night was walked (shortest path ÷ distance 
 
 | Scaffold | Beginner | Confident |
 | --- | --- | --- |
-| Map rotation | 0° on night 1 | up to 155° |
 | Circle of sight | 330 px | 232 px |
 | Sniff recharge | 3.8 s | 7.2 s |
 | Breadcrumb trail on the paper | on | off |
-| "Screen-up" arrow on the map rim | on | faded out |
+| "Screen-up" marker on the map rim | on | faded out |
 | Wood size | 5×3 grid | up to 7×4 grid |
+| Loop edges (extra junctions) | ×0.77 | ×1.96 |
+| Foxgloves to collect | 2–3 | 3–4 |
 
 The grown-ups menu shows the live readout of all of it.
 

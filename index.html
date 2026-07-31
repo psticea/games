@@ -82,10 +82,9 @@
     padding:10px 20px;border-radius:999px;
     box-shadow:0 1px 2px rgba(20,10,50,.2);
   }
-  .game:nth-child(2) .play{background:linear-gradient(180deg,#ffb066,#f4823a);}
-  .game:nth-child(3) .play{background:linear-gradient(180deg,#c48bf0,#8b4fd0);}
-  .game:nth-child(4) .play{background:linear-gradient(180deg,#ffd08a,#e08a3c);}
-  .game:nth-child(5) .play{background:linear-gradient(180deg,#7fd0a8,#35937a);}
+  .game:nth-child(2) .play{background:linear-gradient(180deg,#c48bf0,#8b4fd0);}
+  .game:nth-child(3) .play{background:linear-gradient(180deg,#ffd08a,#e08a3c);}
+  .game:nth-child(4) .play{background:linear-gradient(180deg,#7fd0a8,#35937a);}
   .keys{
     display:flex;flex-wrap:wrap;align-items:center;gap:6px;
     margin-top:12px;font-size:12.5px;font-weight:700;color:#7a6da0;
@@ -107,7 +106,7 @@
 <body>
   <header>
     <h1>Games</h1>
-    <p>Five browser games for kids. No install, no accounts &mdash; just open and play.</p>
+    <p>Four browser games for kids. No install, no accounts &mdash; just open and play.</p>
   </header>
 
   <div class="grid" id="grid">
@@ -159,57 +158,6 @@
         <span class="play">Play &rarr;</span>
         <div class="keys">
           <kbd>&larr;</kbd><kbd>&rarr;</kbd> run <kbd>Space</kbd> hop <kbd>&darr;</kbd> dive <kbd>Q</kbd> grown-ups
-        </div>
-      </div>
-    </a>
-
-    <a class="game" href="comet-catch/index.html">
-      <div class="art">
-        <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-          <defs>
-            <linearGradient id="ccSky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#2f7fd0"/><stop offset="60%" stop-color="#5cbcff"/><stop offset="1" stop-color="#ffe6b8"/>
-            </linearGradient>
-            <radialGradient id="ccComet" cx="38%" cy="32%">
-              <stop offset="0" stop-color="#fffbe8"/><stop offset="55%" stop-color="#ffd24d"/><stop offset="1" stop-color="#ff9a2e"/>
-            </radialGradient>
-          </defs>
-          <rect width="400" height="150" fill="url(#ccSky)"/>
-          <ellipse cx="200" cy="150" rx="260" ry="52" fill="#7fd08a"/>
-          <ellipse cx="200" cy="156" rx="200" ry="40" fill="#5cb86e"/>
-          <path d="M20 104 Q120 20 230 66" stroke="#fff" stroke-width="3" stroke-dasharray="7 11" fill="none" opacity=".8" stroke-linecap="round"/>
-          <path d="M226 76 Q206 88 190 98" stroke="#ffd97a" stroke-width="6" stroke-linecap="round" opacity=".6" fill="none"/>
-          <circle cx="236" cy="70" r="13" fill="url(#ccComet)" stroke="#fff" stroke-width="2"/>
-          <g transform="translate(320,96)">
-            <circle cx="0" cy="-20" r="9" fill="#ffd24d" opacity=".85"/>
-            <rect x="-13" y="-6" width="26" height="26" rx="7" fill="#ff8f5e"/>
-            <rect x="-16" y="-11" width="32" height="9" rx="4.5" fill="#ffb27f"/>
-          </g>
-          <g transform="translate(96,106)">
-            <ellipse cx="0" cy="16" rx="18" ry="5" fill="#2f7a3c" opacity=".28"/>
-            <ellipse cx="0" cy="-2" rx="17" ry="16" fill="#9ee7ff"/>
-            <ellipse cx="2" cy="2" rx="9" ry="9" fill="#e8fbff"/>
-            <circle cx="-5" cy="-6" r="3" fill="#243a52"/><circle cx="6" cy="-6" r="3" fill="#243a52"/>
-            <circle cx="-6" cy="-7.2" r="1.1" fill="#fff"/><circle cx="5" cy="-7.2" r="1.1" fill="#fff"/>
-            <path d="M-4 2 Q0 6 4 2" stroke="#243a52" stroke-width="2" fill="none" stroke-linecap="round"/>
-            <path d="M-17 -14 Q-4 -26 12 -18" stroke="#ffcf6b" stroke-width="5" fill="none" stroke-linecap="round"/>
-          </g>
-        </svg>
-      </div>
-      <div class="body">
-        <h2>Comet Catch</h2>
-        <p class="sub">Ages ~6&ndash;10 &middot; 75 seconds a round</p>
-        <p class="desc">Bloop's Sky Carnival, in 3D. Flower cannons fire comets in long readable arcs
-        and you run to where each one will land, basket ready. Dodge the sneezy clouds and watch out
-        for berries that change course mid&#8209;flight.</p>
-        <div class="tags">
-          <span class="tag skill">Trajectory prediction</span>
-          <span class="tag skill">Response inhibition</span>
-          <span class="tag">3D &middot; needs internet</span>
-        </div>
-        <span class="play">Play &rarr;</span>
-        <div class="keys">
-          <kbd>&larr;</kbd><kbd>&rarr;</kbd> move <kbd>Space</kbd> jump <kbd>&darr;</kbd> skid <kbd>Q</kbd> grown-ups
         </div>
       </div>
     </a>
@@ -470,11 +418,11 @@
         <h2>Foxglove Trail</h2>
         <p class="sub">Ages ~7&ndash;10 &middot; 3 nights, under 2 minutes</p>
         <p class="desc">A fox must reach the den before the fog closes in. You only see a few paces of
-        wood &mdash; but a paper map shows the <em>whole</em> forest. The catch: the map doesn&rsquo;t turn when
-        you do, so you have to rotate it in your head and match the landmarks.</p>
+        wood &mdash; but a paper map shows the <em>whole</em> forest, always drawn the same way up as the
+        screen. Match the landmarks, pick the right branch, and keep your line home.</p>
         <div class="tags">
           <span class="tag skill">Map reading</span>
-          <span class="tag skill">Mental rotation</span>
+          <span class="tag skill">Route planning</span>
           <span class="tag">2D &middot; works offline</span>
         </div>
         <span class="play">Play &rarr;</span>
@@ -485,7 +433,8 @@
     </a>
   </div>
 
-  <footer>Use <kbd>&larr;</kbd><kbd>&rarr;</kbd> and <kbd>Enter</kbd> to pick a game, or just click one.</footer>
+  <footer>Use <kbd>&larr;</kbd><kbd>&rarr;</kbd> and <kbd>Enter</kbd> to pick a game, or just click one.<br>
+  In any game, press <kbd>H</kbd> to come back here.</footer>
 
 <script>
   /* Keyboard navigation, to match the arrow-keys-only spirit of both games. */

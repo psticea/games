@@ -80,6 +80,7 @@
         <ul>
           <li><span class="kbd">Space</span> Drop the block into the gap</li>
           <li><span class="kbd">Q</span> Open and close this menu</li>
+          <li><span class="kbd">H</span> Leave the game and go back to all games</li>
         </ul>
       </div>
 
@@ -1747,7 +1748,7 @@ function drawHUD(){
 }
 function drawHint0(){
   /* the one-line control strip */
-  const items=[['\u25C0','\u25B6','Move'],['\u25B2','\u25BC','Turn'],['Space','','Drop'],['Q','','Grown-ups']];
+  const items=[['\u25C0','\u25B6','Move'],['\u25B2','\u25BC','Turn'],['Space','','Drop'],['Q','','Grown-ups'],['H','','Home']];
   ctx.save();
   ctx.font='700 14px Nunito, Trebuchet MS, sans-serif';
   let w=26;
@@ -1850,6 +1851,13 @@ function frame(now){
 requestAnimationFrame(frame);
 
 window.__BB={G,piece,fox,SHAPES,handleKey,makeSpan};
+</script>
+<script>
+/* H — close the game and go back to the four-game picker. */
+window.addEventListener('keydown', function (e) {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'h' || e.key === 'H') { e.preventDefault(); window.location.href = '../index.html'; }
+}, true);
 </script>
 </body>
 </html>

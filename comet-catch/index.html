@@ -291,6 +291,8 @@ ul.clean li{margin:5px 0}
     <span class="cb-sep">•</span>
     <span class="cb-item"><span class="kc q">Q</span>Grown-ups</span>
     <span class="cb-sep">•</span>
+    <span class="cb-item"><span class="kc q">H</span>Home</span>
+    <span class="cb-sep">•</span>
     <span class="cb-item" style="color:#c0398a;font-weight:700">Catch with your basket!</span>
   </div>
 </div>
@@ -314,6 +316,7 @@ ul.clean li{margin:5px 0}
       <span><span class="kc wide">SPACE</span> Jump</span>
       <span><span class="kc">↓</span> Stop</span>
       <span><span class="kc q">Q</span> Grown-ups menu</span>
+      <span><span class="kc q">H</span> Back to all games</span>
     </div>
     <div class="hintRow" style="opacity:.9;font-size:clamp(13px,1.7vw,17px)">
       <span id="titleBest">Best score: 0</span>
@@ -3410,6 +3413,13 @@ setInterval(() => {
 
 
 
+</script>
+<script>
+/* H — close the game and go back to the four-game picker. */
+window.addEventListener('keydown', function (e) {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'h' || e.key === 'H') { e.preventDefault(); window.location.href = '../index.html'; }
+}, true);
 </script>
 </body>
 </html>

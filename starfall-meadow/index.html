@@ -181,6 +181,7 @@
           <div class="ctrl-row"><span><span class="kbd">↓</span></span><span class="what">Dive down fast while in the air</span></div>
           <div class="ctrl-row"><span><span class="kbd">SPACE</span></span><span class="what">Start / play again on menus</span></div>
           <div class="ctrl-row"><span><span class="kbd">Q</span></span><span class="what">Open &amp; close this menu</span></div>
+          <div class="ctrl-row"><span><span class="kbd">H</span></span><span class="what">Leave the game and go back to all games</span></div>
         </div>
         <h2>What this game is</h2>
         <div class="panel">
@@ -2495,7 +2496,8 @@ const HUD = {
       { keys: [['left'], ['right']], label: 'RUN' },
       { keys: [['text', 'SPACE']], label: 'HOP' },
       { keys: [['down']], label: 'DIVE' },
-      { keys: [['text', 'Q']], label: 'GROWN-UPS' }
+      { keys: [['text', 'Q']], label: 'GROWN-UPS' },
+      { keys: [['text', 'H']], label: 'HOME' }
     ];
     setFont(c, 19);
     let total = 0;
@@ -3042,6 +3044,13 @@ requestAnimationFrame(frame);
 
 /* expose a tiny hook for automated play-testing */
 window.__SFM = { Game, Director, Stars, Pip, Theme, Parts, Pops, Quality, Store, ParentMenu, FX, World, Backdrop, Sprites, HUD, Stage, Audio2 };
+</script>
+<script>
+/* H — close the game and go back to the four-game picker. */
+window.addEventListener('keydown', function (e) {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'h' || e.key === 'H') { e.preventDefault(); window.location.href = '../index.html'; }
+}, true);
 </script>
 </body>
 </html>

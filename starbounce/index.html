@@ -2109,8 +2109,8 @@ function drawHintBar(c){
   let spr=drawHintBar.cache[key];
   if(!spr){
     const items = key==='aim'
-      ? [{k:['left','right'],t:'Aim'},{k:['up','down'],t:'Power'},{k:[],l:'SPACE',t:'Launch!'},{k:[],l:'Q',t:'Grown-ups'}]
-      : [{k:[],l:'SPACE',t:'Go!'},{k:[],l:'Q',t:'Grown-ups'}];
+      ? [{k:['left','right'],t:'Aim'},{k:['up','down'],t:'Power'},{k:[],l:'SPACE',t:'Launch!'},{k:[],l:'Q',t:'Grown-ups'},{k:[],l:'H',t:'Home'}]
+      : [{k:[],l:'SPACE',t:'Go!'},{k:[],l:'Q',t:'Grown-ups'},{k:[],l:'H',t:'Home'}];
     let total=0;
     for(const it of items){
       let w=0;
@@ -2385,7 +2385,8 @@ function drawParentMenu(c){
     [['left','right'],null,'Aim the cannon left and right'],
     [['up','down'],null,'More power / less power'],
     [[],'SPACE','Launch Zip  ·  start or replay a round'],
-    [[],'Q','Open and close this menu (pauses the game)']
+    [[],'Q','Open and close this menu (pauses the game)'],
+    [[],'H','Leave the game and go back to all games']
   ];
   for(const r of rows){
     let kx=rx;
@@ -2490,6 +2491,13 @@ window.__G = G; window.__SND = SND;
 requestAnimationFrame(loop);
 setTimeout(()=>{ const b=document.getElementById('boot'); if(b) b.classList.add('hide');
   setTimeout(()=>b && b.remove(), 600); }, 380);
+</script>
+<script>
+/* H — close the game and go back to the four-game picker. */
+window.addEventListener('keydown', function (e) {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === 'h' || e.key === 'H') { e.preventDefault(); window.location.href = '../index.html'; }
+}, true);
 </script>
 </body>
 </html>
