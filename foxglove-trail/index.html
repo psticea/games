@@ -28,6 +28,40 @@
   #stage{position:fixed;inset:0;}
   canvas{display:block;width:100%;height:100%;}
 
+  /* ---------- phones: portrait, full screen, no browser gestures ---------- */
+  body.touch{height:100dvh;overscroll-behavior:none;touch-action:none;-webkit-touch-callout:none;}
+  body.touch #stage{height:100dvh;}
+  body.touch .topleft{left:12px;top:calc(10px + env(safe-area-inset-top));gap:6px;}
+  body.touch .pill{font-size:12px;padding:5px 12px 5px 10px;gap:7px;}
+  body.touch .pill .lbl{font-size:9.5px;letter-spacing:1px;}
+  body.touch .fogbar{width:82px;height:7px;}
+  body.touch #gloves svg{width:12px;height:16px;}
+  body.touch .controls{display:none;}
+  body.touch .veil{touch-action:pan-y;padding:18px 14px calc(18px + env(safe-area-inset-bottom));}
+  body.touch .touchbar{
+    position:fixed;z-index:4;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 calc(14px + env(safe-area-inset-left)) 0 calc(14px + env(safe-area-inset-right));
+    pointer-events:none;
+  }
+  .touchbar{display:none;}
+  .touchonly{display:none;}
+  body.touch .touchonly{display:block;}
+  body.touch .keysonly{display:none;}
+  .tbtn{
+    pointer-events:auto;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    min-height:44px;padding:0 18px;
+    background:rgba(11,26,32,.62);
+    border:1px solid rgba(226,206,166,.20);
+    border-radius:999px;
+    color:#e9dcc4;font-weight:800;font-size:13px;letter-spacing:.4px;
+    font-family:inherit;
+    backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px);
+    box-shadow:0 6px 18px rgba(0,0,0,.30);
+  }
+  .tbtn:active{background:rgba(24,48,56,.82);}
+
   /* ---------- HUD ---------- */
   .hud{position:fixed;inset:0;pointer-events:none;opacity:0;transition:opacity .5s ease;}
   .hud.on{opacity:1;}
@@ -163,6 +197,11 @@
   </div>
 </div>
 
+<div class="touchbar" id="touchbar">
+  <button class="tbtn" id="btnMenu" type="button">Grown&#8209;ups</button>
+  <button class="tbtn" id="btnHome" type="button">All games</button>
+</div>
+
 <div class="veil" id="parentVeil">
   <div class="card">
     <h2>Foxglove Trail &mdash; for grown&#8209;ups</h2>
@@ -170,14 +209,24 @@
     takes under two minutes. There is no way to lose.</p>
 
     <h3>Controls</h3>
-    <div class="rowkeys">
+    <div class="touchonly">
+      <ul>
+        <li><b>Touch and hold</b> anywhere &mdash; the fox runs towards your finger for as long as you hold.</li>
+        <li><b>Tap the fox</b> (or just beside it, in the middle of the screen) &mdash; sniff, which pulses your
+        position onto the map.</li>
+        <li><b>Tap anywhere</b> on a title or between&#8209;nights screen to carry on.</li>
+        <li><b>Grown&#8209;ups</b> and <b>All games</b> are the two buttons along the bottom.</li>
+      </ul>
+      <p style="margin-top:10px">The game fills the whole screen once you touch it, and the browser bars go away.</p>
+    </div>
+    <div class="rowkeys keysonly">
       <div><kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> run through the wood</div>
       <div><kbd class="wide">Space</kbd> sniff &mdash; pulses your position onto the map</div>
       <div><kbd class="wide">Space</kbd> also starts and continues</div>
       <div><kbd>Q</kbd> open / close this menu (the game pauses)</div>
       <div><kbd>H</kbd> leave the game and go back to all games</div>
     </div>
-    <p style="margin-top:10px">Those are the only keys the game uses. No mouse, anywhere.</p>
+    <p class="keysonly" style="margin-top:10px">Those are the only keys the game uses. No mouse, anywhere.</p>
 
     <h3>What you do</h3>
     <p>A fox has to get home to the den before the evening fog closes in. You can only see a little way
@@ -212,7 +261,8 @@
     still finishes.</p>
 
     <div class="readout" id="readout"></div>
-    <div class="closehint">Press <kbd>Q</kbd> to close and carry on</div>
+    <div class="closehint keysonly">Press <kbd>Q</kbd> to close and carry on</div>
+    <div class="closehint touchonly">Tap anywhere to close and carry on</div>
   </div>
 </div>
 
@@ -1575,6 +1625,38 @@ var readoutEl = document.getElementById('readout');
 var VW = 0, VH = 0, DPR = 1, ZOOM = 1;
 var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/* ---------------------------------------------------------- phones
+   There is no keyboard on a phone, so the game is driven by touch: the page
+   goes full screen, the canvas becomes a tall portrait window on to the wood,
+   and holding a finger down runs the fox towards it. */
+var MOBILE = (function () {
+  try {
+    var coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    var touch = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
+    var ua = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent || '');
+    return (coarse && touch) || (touch && ua);
+  } catch (e) { return false; }
+})();
+if (MOBILE) document.body.classList.add('touch');
+
+function goFullscreen() {
+  if (!MOBILE) return;
+  try {
+    var el = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      var req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) {
+        var p = req.call(el, { navigationUI: 'hide' });
+        if (p && p.catch) p.catch(function () { });
+      }
+    }
+    if (screen.orientation && screen.orientation.lock) {
+      var q = screen.orientation.lock('portrait');
+      if (q && q.catch) q.catch(function () { });
+    }
+  } catch (e) { }
+}
+
 var NIGHTS = 3;
 var G = {
   state: 'title',
@@ -1600,11 +1682,28 @@ window.__FG = G;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
   VW = window.innerWidth; VH = window.innerHeight;
+  if (MOBILE && window.visualViewport) {
+    /* in full screen the visual viewport is the honest height, browser bars
+       and all, so the wood really does reach the bottom of the glass */
+    VW = Math.round(window.visualViewport.width);
+    VH = Math.round(window.visualViewport.height);
+  }
   cv.width = Math.round(VW * DPR); cv.height = Math.round(VH * DPR);
-  ZOOM = clamp(Math.min(VW / 1180, VH / 720), 0.62, 1.32);
+  cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
+  if (MOBILE) {
+    /* a tall portrait window: the wood is framed on the narrow side, so the
+       circle of sight still shows a useful stretch of trail */
+    ZOOM = clamp(Math.min(VW / 620, VH / 1080), 0.5, 1.1);
+  } else {
+    ZOOM = clamp(Math.min(VW / 1180, VH / 720), 0.62, 1.32);
+  }
   if (fogCache) fogCache.key = '';   /* DPR may have changed; rebuild the fog */
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
+document.addEventListener('fullscreenchange', resize);
+document.addEventListener('webkitfullscreenchange', resize);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
 resize();
 
 /* ---- difficulty profile derived from the rolling skill estimate ----
@@ -1777,7 +1876,95 @@ window.addEventListener('keyup', function (e) {
   else if (k === 'ArrowUp') keys.u = false;
   else if (k === 'ArrowDown') keys.d = false;
 });
-window.addEventListener('blur', function () { keys = {}; });
+window.addEventListener('blur', function () { keys = {}; TOUCH.id = null; TOUCH.hold = false; });
+
+/* ------------------------------------------------------------ touch input
+   Hold a finger anywhere and the fox runs towards it: the fox is always in
+   the middle of the screen, so the direction from the middle to the finger is
+   the direction to run. A quick tap on the fox itself sniffs, and a tap on any
+   of the title / between-nights screens carries on. */
+var TOUCH = { id: null, hold: false, dx: 0, dy: 0, x0: 0, y0: 0, t0: 0 };
+var TOUCH_DEAD = 26;      /* px around the fox that steer nowhere */
+function foxTapRadius() { return Math.max(52, Math.min(VW, VH) * 0.13); }
+
+function touchAim(x, y) {
+  var dx = x - VW / 2, dy = y - VH / 2;
+  var d = Math.hypot(dx, dy);
+  if (d < TOUCH_DEAD) { TOUCH.dx = 0; TOUCH.dy = 0; return; }
+  TOUCH.dx = dx / d; TOUCH.dy = dy / d;
+}
+function touchPoint(e, wanted) {
+  for (var i = 0; i < e.changedTouches.length; i++) {
+    if (e.changedTouches[i].identifier === wanted) return e.changedTouches[i];
+  }
+  return null;
+}
+function localPoint(t) {
+  var b = cv.getBoundingClientRect();
+  return { x: t.clientX - b.left, y: t.clientY - b.top };
+}
+
+if (MOBILE) {
+  cv.addEventListener('touchstart', function (e) {
+    goFullscreen();
+    if (!Snd.ready) Snd.init();
+    Snd.resume();
+    e.preventDefault();
+    if (G.paused || TOUCH.id !== null) return;
+    var t = e.changedTouches[0];
+    var p = localPoint(t);
+    TOUCH.id = t.identifier; TOUCH.x0 = p.x; TOUCH.y0 = p.y;
+    TOUCH.t0 = performance.now();
+    TOUCH.hold = G.state === 'play';
+    if (TOUCH.hold) touchAim(p.x, p.y);
+  }, { passive: false });
+
+  cv.addEventListener('touchmove', function (e) {
+    if (TOUCH.id === null) return;
+    var t = touchPoint(e, TOUCH.id);
+    if (!t) return;
+    e.preventDefault();
+    if (!TOUCH.hold) return;
+    var p = localPoint(t);
+    touchAim(p.x, p.y);
+  }, { passive: false });
+
+  var endTouch = function (e) {
+    if (TOUCH.id === null) return;
+    var t = touchPoint(e, TOUCH.id);
+    if (!t) return;
+    e.preventDefault();
+    TOUCH.id = null; TOUCH.hold = false; TOUCH.dx = 0; TOUCH.dy = 0;
+    var p = localPoint(t);
+    var moved = Math.hypot(p.x - TOUCH.x0, p.y - TOUCH.y0);
+    var quick = performance.now() - TOUCH.t0 < 400;
+    if (moved > 18 || !quick) return;         /* that was a hold, not a tap */
+    if (G.state === 'play') {
+      /* a tap on the fox, or very near it, sniffs */
+      if (Math.hypot(p.x - VW / 2, p.y - VH / 2) <= foxTapRadius()) doSniff();
+    } else {
+      onSpace();
+    }
+  };
+  cv.addEventListener('touchend', endTouch, { passive: false });
+  cv.addEventListener('touchcancel', function () {
+    TOUCH.id = null; TOUCH.hold = false; TOUCH.dx = 0; TOUCH.dy = 0;
+  }, { passive: false });
+
+  document.getElementById('btnMenu').addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!Snd.ready) Snd.init();
+    Snd.resume();
+    TOUCH.id = null; TOUCH.hold = false; TOUCH.dx = 0; TOUCH.dy = 0;
+    toggleParent();
+  });
+  document.getElementById('btnHome').addEventListener('click', function (e) {
+    e.preventDefault();
+    window.location.href = '../index.html';
+  });
+  /* the grown-ups card closes on a tap anywhere in it */
+  veil.addEventListener('click', function () { if (G.paused) toggleParent(); });
+}
 
 /* ---------------------------------------------------------------- physics */
 var FOX_R = 13, SPEED = 178, ACCEL = 1400, DRAG = 9.5;
@@ -1833,6 +2020,7 @@ function update(dt) {
     var f = G.fox;
     var dx = (keys.r ? 1 : 0) - (keys.l ? 1 : 0);
     var dy = (keys.d ? 1 : 0) - (keys.u ? 1 : 0);
+    if (!dx && !dy && TOUCH.hold) { dx = TOUCH.dx; dy = TOUCH.dy; }
     var mag = Math.hypot(dx, dy);
     if (mag > 0) {
       dx /= mag; dy /= mag;
@@ -2374,14 +2562,17 @@ function screenTitle() {
 
   ctx.save();
   ctx.globalAlpha = pulse(0.68, 1, 3.2);
-  text('Press  SPACE  to set off', VW / 2, cy + 112, '800 24px "Baloo 2", system-ui, sans-serif', '#ffd28a');
+  text(MOBILE ? 'Tap to set off' : 'Press  SPACE  to set off', VW / 2, cy + 112, '800 24px "Baloo 2", system-ui, sans-serif', '#ffd28a');
   ctx.restore();
-  text('\u2190 \u2191 \u2193 \u2192  run     SPACE  sniff     Q  grown-ups', VW / 2, cy + 158, '700 15px Nunito, system-ui, sans-serif', 'rgba(180,200,192,.75)');
+  text(MOBILE ? 'hold to run  \u00b7  tap the fox to sniff' : '\u2190 \u2191 \u2193 \u2192  run     SPACE  sniff     Q  grown-ups',
+    VW / 2, cy + 158, '700 15px Nunito, system-ui, sans-serif', 'rgba(180,200,192,.75)');
 }
 
 function screenBrief() {
   scrim(0.88);
-  var R = clamp(Math.min(VW * 0.28, (VH - 268) * 0.5), 92, 220);
+  var R = MOBILE
+    ? clamp(Math.min(VW * 0.42, (VH - 330) * 0.5), 110, 240)
+    : clamp(Math.min(VW * 0.28, (VH - 268) * 0.5), 92, 220);
   var cyM = VH * 0.5 + 10;
   drawMapDisc(VW / 2, cyM, R, { showFox: pulse(0.55, 1, 4), trail: false, meter: false, scaffold: true });
 
@@ -2395,7 +2586,7 @@ function screenBrief() {
     VW / 2, cyM + R + 44, '700 15.5px Nunito, system-ui, sans-serif', 'rgba(198,214,206,.82)');
   ctx.save();
   ctx.globalAlpha = pulse(0.66, 1, 3.4);
-  text('SPACE  \u2014  set off', VW / 2, cyM + R + 84, '800 23px "Baloo 2", system-ui, sans-serif', '#ffd28a');
+  text(MOBILE ? 'Tap  \u2014  set off' : 'SPACE  \u2014  set off', VW / 2, cyM + R + 84, '800 23px "Baloo 2", system-ui, sans-serif', '#ffd28a');
   ctx.restore();
 }
 
@@ -2421,7 +2612,8 @@ function screenArrive() {
   text(TIPS[(G.night - 1 + (r.stars === 3 ? 2 : 0)) % TIPS.length], VW / 2, y + 226, '700 14.5px Nunito, system-ui, sans-serif', 'rgba(120,95,55,.9)');
   ctx.save();
   ctx.globalAlpha = pulse(0.62, 1, 3.4);
-  text(G.night < NIGHTS ? 'SPACE  \u2014  night ' + (G.night + 1) : 'SPACE  \u2014  see how you did',
+  var goWord = MOBILE ? 'Tap' : 'SPACE';
+  text(G.night < NIGHTS ? goWord + '  \u2014  night ' + (G.night + 1) : goWord + '  \u2014  see how you did',
     VW / 2, y + 278, '800 22px "Baloo 2", system-ui, sans-serif', '#a2601f');
   ctx.restore();
 }
@@ -2460,7 +2652,7 @@ function screenResult() {
 
   ctx.save();
   ctx.globalAlpha = pulse(0.62, 1, 3.4);
-  text('SPACE  \u2014  a new wood', VW / 2, y + 316, '800 22px "Baloo 2", system-ui, sans-serif', '#a2601f');
+  text((MOBILE ? 'Tap' : 'SPACE') + '  \u2014  a new wood', VW / 2, y + 316, '800 22px "Baloo 2", system-ui, sans-serif', '#a2601f');
   ctx.restore();
 }
 
@@ -2475,8 +2667,16 @@ function render() {
   drawGlows();
 
   if (G.state === 'play') {
-    var R = clamp(Math.min(VW, VH) * 0.155, 76, 124);
-    var mx = VW - R - 40, my = R + 44;
+    var R, mx, my;
+    if (MOBILE) {
+      /* on a narrow screen the paper is drawn much larger in proportion, and
+         kept up in the corner so it never covers the fox or a running thumb */
+      R = clamp(VW * 0.235, 84, 150);
+      mx = VW - R - 12; my = R + 56;
+    } else {
+      R = clamp(Math.min(VW, VH) * 0.155, 76, 124);
+      mx = VW - R - 40; my = R + 44;
+    }
     drawMapDisc(mx, my, R, {
       showFox: clamp(G.sniffTime / 0.6, 0, 1) * (G.sniffTime > 0 ? 1 : 0),
       trail: G.assist > 0.45,
