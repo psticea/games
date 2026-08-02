@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#100D18">
 <title>Beacon Bridge</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232a2036'/%3E%3Crect x='8' y='32' width='48' height='11' rx='3' fill='%238b7684'/%3E%3Crect x='24' y='32' width='11' height='11' rx='2' fill='%23e0a463'/%3E%3Crect x='24' y='16' width='16' height='13' rx='3' fill='%23e6bd7a'/%3E%3Ccircle cx='32' cy='12' r='6' fill='%23ffe6b4'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +20,14 @@
   body{display:flex;align-items:center;justify-content:center;}
   #stage{position:relative;line-height:0;font-size:16px;}
   canvas{display:block;border-radius:12px;box-shadow:0 20px 64px rgba(0,0,0,.6);}
+
+  /* --- phones and tablets: fill the screen, never scroll, never zoom --- */
+  body.touch{height:100dvh;overscroll-behavior:none;touch-action:none;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent;}
+  body.touch #stage{position:fixed;top:0;left:50%;transform:translateX(-50%);}
+  body.touch canvas{border-radius:0;box-shadow:none;margin:0 auto;}
+  body.touch #parent{border-radius:0;}
 
   #parent{
     position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -71,8 +83,8 @@
       out of it, and it takes <b>two</b> blocks to mend one: a lower one that slots into the notch, then
       an upper one that caps it off.</p>
 
-      <h2>Controls &mdash; keyboard only, nothing to click</h2>
-      <div class="cols keys">
+      <h2 id="ctrlHead">Controls &mdash; keyboard only, nothing to click</h2>
+      <div class="cols keys" id="ctrlList">
         <ul>
           <li><span class="kbd">&#9664;</span><span class="kbd">&#9654;</span> Slide the block left and right</li>
           <li><span class="kbd">&#9650;</span><span class="kbd">&#9660;</span> Turn the block a quarter turn</li>
@@ -117,8 +129,8 @@
 
       <div class="rule"></div>
       <div class="footrow">
-        <span class="soundbtn"><span class="kbd">&#9664;</span><span class="kbd">&#9654;</span>&nbsp;Sound: <span id="soundState">On</span></span>
-        <span class="closehint">Press <span class="kbd">Q</span> to close and carry on playing</span>
+        <span class="soundbtn" id="soundBtn"><span class="kbd">&#9664;</span><span class="kbd">&#9654;</span>&nbsp;Sound: <span id="soundState">On</span></span>
+        <span class="closehint" id="closeHint">Press <span class="kbd">Q</span> to close and carry on playing</span>
       </div>
     </div>
   </div>
@@ -150,6 +162,35 @@ const parentEl = document.getElementById('parent');
 const soundStateEl = document.getElementById('soundState');
 const lvlNumEl  = document.getElementById('lvlNum');
 const lvlDescEl = document.getElementById('lvlDesc');
+
+/* ------------------------------------------------------- touch / portrait */
+/* On a phone there is no keyboard, so the game is driven by swipes and taps,
+   the page goes full screen, and the canvas becomes a tall portrait window on
+   to the same 960x600 world: the height is kept whole and the sides are
+   cropped, so a shorter stretch of the bridge is visible at a time. */
+const MOBILE = (function(){
+  try{
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const touch  = ('ontouchstart' in window) || (navigator.maxTouchPoints||0) > 0;
+    const ua     = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent||'');
+    return (coarse && touch) || (touch && ua);
+  }catch(e){ return false; }
+})();
+if(MOBILE) document.body.classList.add('touch');
+
+/* The slice of the 960x600 world the canvas actually shows. */
+let VW = LW, VX = 0, viewScale = 1;
+const vL = ()=>VX, vR = ()=>VX+VW;
+/* Everything laid out for 960 wide is squeezed to fit the narrow window. */
+const uiScale = ()=>Math.min(1, VW/620);
+function withUIScale(fn){
+  const s=uiScale();
+  if(s>=1){ fn(); return; }
+  ctx.save();
+  ctx.translate(LW/2, LH/2); ctx.scale(s,s); ctx.translate(-LW/2, -LH/2);
+  fn();
+  ctx.restore();
+}
 
 /* ------------------------------------------------------------ small utils */
 const clamp=(v,a,b)=>v<a?a:v>b?b:v;
@@ -595,10 +636,11 @@ function buildCrossing(){
   G.camX = camTargetFor();
 }
 function camTargetFor(){
-  if(G.scene==='crossed') return clamp(G.deckR+172-(LW-155), -40, G.worldW - LW + 40);
+  const lo = -40 - VX, hi = G.worldW + 40 - VX - VW;
+  if(G.scene==='crossed') return clamp(G.deckR+172-VX-VW+155, lo, hi);
   const sp = G.spans[Math.min(G.idx,SPANS-1)];
   const c = sp ? sp.x + sp.w/2 : LW/2;
-  return clamp(c - LW/2 + 20, -40, G.worldW - LW + 40);
+  return clamp(c - LW/2 + 20, lo, hi);
 }
 function spawnPiece(){
   const sp = G.spans[G.idx]; if(!sp) return;
@@ -671,6 +713,117 @@ function handleKey(k){
     sfx.drop();
   }
 }
+/* ------------------------------------------------------------ touch input */
+/* Swipe left/right slides the block a column at a time, swipe down drops it,
+   a tap turns it a quarter turn clockwise. Two round buttons stand in for the
+   Q and H keys. */
+const TOUCH = { id:null, x0:0, y0:0, sx:0, t0:0, moved:false, used:false };
+function touchBtns(){
+  if(!MOBILE) return [];
+  const r = Math.min(21, Math.max(15, VW*0.055));
+  return [
+    { id:'menu', x: vL()+r+14, y: LH-r-14, r:r },
+    { id:'home', x: vR()-r-14, y: LH-r-14, r:r }
+  ];
+}
+function canvasToWorld(t){
+  const b = cv.getBoundingClientRect();
+  return { x: VX + (t.clientX-b.left)/Math.max(1e-6,b.width)*VW,
+           y: (t.clientY-b.top)/Math.max(1e-6,b.height)*LH };
+}
+function goFullscreen(){
+  if(!MOBILE) return;
+  try{
+    const el = document.documentElement;
+    if(!document.fullscreenElement && !document.webkitFullscreenElement){
+      const req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if(req){
+        const p = req.call(el, {navigationUI:'hide'});
+        if(p && p.catch) p.catch(function(){});
+      }
+    }
+    if(screen.orientation && screen.orientation.lock){
+      const q = screen.orientation.lock('portrait');
+      if(q && q.catch) q.catch(function(){});
+    }
+  }catch(e){}
+}
+function stepPx(){ return Math.max(22, CELL*viewScale*0.7); }
+
+if(MOBILE){
+  cv.addEventListener('touchstart', function(e){
+    goFullscreen(); initAudio();
+    if(ac && ac.state==='suspended') ac.resume();
+    if(TOUCH.id!==null) return;
+    const t=e.changedTouches[0];
+    TOUCH.id=t.identifier; TOUCH.x0=t.clientX; TOUCH.y0=t.clientY;
+    TOUCH.sx=t.clientX; TOUCH.t0=performance.now();
+    TOUCH.moved=false; TOUCH.used=false;
+    e.preventDefault();
+  }, {passive:false});
+
+  cv.addEventListener('touchmove', function(e){
+    if(TOUCH.id===null) return;
+    let t=null;
+    for(const c of e.changedTouches) if(c.identifier===TOUCH.id) t=c;
+    if(!t) return;
+    e.preventDefault();
+    const dx=t.clientX-TOUCH.x0, dy=t.clientY-TOUCH.y0;
+    if(Math.abs(dx)>8 || Math.abs(dy)>8) TOUCH.moved=true;
+    if(TOUCH.used) return;
+    const drop = Math.max(38, window.innerHeight*0.055);
+    if(dy>drop && Math.abs(dy)>Math.abs(dx)*1.2){
+      handleKey(' '); TOUCH.used=true; return;
+    }
+    const step=stepPx();
+    while(t.clientX-TOUCH.sx >= step){ handleKey('ArrowRight'); TOUCH.sx+=step; }
+    while(TOUCH.sx-t.clientX >= step){ handleKey('ArrowLeft');  TOUCH.sx-=step; }
+  }, {passive:false});
+
+  const endTouch = function(e){
+    if(TOUCH.id===null) return;
+    let t=null;
+    for(const c of e.changedTouches) if(c.identifier===TOUCH.id) t=c;
+    if(!t) return;
+    TOUCH.id=null;
+    e.preventDefault();
+    if(TOUCH.used) return;
+    const dx=Math.abs(t.clientX-TOUCH.x0), dy=Math.abs(t.clientY-TOUCH.y0);
+    const slop=Math.max(14, stepPx()*0.6);
+    if(dx>slop || dy>slop || performance.now()-TOUCH.t0 > 700) return;
+    const p=canvasToWorld(t);
+    for(const b of touchBtns()){
+      if((p.x-b.x)*(p.x-b.x)+(p.y-b.y)*(p.y-b.y) <= (b.r+8)*(b.r+8)){
+        if(b.id==='menu') togglePause();
+        else window.location.href='../index.html';
+        return;
+      }
+    }
+    handleKey(G.scene==='play' ? 'ArrowUp' : ' ');   // turn, or start / play again
+  };
+  cv.addEventListener('touchend', endTouch, {passive:false});
+  cv.addEventListener('touchcancel', function(e){ TOUCH.id=null; }, {passive:false});
+
+  /* the grown-ups card: tap it to close, tap the sound pill to toggle */
+  parentEl.addEventListener('click', function(e){
+    const sb=document.getElementById('soundBtn');
+    if(sb && sb.contains(e.target)){ initAudio(); setSound(!soundOn); if(soundOn) sfx.move(); return; }
+    if(G.paused) togglePause();
+  });
+
+  /* the card talks about keys; on a phone it has to talk about fingers */
+  const ch=document.getElementById('ctrlHead'), cl=document.getElementById('ctrlList');
+  if(ch) ch.textContent='Controls \u2014 swipe and tap, nothing to type';
+  if(cl) cl.innerHTML =
+    '<ul><li><b>Swipe left or right</b> Slide the block across</li>'+
+    '<li><b>Tap</b> Turn the block a quarter turn</li></ul>'+
+    '<ul><li><b>Swipe down</b> Drop the block into the gap</li>'+
+    '<li><b>The \u2630 button</b> Open and close this menu</li>'+
+    '<li><b>The \u2302 button</b> Leave the game and go back to all games</li></ul>';
+  const chint=document.getElementById('closeHint');
+  if(chint) chint.textContent='Tap anywhere to close and carry on playing';
+}
+
 function togglePause(){
   G.paused=!G.paused;
   if(G.paused){
@@ -1692,14 +1845,18 @@ function miniShape(cells,cx,cy,cell){
 function drawHUD(){
   if(G.scene==='title') { drawHint0(); return; }
 
+  /* On a narrow portrait window the strip is stacked instead of spread out. */
+  const narrow = VW < 620;
+
   /* beacons */
-  pill(24,22,132,34);
-  star(45,39,9,'#FFD79A',1);
-  txt('Beacons',60,40,'700 14px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.72)','left','middle');
-  txt(String(G.beacons),138,39,'600 17px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','right','middle');
+  pill(vL()+24,22,132,34);
+  star(vL()+45,39,9,'#FFD79A',1);
+  txt('Beacons',vL()+60,40,'700 14px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.72)','left','middle');
+  txt(String(G.beacons),vL()+138,39,'600 17px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','right','middle');
 
   /* span progress */
-  const gap=30, x0=LW/2-((SPANS-1)*gap)/2;
+  const gap=narrow?27:30;
+  const x0=narrow ? vR()-24-(SPANS-1)*gap : LW/2-((SPANS-1)*gap)/2;
   for(let i=0;i<SPANS;i++){
     const px=x0+i*gap, py=39, done=G.spans[i] && G.spans[i].filled;
     ctx.fillStyle = done ? '#FFD79A' : 'rgba(246,235,225,.20)';
@@ -1714,7 +1871,9 @@ function drawHUD(){
   }
 
   /* daylight */
-  const bw=176, bx=LW-24-bw, by=28, bh=15;
+  const bw=narrow ? VW-48 : 176;
+  const bx=narrow ? vL()+24 : vR()-24-bw;
+  const by=narrow ? 82 : 28, bh=15;
   const k=clamp(G.time/ROUND_TIME,0,1);
   txt('DAYLIGHT',bx,by-11,'700 10px Nunito, Trebuchet MS, sans-serif',
       'rgba(246,235,225,.45)','left','middle');
@@ -1736,7 +1895,7 @@ function drawHUD(){
   /* the block that is coming next, so both drops can be planned at once */
   if(G.scene==='play' && piece.sp && piece.sp.step===0 && !piece.sp.filled){
     const nq=piece.sp.queue[1];
-    const px=LW-118, py=64;
+    const px=narrow ? vR()-108 : LW-118, py=narrow ? 112 : 64;
     ctx.fillStyle='rgba(22,16,30,.46)'; rr(px,py,94,74,12); ctx.fill();
     ctx.strokeStyle='rgba(255,224,176,.14)'; ctx.lineWidth=1; rr(px+.5,py+.5,93,73,12); ctx.stroke();
     txt('NEXT',px+47,py+14,'700 10px Nunito, Trebuchet MS, sans-serif',
@@ -1747,6 +1906,7 @@ function drawHUD(){
   drawHint0();
 }
 function drawHint0(){
+  if(MOBILE){ drawTouchHint(); return; }
   /* the one-line control strip */
   const items=[['\u25C0','\u25B6','Move'],['\u25B2','\u25BC','Turn'],['Space','','Drop'],['Q','','Grown-ups'],['H','','Home']];
   ctx.save();
@@ -1767,6 +1927,28 @@ function drawHint0(){
   }
   ctx.restore();
 }
+/* the finger version of the strip, plus the two round buttons */
+function drawTouchHint(){
+  ctx.save();
+  const lines = G.scene==='play'
+    ? ['\u25C0 swipe \u25B6  move   \u00B7   tap  turn', '\u25BC swipe down  drop']
+    : ['tap anywhere to play'];
+  const w=Math.min(VW-24, 300), x0=LW/2-w/2, h=lines.length>1?46:30, y=LH-62-h;
+  pill(x0,y,w,h,.42);
+  for(let i=0;i<lines.length;i++){
+    txt(lines[i],LW/2,y+(lines.length>1?16+i*17:15),
+        '700 13px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.80)','center','middle');
+  }
+  for(const b of touchBtns()){
+    ctx.fillStyle='rgba(22,16,30,.5)';
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,6.2832); ctx.fill();
+    ctx.strokeStyle='rgba(255,224,176,.26)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(b.x,b.y,b.r-.5,0,6.2832); ctx.stroke();
+    txt(b.id==='menu'?'\u2630':'\u2302', b.x, b.y+1,
+        '600 '+Math.round(b.r*1.05)+'px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
+  }
+  ctx.restore();
+}
 
 /* ---------------------------------------------------------------- screens */
 function panel(w,h,cy){
@@ -1776,7 +1958,8 @@ function panel(w,h,cy){
   rr(x+.75,y+.75,w-1.5,h-1.5,20); ctx.stroke();
 }
 function blink(){ return 0.62+Math.sin(G.t*2.4)*0.22; }
-function drawTitle(){
+function drawTitle(){ withUIScale(drawTitle0); }
+function drawTitle0(){
   panel(590,222,168);
   txt('Beacon Bridge',LW/2,114,'600 50px Fredoka, Trebuchet MS, sans-serif','#FFD79A','center','middle');
   txt('Turn the stone. Fill the gap. Walk the fox home.',LW/2,162,
@@ -1784,12 +1967,13 @@ function drawTitle(){
   txt('Three spans \u00B7 two blocks each \u00B7 ninety seconds of light',LW/2,190,
       '600 13px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.45)','center','middle');
   ctx.save(); ctx.globalAlpha=blink();
-  txt('Press  SPACE  to begin',LW/2,232,'600 21px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
+  txt(MOBILE?'Tap  to begin':'Press  SPACE  to begin',LW/2,232,'600 21px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
   ctx.restore();
   star(LW/2-206,114,10,'#FFD79A',.75);
   star(LW/2+206,114,10,'#FFD79A',.75);
 }
-function drawCrossed(){
+function drawCrossed(){ withUIScale(drawCrossed0); }
+function drawCrossed0(){
   panel(500,206,168);
   txt('Beacon Lit!',LW/2,110,'600 40px Fredoka, Trebuchet MS, sans-serif','#FFD79A','center','middle');
   txt(Math.round(G.time)+' seconds of light to spare',LW/2,148,
@@ -1802,10 +1986,11 @@ function drawCrossed(){
   txt('a star for every span built first go',LW/2,214,
       '600 12px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.42)','center','middle');
   ctx.save(); ctx.globalAlpha=blink();
-  txt('Press  SPACE  for a new bridge',LW/2,244,'600 20px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
+  txt(MOBILE?'Tap  for a new bridge':'Press  SPACE  for a new bridge',LW/2,244,'600 20px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
   ctx.restore();
 }
-function drawDusk(){
+function drawDusk(){ withUIScale(drawDusk0); }
+function drawDusk0(){
   const built=G.spans.filter(s=>s.filled).length;
   panel(510,192,168);
   txt('Dusk',LW/2,112,'600 40px Fredoka, Trebuchet MS, sans-serif','#FFD79A','center','middle');
@@ -1815,22 +2000,38 @@ function drawDusk(){
   txt('The next bridge will be a little kinder.',LW/2,178,
       '600 13px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.45)','center','middle');
   ctx.save(); ctx.globalAlpha=blink();
-  txt('Press  SPACE  to try again',LW/2,226,'600 20px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
+  txt(MOBILE?'Tap  to try again':'Press  SPACE  to try again',LW/2,226,'600 20px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','center','middle');
   ctx.restore();
 }
 
 /* ===================================================================== BOOT */
 function resize(){
-  const scale=Math.min(window.innerWidth/LW, window.innerHeight/LH);
-  const cw=Math.max(320,Math.floor(LW*scale)), ch=Math.floor(LH*scale);
+  const availW=window.innerWidth, availH=window.innerHeight;
+  let cw, ch, sx, sy;
+  if(MOBILE && availH>availW){
+    /* portrait: fill the screen, keep the full height of the world and crop
+       the sides, so a shorter stretch of the bridge is on screen */
+    const s=availH/LH;
+    ch=availH; cw=Math.min(availW, Math.floor(LW*s));
+    VW=Math.min(LW, cw/s); VX=(LW-VW)/2;
+    sx=sy=s;
+  }else{
+    const s=Math.min(availW/LW, availH/LH);
+    cw=Math.max(320,Math.floor(LW*s)); ch=Math.floor(LH*s);
+    VW=LW; VX=0;
+    sx=cw/LW; sy=ch/LH;
+  }
+  viewScale=sy;
   stage.style.width=cw+'px'; stage.style.height=ch+'px';
-  stage.style.fontSize=Math.max(11, scale*17)+'px';
+  stage.style.fontSize=Math.max(11, sy*17)+'px';
   const dpr=Math.min(window.devicePixelRatio||1,2);
   cv.width=Math.floor(cw*dpr); cv.height=Math.floor(ch*dpr);
   cv.style.width=cw+'px'; cv.style.height=ch+'px';
-  ctx.setTransform(cw*dpr/LW,0,0,ch*dpr/LH,0,0);
+  ctx.setTransform(sx*dpr,0,0,sy*dpr,-VX*sx*dpr,0);
 }
 addEventListener('resize',resize);
+addEventListener('orientationchange',resize);
+if(window.visualViewport) window.visualViewport.addEventListener('resize',resize);
 resize();
 
 buildCrossing();
