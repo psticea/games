@@ -1407,11 +1407,13 @@ function bakeMap(world) {
   /* foxgloves */
   for (var q = 0; q < world.gloves.length; q++) {
     var gl = world.gloves[q], pq = P(gl.x, gl.y);
-    drawMapGlyph(g, 'glove', pq[0], pq[1], 1);
+    /* the paper is shrunk hard to fit the disc in the corner, so the
+       foxgloves are inked over-size to survive the reduction */
+    drawMapGlyph(g, 'glove', pq[0], pq[1], 1.6);
   }
   /* the den — the thing you are looking for */
   var pd = P(world.den.x, world.den.y);
-  drawMapGlyph(g, 'den', pd[0], pd[1], 1);
+  drawMapGlyph(g, 'den', pd[0], pd[1], 1.2);
 
   /* compass rose — the paper is always north-up, so this is a fixed anchor */
   var rx = cx + (minX - ox) * s + 60, ry = cy + (minY - oy) * s + 60;
@@ -1493,31 +1495,47 @@ function drawMapGlyph(g, type, x, y, k) {
     g.beginPath(); g.moveTo(-6, 0); g.quadraticCurveTo(-3, -2.6, 0, 0); g.quadraticCurveTo(3, 2.6, 6, 0); g.stroke();
     g.beginPath(); g.moveTo(-4, 4); g.quadraticCurveTo(-1, 1.6, 2, 4); g.stroke();
   } else if (type === 'glove') {
-    g.strokeStyle = 'rgba(178,72,124,.92)'; g.fillStyle = 'rgba(178,72,124,.92)';
-    g.beginPath(); g.moveTo(0, 9); g.quadraticCurveTo(-3, 0, -2, -9); g.stroke();
-    for (var b = 0; b < 3; b++) {
+    /* foxgloves are the optional treats, so they have to be spottable at a
+       glance on a small paper disc: a pale halo lifts them off the map, and
+       the bells are filled and outlined rather than hairline-drawn */
+    g.fillStyle = 'rgba(255,240,246,.80)';
+    g.beginPath(); g.arc(-2, -2, 13, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(178,72,124,.34)'; g.lineWidth = 1.6;
+    g.beginPath(); g.arc(-2, -2, 13, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(74,120,86,.95)'; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(1, 11); g.quadraticCurveTo(-3, 1, -2, -11); g.stroke();
+    g.beginPath(); g.moveTo(0, 6); g.lineTo(5, 2); g.stroke();
+    for (var b = 0; b < 4; b++) {
+      g.fillStyle = ['rgba(206,58,130,.96)', 'rgba(219,84,150,.96)',
+        'rgba(232,113,171,.96)', 'rgba(243,150,196,.96)'][b];
+      g.strokeStyle = 'rgba(122,32,80,.9)'; g.lineWidth = 1.5;
       g.beginPath();
-      g.ellipse(-5 - b * 0.6, 2 - b * 5.5, 3.1 - b * 0.3, 4.2 - b * 0.4, 0.4, 0, TAU);
-      g.fill();
+      g.ellipse(-6 - b * 0.5, 4 - b * 5.2, 4.1 - b * 0.5, 5.2 - b * 0.6, 0.4, 0, TAU);
+      g.fill(); g.stroke();
     }
   } else if (type === 'den') {
-    g.lineWidth = 3;
+    /* home. Drawn bolder than anything else on the paper, with a warm wash
+       behind it, so a child can find it the moment the map opens. */
+    g.fillStyle = 'rgba(214,104,64,.16)';
+    g.beginPath(); g.arc(0, 0, 30, 0, TAU); g.fill();
+    g.lineWidth = 3.6;
     g.strokeStyle = 'rgba(70,50,28,.95)';
+    g.fillStyle = 'rgba(206,178,126,.75)';
     g.beginPath();
-    g.moveTo(-17, 10); g.quadraticCurveTo(-12, -12, 0, -12); g.quadraticCurveTo(12, -12, 17, 10);
-    g.stroke();
-    g.fillStyle = 'rgba(70,50,28,.95)';
+    g.moveTo(-19, 11); g.quadraticCurveTo(-13, -14, 0, -14); g.quadraticCurveTo(13, -14, 19, 11);
+    g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = 'rgba(52,36,20,.96)';
     g.beginPath();
-    g.moveTo(-6, 10); g.quadraticCurveTo(-6, -2, 0, -2); g.quadraticCurveTo(6, -2, 6, 10);
+    g.moveTo(-7, 11); g.quadraticCurveTo(-7, -3, 0, -3); g.quadraticCurveTo(7, -3, 7, 11);
     g.closePath(); g.fill();
-    g.strokeStyle = 'rgba(198,86,54,.92)'; g.lineWidth = 2.6;
-    g.setLineDash([5, 5]);
-    g.beginPath(); g.arc(0, 0, 27, 0, TAU); g.stroke();
+    g.strokeStyle = 'rgba(198,86,54,.96)'; g.lineWidth = 3.4;
+    g.setLineDash([6, 5]);
+    g.beginPath(); g.arc(0, 0, 30, 0, TAU); g.stroke();
     g.setLineDash([]);
     /* a small cross-hatched X above so it reads as "the goal" */
-    g.strokeStyle = 'rgba(198,86,54,.9)'; g.lineWidth = 3;
+    g.strokeStyle = 'rgba(198,86,54,.95)'; g.lineWidth = 3.6;
     g.beginPath();
-    g.moveTo(-5, -22); g.lineTo(5, -32); g.moveTo(5, -22); g.lineTo(-5, -32);
+    g.moveTo(-6, -24); g.lineTo(6, -36); g.moveTo(6, -24); g.lineTo(-6, -36);
     g.stroke();
   }
   g.restore();
@@ -1623,6 +1641,10 @@ var nightNumEl = document.getElementById('nightNum');
 var readoutEl = document.getElementById('readout');
 
 var VW = 0, VH = 0, DPR = 1, ZOOM = 1;
+/* where on the glass the fox is held. On a phone the map, the fog bar and the
+   night counter all live along the top, so the fox sits three fifths of the
+   way down instead of dead centre, leaving the busy strip clear. */
+var FOCUS_X = 0, FOCUS_Y = 0;
 var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* ---------------------------------------------------------- phones
@@ -1692,11 +1714,15 @@ function resize() {
   cv.style.width = VW + 'px'; cv.style.height = VH + 'px';
   if (MOBILE) {
     /* a tall portrait window: the wood is framed on the narrow side, so the
-       circle of sight still shows a useful stretch of trail */
-    ZOOM = clamp(Math.min(VW / 620, VH / 1080), 0.5, 1.1);
+       circle of sight still shows a useful stretch of trail. The whole scene
+       is then stepped up by a fifth, so the fox reads clearly on a small
+       screen and the lit circle covers more of the glass. */
+    ZOOM = clamp(Math.min(VW / 620, VH / 1080), 0.5, 1.1) * 1.2;
   } else {
     ZOOM = clamp(Math.min(VW / 1180, VH / 720), 0.62, 1.32);
   }
+  FOCUS_X = VW / 2;
+  FOCUS_Y = MOBILE ? VH * 0.6 : VH / 2;
   if (fogCache) fogCache.key = '';   /* DPR may have changed; rebuild the fog */
 }
 window.addEventListener('resize', resize);
@@ -1879,16 +1905,16 @@ window.addEventListener('keyup', function (e) {
 window.addEventListener('blur', function () { keys = {}; TOUCH.id = null; TOUCH.hold = false; });
 
 /* ------------------------------------------------------------ touch input
-   Hold a finger anywhere and the fox runs towards it: the fox is always in
-   the middle of the screen, so the direction from the middle to the finger is
-   the direction to run. A quick tap on the fox itself sniffs, and a tap on any
+   Hold a finger anywhere and the fox runs towards it: the fox is always held
+   at the same spot on the glass, so the direction from that spot to the
+   finger is the direction to run. A quick tap on the fox itself sniffs, and a tap on any
    of the title / between-nights screens carries on. */
 var TOUCH = { id: null, hold: false, dx: 0, dy: 0, x0: 0, y0: 0, t0: 0 };
 var TOUCH_DEAD = 26;      /* px around the fox that steer nowhere */
 function foxTapRadius() { return Math.max(52, Math.min(VW, VH) * 0.13); }
 
 function touchAim(x, y) {
-  var dx = x - VW / 2, dy = y - VH / 2;
+  var dx = x - FOCUS_X, dy = y - FOCUS_Y;
   var d = Math.hypot(dx, dy);
   if (d < TOUCH_DEAD) { TOUCH.dx = 0; TOUCH.dy = 0; return; }
   TOUCH.dx = dx / d; TOUCH.dy = dy / d;
@@ -1941,7 +1967,7 @@ if (MOBILE) {
     if (moved > 18 || !quick) return;         /* that was a hold, not a tap */
     if (G.state === 'play') {
       /* a tap on the fox, or very near it, sniffs */
-      if (Math.hypot(p.x - VW / 2, p.y - VH / 2) <= foxTapRadius()) doSniff();
+      if (Math.hypot(p.x - FOCUS_X, p.y - FOCUS_Y) <= foxTapRadius()) doSniff();
     } else {
       onSpace();
     }
@@ -2002,7 +2028,7 @@ function resolveCollisions(p) {
 }
 
 function worldToScreen(x, y) {
-  return { x: (x - G.cam.x) * ZOOM + VW / 2, y: (y - G.cam.y) * ZOOM + VH / 2 };
+  return { x: (x - G.cam.x) * ZOOM + FOCUS_X, y: (y - G.cam.y) * ZOOM + FOCUS_Y };
 }
 function panOf(x) {
   return clamp((x - G.fox.x) / 620, -0.85, 0.85);
@@ -2122,8 +2148,8 @@ function update(dt) {
     G.fox.vx *= 0.9; G.fox.vy *= 0.9;
   }
 
-  /* camera — always centred on the fox, so "you are here" is always the middle
-     of the screen. Clamping to the world edge would break that contract. */
+  /* camera — always locked to the fox, so "you are here" is always the same
+     spot on the glass. Clamping to the world edge would break that contract. */
   var lerpK = Math.min(1, dt * (reduceMotion ? 9 : 5.4));
   G.cam.x += (G.fox.x - G.cam.x) * lerpK;
   G.cam.y += (G.fox.y - G.cam.y) * lerpK;
@@ -2149,7 +2175,7 @@ function fogQuant() {
 function drawWorld() {
   var w = G.world;
   ctx.save();
-  ctx.translate(VW / 2, VH / 2); ctx.scale(ZOOM, ZOOM); ctx.translate(-G.cam.x, -G.cam.y);
+  ctx.translate(FOCUS_X, FOCUS_Y); ctx.scale(ZOOM, ZOOM); ctx.translate(-G.cam.x, -G.cam.y);
 
   /* everything outside the circle of sight is painted over by the fog,
      so only the lit square is ever worth drawing */
@@ -2325,7 +2351,7 @@ function drawGlows() {
   if (G.owlMode && G.state === 'play') {
     var ang = Math.atan2(w.den.y - G.fox.y, w.den.x - G.fox.x);
     var rad = Math.min(VW, VH) * 0.35;
-    var cxp = VW / 2 + Math.cos(ang) * rad, cyp = VH / 2 + Math.sin(ang) * rad;
+    var cxp = FOCUS_X + Math.cos(ang) * rad, cyp = FOCUS_Y + Math.sin(ang) * rad;
     var pa = 0.30 + Math.sin(G.t * 2.4) * 0.10;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
