@@ -13,6 +13,8 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 
 All of them use **arrow keys, Space, `Q` and `H` only** — no mouse — and none of them has a "Game Over".
 `H` closes the game and comes straight back to the picker.
+Beacon Bridge also plays on a phone: opened on a touch device it goes full screen in portrait and is driven by
+swipes (left/right to slide, down to drop) and a tap (to turn), with on-screen buttons for the grown-ups menu and home.
 The root page is a picker linking to those four.
 
 Comet Catch is still here and still playable — [play](https://psticea.github.io/games/comet-catch/) ·
