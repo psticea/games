@@ -23,82 +23,94 @@
     color:var(--ink);
     -webkit-font-smoothing:antialiased;
     display:flex;flex-direction:column;align-items:center;
-    padding:40px 20px 56px;
+    min-height:100vh;min-height:100dvh;
+    padding:26px 16px calc(26px + env(safe-area-inset-bottom));
   }
-  header{text-align:center;margin-bottom:30px;max-width:720px;}
+  /* auto margins centre the stack on a tall screen without ever clipping it */
+  header{text-align:center;margin:auto auto 18px;}
   h1{
     font-family:'Baloo 2',system-ui,sans-serif;
-    font-size:clamp(34px,6vw,56px);margin:0 0 6px;color:#fff;font-weight:800;
-    letter-spacing:.5px;
+    font-size:clamp(30px,8vw,48px);margin:0;color:#fff;font-weight:800;
+    letter-spacing:.5px;line-height:1.1;
     text-shadow:0 2px 0 rgba(38,26,66,.28), 0 6px 18px rgba(20,10,50,.22);
   }
   header p{
-    margin:0;font-size:clamp(15px,2.2vw,18px);font-weight:700;color:#fff;
+    margin:5px 0 0;font-size:clamp(12.5px,3.2vw,15px);font-weight:700;color:#fff;
     text-shadow:0 1px 3px rgba(20,10,50,.34);
   }
+
+  /* Two columns of cards on anything wide enough, one on a phone. */
   .grid{
-    display:grid;gap:22px;width:100%;max-width:748px;
-    grid-template-columns:repeat(auto-fit,minmax(330px,1fr));
+    display:grid;gap:15px;width:100%;max-width:760px;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
   }
   .game{
-    display:block;text-decoration:none;color:inherit;
+    display:flex;flex-direction:column;text-decoration:none;color:inherit;
     background:var(--card);
     border:1px solid var(--line);
-    border-radius:22px;
-    padding:0 0 20px;
+    border-radius:18px;
     overflow:hidden;
-    box-shadow:0 1px 2px rgba(0,0,0,.14), 0 8px 20px rgba(0,0,0,.14);
+    box-shadow:0 1px 2px rgba(0,0,0,.14), 0 8px 20px rgba(0,0,0,.16);
     transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s cubic-bezier(.22,1,.36,1);
+    -webkit-tap-highlight-color:transparent;
   }
   .game:hover,.game:focus-visible{
     transform:translateY(-4px);
-    box-shadow:0 1px 2px rgba(0,0,0,.16), 0 14px 34px rgba(0,0,0,.20);
+    box-shadow:0 1px 2px rgba(0,0,0,.16), 0 14px 34px rgba(0,0,0,.22);
     outline:none;
   }
   .game.sel{
-    box-shadow:inset 0 0 0 3px #ff7ab8, 0 1px 2px rgba(0,0,0,.16), 0 14px 34px rgba(0,0,0,.20);
+    box-shadow:inset 0 0 0 3px #ff7ab8, 0 1px 2px rgba(0,0,0,.16), 0 14px 34px rgba(0,0,0,.22);
     transform:translateY(-4px);
   }
-  .art{height:150px;overflow:hidden;}
-  .art svg{display:block;width:100%;height:100%;}
-  .body{padding:16px 22px 0;}
+  /* the art keeps its own 400x150 shape, so nothing is ever cropped */
+  .art{aspect-ratio:400/150;background:#2b2050;overflow:hidden;}
+  /* a hair of overscan, so sub-pixel column widths never leave a seam */
+  .art svg{display:block;width:calc(100% + 2px);height:calc(100% + 2px);margin:-1px;}
+
+  .cap{display:flex;align-items:center;gap:10px;padding:9px 11px 10px 14px;}
+  .name{flex:1 1 auto;min-width:0;}
   h2{
     font-family:'Baloo 2',system-ui,sans-serif;
-    font-size:25px;margin:0 0 2px;font-weight:800;
+    font-size:20px;line-height:1.15;margin:0;font-weight:800;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .sub{font-size:13px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#8c7fb0;margin:0 0 10px;}
-  .desc{font-size:14.5px;line-height:1.55;color:#4a3f6b;margin:0 0 12px;}
-  .tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
-  .tag{
-    font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
-    padding:4px 10px;border-radius:999px;
-    background:#f1ecfb;color:#6b5c98;border:1px solid rgba(120,100,170,.2);
+  .sub{
+    margin:1px 0 0;font-size:10.5px;font-weight:800;letter-spacing:.55px;
+    text-transform:uppercase;color:#8c7fb0;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .tag.skill{background:#fff2f8;color:#c4467f;border-color:rgba(255,122,184,.35);}
   .play{
-    display:inline-flex;align-items:center;gap:9px;
-    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:16px;
+    flex:0 0 auto;
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:15px;
     color:#fff;background:linear-gradient(180deg,#6ec1f5,#3d95d8);
-    padding:10px 20px;border-radius:999px;
-    box-shadow:0 1px 2px rgba(20,10,50,.2);
+    padding:9px 17px;border-radius:999px;
+    box-shadow:0 1px 2px rgba(20,10,50,.25);
   }
   .game:nth-child(2) .play{background:linear-gradient(180deg,#c48bf0,#8b4fd0);}
   .game:nth-child(3) .play{background:linear-gradient(180deg,#ffd08a,#e08a3c);}
   .game:nth-child(4) .play{background:linear-gradient(180deg,#7fd0a8,#35937a);}
-  .keys{
-    display:flex;flex-wrap:wrap;align-items:center;gap:6px;
-    margin-top:12px;font-size:12.5px;font-weight:700;color:#7a6da0;
-  }
+
   kbd{
     display:inline-flex;align-items:center;justify-content:center;
-    min-width:26px;height:25px;padding:0 7px;
+    min-width:24px;height:23px;padding:0 6px;
     background:linear-gradient(180deg,#fff,#efe9f9);
     border:1.5px solid #cfc4e6;border-bottom-width:3px;border-radius:7px;
-    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:12.5px;color:#3b2f5e;
+    font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:12px;color:#3b2f5e;
   }
   footer{
-    margin-top:30px;text-align:center;font-size:13.5px;font-weight:700;
+    margin:20px auto auto;text-align:center;font-size:12.5px;font-weight:700;
     color:#fff;text-shadow:0 1px 3px rgba(20,10,50,.34);
+  }
+  /* the keyboard line is noise on a phone, but its auto margin still centres */
+  @media (pointer:coarse){ footer{visibility:hidden;height:0;overflow:hidden;} }
+  @media (max-width:430px){
+    body{padding-top:18px;}
+    header{margin-bottom:14px;}
+    .grid{gap:12px;}
+    h2{font-size:19px;}
+    .play{padding:9px 15px;font-size:14.5px;}
   }
   @media (prefers-reduced-motion:reduce){ .game{transition:none;} }
 </style>
@@ -106,7 +118,7 @@
 <body>
   <header>
     <h1>Games</h1>
-    <p>Four browser games for kids. No install, no accounts &mdash; just open and play.</p>
+    <p>Four browser games for kids. Just tap and play.</p>
   </header>
 
   <div class="grid" id="grid">
@@ -144,21 +156,12 @@
           </g>
         </svg>
       </div>
-      <div class="body">
-        <h2>Starfall Meadow</h2>
-        <p class="sub">Ages ~7&ndash;10 &middot; 60 seconds a round</p>
-        <p class="desc">Stars arc across the sky and Pip runs to catch them. You can't win by chasing
-        where a star <em>is</em> &mdash; you have to read its curve and get to where it's <em>going to be</em>.
-        Missed stars bloom into flowers, so there's no losing.</p>
-        <div class="tags">
-          <span class="tag skill">Trajectory prediction</span>
-          <span class="tag skill">Anticipatory timing</span>
-          <span class="tag">2D &middot; works offline</span>
+      <div class="cap">
+        <div class="name">
+          <h2>Starfall Meadow</h2>
+          <p class="sub">Trajectory &middot; 60 seconds</p>
         </div>
         <span class="play">Play &rarr;</span>
-        <div class="keys">
-          <kbd>&larr;</kbd><kbd>&rarr;</kbd> run <kbd>Space</kbd> hop <kbd>&darr;</kbd> dive <kbd>Q</kbd> grown-ups
-        </div>
       </div>
     </a>
 
@@ -215,21 +218,12 @@
           </g>
         </svg>
       </div>
-      <div class="body">
-        <h2>Starbounce</h2>
-        <p class="sub">Ages ~7&ndash;10 &middot; 90 seconds a round</p>
-        <p class="desc">Zip's Sky Rescue. Aim a cannon, set the power, and launch Zip in an arc to pop the
-        golden stars and free the friends inside. Bank off the candy walls and jelly blobs &mdash; and the
-        sparkle guide gets shorter the better you predict.</p>
-        <div class="tags">
-          <span class="tag skill">Trajectory prediction</span>
-          <span class="tag skill">Angle of reflection</span>
-          <span class="tag">2D &middot; works offline</span>
+      <div class="cap">
+        <div class="name">
+          <h2>Starbounce</h2>
+          <p class="sub">Angles &middot; 90 seconds</p>
         </div>
         <span class="play">Play &rarr;</span>
-        <div class="keys">
-          <kbd>&larr;</kbd><kbd>&rarr;</kbd> aim <kbd>&uarr;</kbd><kbd>&darr;</kbd> power <kbd>Space</kbd> launch <kbd>Q</kbd> grown-ups
-        </div>
       </div>
     </a>
 
@@ -313,21 +307,12 @@
           </g>
         </svg>
       </div>
-      <div class="body">
-        <h2>Beacon Bridge</h2>
-        <p class="sub">Ages ~7&ndash;10 &middot; 90 seconds a crossing</p>
-        <p class="desc">A fox has to cross a canyon before the light goes. Each of the three stone spans
-        has a bite out of it, and it takes <b>two</b> blocks to make one whole &mdash; a lower one that slots
-        into the notch, then an upper one that caps it off. Turn both in your head before you drop either.</p>
-        <div class="tags">
-          <span class="tag skill">Mental rotation</span>
-          <span class="tag skill">Two-step planning</span>
-          <span class="tag">2D &middot; works offline</span>
+      <div class="cap">
+        <div class="name">
+          <h2>Beacon Bridge</h2>
+          <p class="sub">Mental rotation &middot; 90 seconds</p>
         </div>
         <span class="play">Play &rarr;</span>
-        <div class="keys">
-          <kbd>&larr;</kbd><kbd>&rarr;</kbd> slide <kbd>&uarr;</kbd><kbd>&darr;</kbd> turn <kbd>Space</kbd> drop <kbd>Q</kbd> grown-ups
-        </div>
       </div>
     </a>
 
@@ -414,27 +399,17 @@
           </g>
         </svg>
       </div>
-      <div class="body">
-        <h2>Foxglove Trail</h2>
-        <p class="sub">Ages ~7&ndash;10 &middot; 3 nights, under 2 minutes</p>
-        <p class="desc">A fox must reach the den before the fog closes in. You only see a few paces of
-        wood &mdash; but a paper map shows the <em>whole</em> forest, always drawn the same way up as the
-        screen. Match the landmarks, pick the right branch, and keep your line home.</p>
-        <div class="tags">
-          <span class="tag skill">Map reading</span>
-          <span class="tag skill">Route planning</span>
-          <span class="tag">2D &middot; works offline</span>
+      <div class="cap">
+        <div class="name">
+          <h2>Foxglove Trail</h2>
+          <p class="sub">Map reading &middot; 3 nights</p>
         </div>
         <span class="play">Play &rarr;</span>
-        <div class="keys">
-          <kbd>&larr;</kbd><kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&rarr;</kbd> run <kbd>Space</kbd> sniff <kbd>Q</kbd> grown-ups
-        </div>
       </div>
     </a>
   </div>
 
-  <footer>Use <kbd>&larr;</kbd><kbd>&rarr;</kbd> and <kbd>Enter</kbd> to pick a game, or just click one.<br>
-  In any game, press <kbd>H</kbd> to come back here.</footer>
+  <footer>Arrow keys and <kbd>Enter</kbd> to pick a game &middot; <kbd>H</kbd> in any game comes back here.</footer>
 
 <script>
   /* Keyboard navigation, to match the arrow-keys-only spirit of both games. */
