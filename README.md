@@ -15,7 +15,9 @@ All of them use **arrow keys, Space, `Q` and `H` only** — no mouse — and non
 `H` closes the game and comes straight back to the picker.
 Beacon Bridge also plays on a phone: opened on a touch device it goes full screen in portrait and is driven by
 swipes (left/right to slide, down to drop) and a tap (to turn), with on-screen buttons for the grown-ups menu and home.
-The root page is a picker linking to those four.
+On a narrow screen it zooms out just far enough to hold the fox and the span being mended in the same shot, and the
+sky and the gorge run past the top and bottom of the frame so the picture still fills the screen.
+The root page is a compact picker: a painting, the game's name and a Play button for each of those four.
 
 Comet Catch is still here and still playable — [play](https://psticea.github.io/games/comet-catch/) ·
 [`comet-catch/`](comet-catch/index.html) — it is just no longer listed on the picker, to keep the front page short.

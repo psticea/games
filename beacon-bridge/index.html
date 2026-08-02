@@ -178,9 +178,12 @@ const MOBILE = (function(){
 })();
 if(MOBILE) document.body.classList.add('touch');
 
-/* The slice of the 960x600 world the canvas actually shows. */
-let VW = LW, VX = 0, viewScale = 1;
+/* The slice of the 960x600 world the canvas actually shows. On a phone the
+   window is also allowed to run past the top and bottom of the 600-unit frame,
+   so the sky and the gorge fill the screen instead of leaving bars. */
+let VW = LW, VX = 0, VH = LH, VY = 0, viewScale = 1;
 const vL = ()=>VX, vR = ()=>VX+VW;
+const vT = ()=>VY, vB = ()=>VY+VH;
 /* Everything laid out for 960 wide is squeezed to fit the narrow window. */
 const uiScale = ()=>Math.min(1, VW/620);
 function withUIScale(fn){
@@ -610,10 +613,13 @@ function saveLevel(){
 }
 loadLevel();
 
-/* fixed decorative fields, generated once */
-const STARS=[]; for(let i=0;i<130;i++) STARS.push({x:Math.random()*LW, y:Math.random()*(DECK_Y-6), r:0.5+Math.random()*1.1, p:Math.random()*6.28, s:0.6+Math.random()*1.6});
+/* fixed decorative fields, generated once. The sky and the gorge are seeded a
+   little beyond the 600-unit frame, because a tall phone screen shows more of
+   both than a desktop window does. */
+const SKY_TOP = -300, GORGE_BOT = LH+300;
+const STARS=[]; for(let i=0;i<260;i++) STARS.push({x:Math.random()*LW, y:SKY_TOP+Math.random()*(DECK_Y-6-SKY_TOP), r:0.5+Math.random()*1.1, p:Math.random()*6.28, s:0.6+Math.random()*1.6});
 const FLIES=[]; for(let i=0;i<16;i++) FLIES.push({x:Math.random()*1300, y:DECK_Y+40+Math.random()*180, p:Math.random()*6.28, s:0.5+Math.random()*0.9, r:22+Math.random()*40});
-const MOTES=[]; for(let i=0;i<26;i++) MOTES.push({x:Math.random()*LW, y:Math.random()*LH, p:Math.random()*6.28, s:0.25+Math.random()*0.5, r:0.7+Math.random()*1.4});
+const MOTES=[]; for(let i=0;i<52;i++) MOTES.push({x:Math.random()*LW, y:SKY_TOP+Math.random()*(GORGE_BOT-SKY_TOP), p:Math.random()*6.28, s:0.25+Math.random()*0.5, r:0.7+Math.random()*1.4});
 const BIRDS=[]; for(let i=0;i<4;i++) BIRDS.push({x:Math.random()*LW, y:60+Math.random()*120, s:7+Math.random()*24, p:Math.random()*6.28});
 
 /* ------------------------------------------------------------ build a run */
@@ -631,16 +637,29 @@ function buildCrossing(){
   G.deckL = G.spans[0].x - PIER_W;
   G.deckR = G.bridgeEnd + PIER_W;
   G.worldW = G.deckR + 430;
-  fox.x = 74; fox.tx = fox.x; fox.walking=false; fox.cheer=0; fox.speed=0;
+  /* the fox waits at the bridgehead, the same spot it rests on between spans,
+     so the camera can always hold it and the span being mended together */
+  fox.x = G.spans[0].x - PIER_W/2 - 2; fox.tx = fox.x; fox.walking=false; fox.cheer=0; fox.speed=0;
   spawnPiece();
   G.camX = camTargetFor();
 }
+/* Centre the span being mended, then slide the window along if that would push
+   the fox off the edge: on a narrow screen the fox has to stay in shot. */
 function camTargetFor(){
   const lo = -40 - VX, hi = G.worldW + 40 - VX - VW;
-  if(G.scene==='crossed') return clamp(G.deckR+172-VX-VW+155, lo, hi);
-  const sp = G.spans[Math.min(G.idx,SPANS-1)];
-  const c = sp ? sp.x + sp.w/2 : LW/2;
-  return clamp(c - LW/2 + 20, lo, hi);
+  let t;
+  if(G.scene==='crossed'){
+    t = G.deckR+172-VX-VW+155;
+  }else{
+    const sp = G.spans[Math.min(G.idx,SPANS-1)];
+    const c = sp ? sp.x + sp.w/2 : LW/2;
+    t = c - VX - VW/2 + 20;
+  }
+  /* the fox is about 70 units of tail to 66 units of nose across, at rest */
+  const fl = fox.x - 70, fr = fox.x + 66;
+  if(fl < t + VX)            t = fl - VX;
+  else if(fr > t + VX + VW)  t = fr - VX - VW;
+  return clamp(t, lo, hi);
 }
 function spawnPiece(){
   const sp = G.spans[G.idx]; if(!sp) return;
@@ -722,14 +741,14 @@ function touchBtns(){
   if(!MOBILE) return [];
   const r = Math.min(21, Math.max(15, VW*0.055));
   return [
-    { id:'menu', x: vL()+r+14, y: LH-r-14, r:r },
-    { id:'home', x: vR()-r-14, y: LH-r-14, r:r }
+    { id:'menu', x: vL()+r+14, y: vB()-r-14, r:r },
+    { id:'home', x: vR()-r-14, y: vB()-r-14, r:r }
   ];
 }
 function canvasToWorld(t){
   const b = cv.getBoundingClientRect();
   return { x: VX + (t.clientX-b.left)/Math.max(1e-6,b.width)*VW,
-           y: (t.clientY-b.top)/Math.max(1e-6,b.height)*LH };
+           y: VY + (t.clientY-b.top)/Math.max(1e-6,b.height)*VH };
 }
 function goFullscreen(){
   if(!MOBILE) return;
@@ -1096,7 +1115,7 @@ buildTerrain();
 function draw(){
   P = palette(G.dayT);
   buildTiles();
-  ctx.clearRect(0,0,LW,LH);
+  ctx.clearRect(0,vT(),LW,vB()-vT());
 
   drawSky();
   drawStars();
@@ -1138,7 +1157,7 @@ function drawSky(){
   const g=ctx.createLinearGradient(0,-40,0,DECK_Y+30);
   g.addColorStop(0,P.sky0); g.addColorStop(.36,P.sky1);
   g.addColorStop(.66,P.sky2); g.addColorStop(.86,P.sky3); g.addColorStop(1,P.sky4);
-  ctx.fillStyle=g; ctx.fillRect(0,0,LW,DECK_Y+30);
+  ctx.fillStyle=g; ctx.fillRect(0,vT(),LW,DECK_Y+30-vT());
 }
 function sunPos(){
   return { x: 726 - G.camX*0.05, y: lerp(112, DECK_Y+26, easeInOut(clamp(G.dayT,0,1))) };
@@ -1148,7 +1167,7 @@ function drawSun(){
   ctx.drawImage(glowTile, s.x-232, s.y-232);
   if(s.y<DECK_Y+16){
     ctx.save();
-    ctx.beginPath(); ctx.rect(0,0,LW,DECK_Y+2); ctx.clip();
+    ctx.beginPath(); ctx.rect(0,vT(),LW,DECK_Y+2-vT()); ctx.clip();
     ctx.globalAlpha=clamp(1.25-G.dayT*1.1,0,1);
     const dg=ctx.createRadialGradient(s.x-5,s.y-5,1,s.x,s.y,21);
     dg.addColorStop(0,'#FFFBEC'); dg.addColorStop(.6,P.sun); dg.addColorStop(1,P.sunGlow);
@@ -1191,10 +1210,10 @@ function rgbaFrom(rgbStr,a){
 
 /* the gorge itself, drawn in screen space with a slow parallax */
 function drawCanyon(){
-  const top=DECK_Y;
+  const top=DECK_Y, bot=vB();
   const g=ctx.createLinearGradient(0,top,0,LH);
   g.addColorStop(0,P.wall); g.addColorStop(.62,P.wallLo); g.addColorStop(1,P.fore);
-  ctx.fillStyle=g; ctx.fillRect(0,top,LW,LH-top);
+  ctx.fillStyle=g; ctx.fillRect(0,top,LW,bot-top);
 
   /* strata: long soft bands following the rock */
   ctx.save();
@@ -1207,11 +1226,11 @@ function drawCanyon(){
   ctx.restore();
 
   /* river far below, with a slow specular crawl */
-  const ry=LH-42;
-  const rg=ctx.createLinearGradient(0,ry-14,0,LH);
+  const ry=bot-42;
+  const rg=ctx.createLinearGradient(0,ry-14,0,bot);
   rg.addColorStop(0, rgbaFrom(P.river,0)); rg.addColorStop(.55, rgbaFrom(P.river,.60));
   rg.addColorStop(1, rgbaFrom(P.river,.26));
-  ctx.fillStyle=rg; ctx.fillRect(0,ry-14,LW,LH-ry+14);
+  ctx.fillStyle=rg; ctx.fillRect(0,ry-14,LW,bot-ry+14);
   ctx.save();
   ctx.fillStyle='#FFE9C4';
   for(let i=0;i<11;i++){
@@ -1222,15 +1241,15 @@ function drawCanyon(){
   }
   ctx.restore();
 
-  drawHaze(LH-118, 104, 0.14);
+  drawHaze(bot-118, 104, 0.14);
   drawHaze(top+52, 76, 0.09);
 }
 function drawNearMist(){
-  const y=LH-84;
-  const g=ctx.createLinearGradient(0,y,0,LH);
+  const y=vB()-84;
+  const g=ctx.createLinearGradient(0,y,0,vB());
   g.addColorStop(0, rgbaFrom(P.mist,0));
   g.addColorStop(1, rgbaFrom(P.mist,.10));
-  ctx.fillStyle=g; ctx.fillRect(0,y,LW,LH-y);
+  ctx.fillStyle=g; ctx.fillRect(0,y,LW,vB()-y);
 }
 function drawMotes(){
   ctx.save();
@@ -1264,7 +1283,7 @@ function drawFireflies(){
 function drawVignette(){
   ctx.save();
   ctx.globalAlpha=0.34+G.dayT*0.16;
-  ctx.drawImage(vignTile,0,0);
+  ctx.drawImage(vignTile,0,vT(),LW,vB()-vT());
   ctx.restore();
 }
 
@@ -1333,8 +1352,8 @@ function drawCliffs(){
   const g=ctx.createLinearGradient(0,DECK_Y,0,LH);
   g.addColorStop(0,P.near); g.addColorStop(.5,P.wallLo); g.addColorStop(1,P.fore);
   ctx.fillStyle=g;
-  ctx.fillRect(lx-760,DECK_Y,760,LH-DECK_Y);
-  ctx.fillRect(rx,DECK_Y,860,LH-DECK_Y);
+  ctx.fillRect(lx-760,DECK_Y,760,vB()-DECK_Y);
+  ctx.fillRect(rx,DECK_Y,860,vB()-DECK_Y);
 
   /* rim light along the two cliff tops, warm from the sun side */
   ctx.fillStyle=rgbaFrom(P.ledge,.85);
@@ -1847,18 +1866,19 @@ function drawHUD(){
 
   /* On a narrow portrait window the strip is stacked instead of spread out. */
   const narrow = VW < 620;
+  const top = vT();
 
   /* beacons */
-  pill(vL()+24,22,132,34);
-  star(vL()+45,39,9,'#FFD79A',1);
-  txt('Beacons',vL()+60,40,'700 14px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.72)','left','middle');
-  txt(String(G.beacons),vL()+138,39,'600 17px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','right','middle');
+  pill(vL()+24,top+22,132,34);
+  star(vL()+45,top+39,9,'#FFD79A',1);
+  txt('Beacons',vL()+60,top+40,'700 14px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.72)','left','middle');
+  txt(String(G.beacons),vL()+138,top+39,'600 17px Fredoka, Trebuchet MS, sans-serif','#FFE8C4','right','middle');
 
   /* span progress */
   const gap=narrow?27:30;
   const x0=narrow ? vR()-24-(SPANS-1)*gap : LW/2-((SPANS-1)*gap)/2;
   for(let i=0;i<SPANS;i++){
-    const px=x0+i*gap, py=39, done=G.spans[i] && G.spans[i].filled;
+    const px=x0+i*gap, py=top+39, done=G.spans[i] && G.spans[i].filled;
     ctx.fillStyle = done ? '#FFD79A' : 'rgba(246,235,225,.20)';
     ctx.beginPath(); ctx.arc(px,py,6.5,0,6.2832); ctx.fill();
     if(done && G.spans[i].clean){
@@ -1873,7 +1893,7 @@ function drawHUD(){
   /* daylight */
   const bw=narrow ? VW-48 : 176;
   const bx=narrow ? vL()+24 : vR()-24-bw;
-  const by=narrow ? 82 : 28, bh=15;
+  const by=narrow ? top+82 : top+28, bh=15;
   const k=clamp(G.time/ROUND_TIME,0,1);
   txt('DAYLIGHT',bx,by-11,'700 10px Nunito, Trebuchet MS, sans-serif',
       'rgba(246,235,225,.45)','left','middle');
@@ -1895,7 +1915,7 @@ function drawHUD(){
   /* the block that is coming next, so both drops can be planned at once */
   if(G.scene==='play' && piece.sp && piece.sp.step===0 && !piece.sp.filled){
     const nq=piece.sp.queue[1];
-    const px=narrow ? vR()-108 : LW-118, py=narrow ? 112 : 64;
+    const px=narrow ? vR()-108 : LW-118, py=top+(narrow ? 112 : 64);
     ctx.fillStyle='rgba(22,16,30,.46)'; rr(px,py,94,74,12); ctx.fill();
     ctx.strokeStyle='rgba(255,224,176,.14)'; ctx.lineWidth=1; rr(px+.5,py+.5,93,73,12); ctx.stroke();
     txt('NEXT',px+47,py+14,'700 10px Nunito, Trebuchet MS, sans-serif',
@@ -1915,7 +1935,7 @@ function drawHint0(){
   for(const it of items){
     w += (it[0].length>2?46:25) + (it[1]?27:0) + 8 + ctx.measureText(it[2]).width + 22;
   }
-  const x0=LW/2-w/2, y=LH-44;
+  const x0=LW/2-w/2, y=vB()-44;
   pill(x0,y,w,34,.42);
   let x=x0+16;
   for(const it of items){
@@ -1933,7 +1953,7 @@ function drawTouchHint(){
   const lines = G.scene==='play'
     ? ['\u25C0 swipe \u25B6  move   \u00B7   tap  turn', '\u25BC swipe down  drop']
     : ['tap anywhere to play'];
-  const w=Math.min(VW-24, 300), x0=LW/2-w/2, h=lines.length>1?46:30, y=LH-62-h;
+  const w=Math.min(VW-24, 300), x0=LW/2-w/2, h=lines.length>1?46:30, y=vB()-62-h;
   pill(x0,y,w,h,.42);
   for(let i=0;i<lines.length;i++){
     txt(lines[i],LW/2,y+(lines.length>1?16+i*17:15),
@@ -2005,20 +2025,26 @@ function drawDusk0(){
 }
 
 /* ===================================================================== BOOT */
+/* On a phone the world is drawn a little smaller so that the fox and the span
+   being mended fit on screen together; the sky above and the gorge below then
+   have to stretch past the 600-unit frame to fill the rest of the screen. */
+const MIN_VW = 380;
 function resize(){
   const availW=window.innerWidth, availH=window.innerHeight;
   let cw, ch, sx, sy;
   if(MOBILE && availH>availW){
-    /* portrait: fill the screen, keep the full height of the world and crop
-       the sides, so a shorter stretch of the bridge is on screen */
-    const s=availH/LH;
+    /* portrait: fill the screen, zooming out until at least MIN_VW of the
+       world is across it, and crop the sides of the world to match */
+    const s=Math.min(availH/LH, availW/Math.min(LW,MIN_VW));
     ch=availH; cw=Math.min(availW, Math.floor(LW*s));
     VW=Math.min(LW, cw/s); VX=(LW-VW)/2;
+    VH=ch/s;               VY=(LH-VH)/2;
     sx=sy=s;
   }else{
     const s=Math.min(availW/LW, availH/LH);
     cw=Math.max(320,Math.floor(LW*s)); ch=Math.floor(LH*s);
     VW=LW; VX=0;
+    VH=LH; VY=0;
     sx=cw/LW; sy=ch/LH;
   }
   viewScale=sy;
@@ -2027,7 +2053,7 @@ function resize(){
   const dpr=Math.min(window.devicePixelRatio||1,2);
   cv.width=Math.floor(cw*dpr); cv.height=Math.floor(ch*dpr);
   cv.style.width=cw+'px'; cv.style.height=ch+'px';
-  ctx.setTransform(sx*dpr,0,0,sy*dpr,-VX*sx*dpr,0);
+  ctx.setTransform(sx*dpr,0,0,sy*dpr,-VX*sx*dpr,-VY*sy*dpr);
 }
 addEventListener('resize',resize);
 addEventListener('orientationchange',resize);
