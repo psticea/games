@@ -850,13 +850,13 @@ const Stage = {
     this.scale = s;
     this.ox = (w - VW * s) / 2;
     this.oy = (h - VH * s) / 2;
-    /* The run rails live in the letterbox bars beside the 16:9 meadow, so a
-       thumb can never cover the game. A tall phone in landscape leaves 50-85px
-       of bar, which is a thumb's width; a 4:3 tablet letterboxes top and bottom
-       instead and leaves none, so there the rail is allowed to overlap the very
-       edge of the scene rather than shrinking it. */
+    /* The run zones are the outer eighth of the screen on each side, and the
+       six eighths between them are one big hop button. They are deliberately
+       not drawn: on a tall phone in landscape they sit almost entirely on the
+       letterbox bars beside the 16:9 meadow, and a thumb resting there covers
+       nothing that matters. The hint strip along the bottom does the teaching. */
     if (MOBILE) {
-      this.railW = Math.max(this.ox, clamp(w * 0.075, 56, 92));
+      this.railW = w / 8;
       document.body.style.setProperty('--rail-w', this.railW + 'px');
     }
   },
@@ -874,46 +874,6 @@ const Stage = {
   },
   end() { ctx.restore(); }
 };
-
-/* The run rails, drawn in screen space after the scene's clip is lifted,
-   because they live out in the letterbox bars beside the 16:9 meadow. */
-function drawRails(c) {
-  if (!MOBILE || ParentMenu.open) return;
-  if (document.body.classList.contains('portrait')) return;
-  const w = Stage.cssW, h = Stage.cssH, rw = Stage.railW;
-  if (rw < 24 || h < 120) return;
-  /* On a phone the rail sits entirely on the page colour beside the meadow; on
-     a 4:3 tablet there is no bar, so it lies over the very edge of the scene
-     and is drawn fainter to keep the grass readable through it. */
-  const overScene = rw > Stage.ox + 1;
-  const top = 60, bot = 10;                 // clear of the round corner buttons
-  c.save();
-  c.setTransform(Stage.dpr, 0, 0, Stage.dpr, 0, 0);
-  for (const side of [-1, 1]) {
-    const x = side < 0 ? 4 : w - rw + 4;
-    const held = Touch.dir === side;
-    const bw = rw - 8, bh = h - top - bot;
-    c.beginPath(); c.roundRect(x, top, bw, bh, 18);
-    c.fillStyle = held ? 'rgba(255,247,214,0.30)'
-      : (overScene ? 'rgba(22,14,44,0.20)' : 'rgba(22,14,44,0.30)');
-    c.fill();
-    c.lineWidth = 2;
-    c.strokeStyle = held ? 'rgba(255,247,214,0.85)' : 'rgba(255,255,255,0.30)';
-    c.stroke();
-    // the chevron sits low, where a thumb naturally rests
-    const cx = x + bw / 2, cy = top + bh * 0.66, s = Math.min(15, bw * 0.30);
-    c.save();
-    c.translate(cx, cy); c.scale(side, 1);
-    c.beginPath();
-    c.moveTo(-s * 0.45, -s); c.lineTo(s * 0.55, 0); c.lineTo(-s * 0.45, s);
-    c.lineJoin = 'round'; c.lineCap = 'round';
-    c.lineWidth = s * 0.62; c.strokeStyle = 'rgba(40,26,66,0.55)'; c.stroke();
-    c.lineWidth = s * 0.34; c.strokeStyle = held ? '#FFFFFF' : 'rgba(255,247,214,0.92)';
-    c.stroke();
-    c.restore();
-  }
-  c.restore();
-}
 window.addEventListener('resize', () => Stage.resize());
 
 /* ────────────────────────── 5. Time-of-day themes ──────────────────────── */
@@ -3329,7 +3289,6 @@ function tick(rdt, t0) {
 
   Quality.sample(performance.now() - t0);
   Stage.end();
-  drawRails(ctx);
 }
 
 /* ─────────────────────────── 17. Boot ──────────────────────────────────── */
