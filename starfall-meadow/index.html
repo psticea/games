@@ -173,21 +173,23 @@
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
     -webkit-tap-highlight-color:transparent;
   }
-  /* the two round buttons that stand in for the Q and H keys */
+  /* the two round buttons that stand in for the Q and H keys.
+     They sit at the TOP of each run rail, out in the letterbox beside the
+     meadow, as far as possible from where a thumb rests to run. */
   .mbtn{
     display:none;position:fixed;z-index:30;
-    bottom:calc(10px + env(safe-area-inset-bottom));
-    width:46px;height:46px;border-radius:50%;padding:0;
+    top:calc(8px + env(safe-area-inset-top));
+    width:44px;height:44px;border-radius:50%;padding:0;
     align-items:center;justify-content:center;
     background:rgba(24,16,44,.55);border:1.5px solid rgba(255,233,184,.42);
-    color:#FFE9B8;font:600 23px/1 'Baloo 2',system-ui,sans-serif;
+    color:#FFE9B8;font:600 22px/1 'Baloo 2',system-ui,sans-serif;
     backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
     -webkit-tap-highlight-color:transparent;
   }
   body.touch .mbtn{display:flex;}
   body.touch.portrait .mbtn,body.touch.menuopen .mbtn{display:none;}
-  #mbtnMenu{left:calc(12px + env(safe-area-inset-left) + var(--play-l, 0px));}
-  #mbtnHome{right:calc(12px + env(safe-area-inset-right) + var(--play-r, 0px));}
+  #mbtnMenu{left:calc((var(--rail-w, 60px) - 44px) / 2);}
+  #mbtnHome{right:calc((var(--rail-w, 60px) - 44px) / 2);}
   .mbtn:active{background:rgba(70,48,110,.8);transform:scale(.94);}
   /* the game needs the long edge of the screen, so portrait is politely refused */
   #rotate{
@@ -704,7 +706,7 @@ function goFullscreen() {
 }
 
 const Touch = {
-  moveId: null, anchorX: 0, dir: 0,
+  railId: null, dir: 0,
   jumpId: null, jumpY0: 0, diving: false,
 
   init() {
@@ -741,11 +743,17 @@ const Touch = {
 
   /* clear every held key — used when the menu opens or a touch is lost */
   releaseAll() {
-    this.moveId = null; this.jumpId = null; this.dir = 0; this.diving = false;
+    this.railId = null; this.jumpId = null; this.dir = 0; this.diving = false;
     Input.down.left = Input.down.right = Input.down.space = Input.down.up = Input.down.down = false;
   },
 
-  deadZone() { return Math.max(12, window.innerWidth * 0.022); },
+  /* -1 for the left rail, 1 for the right, 0 for the meadow in between */
+  zoneAt(x) {
+    const rw = Stage.railW;
+    if (x <= rw) return -1;
+    if (x >= Stage.cssW - rw) return 1;
+    return 0;
+  },
 
   start(e) {
     e.preventDefault();
@@ -760,10 +768,16 @@ const Touch = {
     }
 
     for (const t of e.changedTouches) {
-      const left = t.clientX < window.innerWidth * 0.45;
-      if (left && this.moveId === null) {
-        this.moveId = t.identifier; this.anchorX = t.clientX; this.dir = 0;
-      } else if (!left && this.jumpId === null) {
+      const zone = this.zoneAt(t.clientX);
+      if (zone !== 0) {
+        /* Hold a rail, keep running. The rail owns its direction until the
+           finger lifts, so a thumb that drifts off the strip mid-run does not
+           stop dead. A second rail press simply takes over the direction. */
+        this.railId = t.identifier;
+        this.dir = zone;
+        Input.down.left = zone < 0;
+        Input.down.right = zone > 0;
+      } else if (this.jumpId === null) {
         this.jumpId = t.identifier; this.jumpY0 = t.clientY; this.diving = false;
         Input.pressed.space = true;      // a hop, or a flutter if already airborne
         Input.down.space = true;         // held = a taller hop
@@ -775,25 +789,16 @@ const Touch = {
   move(e) {
     e.preventDefault();
     if (ParentMenu.open) return;
-    const dz = this.deadZone();
+    /* Only the meadow finger cares about movement: dragging it down dives.
+       A rail finger is deliberately ignored — holding is the whole gesture. */
     for (const t of e.changedTouches) {
-      if (t.identifier === this.moveId) {
-        /* a sticky slider: the anchor follows the thumb at the edge of the dead
-           zone, so direction can be reversed without lifting a finger */
-        const dx = t.clientX - this.anchorX;
-        if (dx >= dz) { this.dir = 1; this.anchorX = t.clientX - dz; }
-        else if (dx <= -dz) { this.dir = -1; this.anchorX = t.clientX + dz; }
-        else this.dir = 0;
-        Input.down.left = this.dir < 0;
-        Input.down.right = this.dir > 0;
-      } else if (t.identifier === this.jumpId) {
-        const dy = t.clientY - this.jumpY0;
-        const want = dy > Math.max(34, window.innerHeight * 0.07);
-        if (want !== this.diving) {
-          this.diving = want;
-          if (want) { Input.down.space = false; Input.down.down = true; }
-          else { Input.down.down = false; }
-        }
+      if (t.identifier !== this.jumpId) continue;
+      const dy = t.clientY - this.jumpY0;
+      const want = dy > Math.max(30, window.innerHeight * 0.07);
+      if (want !== this.diving) {
+        this.diving = want;
+        if (want) { Input.down.space = false; Input.down.down = true; }
+        else { Input.down.down = false; }
       }
     }
   },
@@ -801,14 +806,24 @@ const Touch = {
   end(e) {
     e.preventDefault();
     for (const t of e.changedTouches) {
-      if (t.identifier === this.moveId) {
-        this.moveId = null; this.dir = 0;
-        Input.down.left = Input.down.right = false;
+      if (t.identifier === this.railId) {
+        this.railId = null; this.dir = 0;
       } else if (t.identifier === this.jumpId) {
         this.jumpId = null; this.diving = false;
         Input.down.space = false; Input.down.down = false;
       }
     }
+    /* A child may well end up with a thumb on each edge. If the tracked one
+       lifts, adopt whichever rail is still held rather than stopping dead. */
+    if (this.railId === null) {
+      for (const t of e.touches) {
+        if (t.identifier === this.jumpId) continue;
+        const z = this.zoneAt(t.clientX);
+        if (z !== 0) { this.railId = t.identifier; this.dir = z; break; }
+      }
+    }
+    Input.down.left = this.dir < 0;
+    Input.down.right = this.dir > 0;
   }
 };
 
@@ -824,7 +839,7 @@ let CAN_FILTER = true;
 try { gctx.filter = 'blur(2px)'; CAN_FILTER = (gctx.filter === 'blur(2px)'); gctx.filter = 'none'; } catch (e) { CAN_FILTER = false; }
 
 const Stage = {
-  scale: 1, ox: 0, oy: 0, dpr: 1, cssW: 0, cssH: 0,
+  scale: 1, ox: 0, oy: 0, dpr: 1, cssW: 0, cssH: 0, railW: 0,
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = window.innerWidth, h = window.innerHeight;
@@ -835,11 +850,14 @@ const Stage = {
     this.scale = s;
     this.ox = (w - VW * s) / 2;
     this.oy = (h - VH * s) / 2;
-    /* keep the two round buttons in the corners of the *meadow*, not of the
-       screen — on a wide phone the 16:9 field is letterboxed */
+    /* The run rails live in the letterbox bars beside the 16:9 meadow, so a
+       thumb can never cover the game. A tall phone in landscape leaves 50-85px
+       of bar, which is a thumb's width; a 4:3 tablet letterboxes top and bottom
+       instead and leaves none, so there the rail is allowed to overlap the very
+       edge of the scene rather than shrinking it. */
     if (MOBILE) {
-      document.body.style.setProperty('--play-l', this.ox + 'px');
-      document.body.style.setProperty('--play-r', this.ox + 'px');
+      this.railW = Math.max(this.ox, clamp(w * 0.075, 56, 92));
+      document.body.style.setProperty('--rail-w', this.railW + 'px');
     }
   },
   begin() {
@@ -856,6 +874,46 @@ const Stage = {
   },
   end() { ctx.restore(); }
 };
+
+/* The run rails, drawn in screen space after the scene's clip is lifted,
+   because they live out in the letterbox bars beside the 16:9 meadow. */
+function drawRails(c) {
+  if (!MOBILE || ParentMenu.open) return;
+  if (document.body.classList.contains('portrait')) return;
+  const w = Stage.cssW, h = Stage.cssH, rw = Stage.railW;
+  if (rw < 24 || h < 120) return;
+  /* On a phone the rail sits entirely on the page colour beside the meadow; on
+     a 4:3 tablet there is no bar, so it lies over the very edge of the scene
+     and is drawn fainter to keep the grass readable through it. */
+  const overScene = rw > Stage.ox + 1;
+  const top = 60, bot = 10;                 // clear of the round corner buttons
+  c.save();
+  c.setTransform(Stage.dpr, 0, 0, Stage.dpr, 0, 0);
+  for (const side of [-1, 1]) {
+    const x = side < 0 ? 4 : w - rw + 4;
+    const held = Touch.dir === side;
+    const bw = rw - 8, bh = h - top - bot;
+    c.beginPath(); c.roundRect(x, top, bw, bh, 18);
+    c.fillStyle = held ? 'rgba(255,247,214,0.30)'
+      : (overScene ? 'rgba(22,14,44,0.20)' : 'rgba(22,14,44,0.30)');
+    c.fill();
+    c.lineWidth = 2;
+    c.strokeStyle = held ? 'rgba(255,247,214,0.85)' : 'rgba(255,255,255,0.30)';
+    c.stroke();
+    // the chevron sits low, where a thumb naturally rests
+    const cx = x + bw / 2, cy = top + bh * 0.66, s = Math.min(15, bw * 0.30);
+    c.save();
+    c.translate(cx, cy); c.scale(side, 1);
+    c.beginPath();
+    c.moveTo(-s * 0.45, -s); c.lineTo(s * 0.55, 0); c.lineTo(-s * 0.45, s);
+    c.lineJoin = 'round'; c.lineCap = 'round';
+    c.lineWidth = s * 0.62; c.strokeStyle = 'rgba(40,26,66,0.55)'; c.stroke();
+    c.lineWidth = s * 0.34; c.strokeStyle = held ? '#FFFFFF' : 'rgba(255,247,214,0.92)';
+    c.stroke();
+    c.restore();
+  }
+  c.restore();
+}
 window.addEventListener('resize', () => Stage.resize());
 
 /* ────────────────────────── 5. Time-of-day themes ──────────────────────── */
@@ -2715,10 +2773,10 @@ const HUD = {
     }
   },
   /* the finger version of the strip — the round ☰ / ⌂ buttons live in the DOM,
-     down in the corners, so only the gestures need explaining here */
+     at the top of each run rail, so only the gestures need explaining here */
   touchControls(c) {
     const y = VH - 36;
-    const line = 'SLIDE the left half to RUN   ·   TAP the right half to HOP   ·   SWIPE DOWN to DIVE';
+    const line = 'HOLD an edge to RUN   ·   TAP the meadow to HOP   ·   SWIPE DOWN to DIVE';
     setFont(c, 21);
     const w = c.measureText(line).width;
     panel(c, VW / 2 - w / 2 - 24, y - 24, w + 48, 48, 24, 0.30, true);
@@ -2764,13 +2822,14 @@ const ParentMenu = {
      and the card closes by tapping the backdrop or the close bar. */
   enableTouch() {
     const head = document.getElementById('ctrlHead');
-    if (head) head.textContent = 'Controls — tap and slide, nothing to type';
+    if (head) head.textContent = 'Controls — hold and tap, nothing to type';
     const panel = document.getElementById('ctrlPanel');
     if (panel) panel.innerHTML =
-      '<div class="ctrl-row"><span><span class="kbd">&#9664;&#9654;</span></span><span class="what">Slide your thumb on the <b>left half</b> to run</span></div>' +
-      '<div class="ctrl-row"><span><span class="kbd">TAP</span></span><span class="what">Tap the <b>right half</b> to hop &mdash; tap again in the air for a flutter-jump</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9664;</span></span><span class="what"><b>Hold the left edge</b> of the screen to run left</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9654;</span></span><span class="what"><b>Hold the right edge</b> to run right &mdash; keep holding, keep running</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">TAP</span></span><span class="what">Tap <b>the meadow</b> to hop &mdash; tap again in the air for a flutter-jump</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">HOLD</span></span><span class="what">Keep holding for a taller hop</span></div>' +
-      '<div class="ctrl-row"><span><span class="kbd">&#9660;</span></span><span class="what">Swipe down on the right half to dive</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9660;</span></span><span class="what">Swipe down on the meadow to dive</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">TAP</span></span><span class="what">Tap anywhere to start / play again on menus</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">&#9776;</span></span><span class="what">Open &amp; close this menu</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">&#8962;</span></span><span class="what">Leave the game and go back to all games</span></div>';
@@ -3270,6 +3329,7 @@ function tick(rdt, t0) {
 
   Quality.sample(performance.now() - t0);
   Stage.end();
+  drawRails(ctx);
 }
 
 /* ─────────────────────────── 17. Boot ──────────────────────────────────── */
