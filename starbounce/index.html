@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#08061a" />
 <title>STARBOUNCE — Zip's Sky Rescue</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3CradialGradient id='g' cx='38%25' cy='32%25'%3E%3Cstop offset='0' stop-color='%23fffdf2'/%3E%3Cstop offset='.45' stop-color='%23ffdc4a'/%3E%3Cstop offset='1' stop-color='%23f2652b'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' stroke='%23341250' stroke-width='2.5' stroke-linejoin='round' d='M16 2l3.8 8.6 9.2 1-6.9 6.3 2 9.1L16 22.4 7.9 27l2-9.1L3 11.6l9.2-1z'/%3E%3Ccircle cx='12.6' cy='15' r='1.7' fill='%23341250'/%3E%3Ccircle cx='19.4' cy='15' r='1.7' fill='%23341250'/%3E%3C/svg%3E" />
 <style>
@@ -46,11 +50,48 @@
     border:5px solid rgba(255,255,255,.15); border-top-color:#ffd76a;
     animation:sp 900ms linear infinite; }
   @keyframes sp { to { transform:rotate(360deg); } }
+
+  /* ---------------------------------------------- phones and tablets ----- */
+  /* Every rule here is gated on body.touch, which is only added when a coarse
+     pointer is detected — a desktop sees none of it. */
+  body.touch { height:100dvh; overscroll-behavior:none; -webkit-touch-callout:none;
+    -webkit-tap-highlight-color:transparent; }
+  body.touch canvas#game { border-radius:0; box-shadow:none; }
+  /* two round buttons standing in for the Q and H keys */
+  .mbtn {
+    display:none; position:fixed; z-index:30;
+    bottom:calc(10px + env(safe-area-inset-bottom));
+    width:46px; height:46px; border-radius:50%; padding:0;
+    align-items:center; justify-content:center;
+    background:rgba(22,12,52,.58); border:1.5px solid rgba(255,225,150,.42);
+    color:#ffe9b8; font:800 23px/1 system-ui,-apple-system,sans-serif;
+    backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    -webkit-tap-highlight-color:transparent;
+  }
+  body.touch .mbtn { display:flex; }
+  body.touch.portrait .mbtn { display:none; }
+  #mbtnMenu { left:calc(12px + env(safe-area-inset-left) + var(--play-l, 0px)); }
+  #mbtnHome { right:calc(12px + env(safe-area-inset-right) + var(--play-r, 0px)); }
+  .mbtn:active { background:rgba(70,44,120,.82); transform:scale(.94); }
+  /* the sky is wide, so portrait is politely refused */
+  #rotate {
+    display:none; position:fixed; inset:0; z-index:40;
+    flex-direction:column; align-items:center; justify-content:center; gap:22px;
+    background:radial-gradient(120% 100% at 50% 0%, #2a1f63 0%, #120d2f 55%, #08061a 100%);
+    color:#ffe9b8; text-align:center; padding:24px; font-weight:800; font-size:20px;
+  }
+  body.touch.portrait #rotate { display:flex; }
+  #rotate .ph { width:54px; height:92px; border-radius:12px; border:3.5px solid #ffe9b8;
+    animation:tipover 2.2s ease-in-out infinite; }
+  @keyframes tipover { 0%,25%{transform:rotate(0)} 55%,100%{transform:rotate(-90deg)} }
 </style>
 </head>
 <body>
 <div id="stage"><canvas id="game" aria-label="Starbounce game"></canvas></div>
 <div id="boot"><div class="t">STARBOUNCE</div><div class="spin"></div><div class="s">warming up the sky…</div></div>
+<button id="mbtnMenu" class="mbtn" type="button" aria-label="Grown-ups menu">&#9776;</button>
+<button id="mbtnHome" class="mbtn" type="button" aria-label="Back to all games">&#8962;</button>
+<div id="rotate"><div class="ph"></div><div>Turn your phone sideways<br>to fly with Zip</div></div>
 
 <script>
 "use strict";
@@ -97,9 +138,22 @@ function offscreenEarly(w,h){
   return c;
 }
 
+/* --------------------------------------------------------- touch device --- */
+/* A phone has no keyboard, so on a coarse-pointer device the cannon is aimed by
+   dragging a finger and fired by lifting it. None of this exists on a desktop. */
+const MOBILE = (function(){
+  try{
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const touch  = ('ontouchstart' in window) || (navigator.maxTouchPoints||0) > 0;
+    const ua     = /Android|iPhone|iPad|iPod|Mobile|Silk|Kindle/i.test(navigator.userAgent||'');
+    return (coarse && touch) || (touch && ua);
+  }catch(e){ return false; }
+})();
+if(MOBILE) document.body.classList.add('touch');
+
 function resize(){
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const pad = window.innerWidth < 700 ? 0 : 18;
+  const pad = (MOBILE || window.innerWidth < 700) ? 0 : 18;
   const aw = Math.max(320, window.innerWidth  - pad);
   const ah = Math.max(240, window.innerHeight - pad);
   const s  = Math.min(aw / VW, ah / VH);
@@ -108,8 +162,18 @@ function resize(){
   const bw = Math.round(VW * s * dpr), bh = Math.round(VH * s * dpr);
   if (cvs.width !== bw || cvs.height !== bh){ cvs.width = bw; cvs.height = bh; }
   RS = s * dpr;
+  if(MOBILE){
+    document.body.classList.toggle('portrait', window.innerHeight > window.innerWidth);
+    /* keep the two round buttons tucked into the corners of the *game*, not of
+       the screen — on a wide phone the canvas is letterboxed */
+    const bar = Math.max(0, (window.innerWidth - VW*s)/2);
+    document.body.style.setProperty('--play-l', bar+'px');
+    document.body.style.setProperty('--play-r', bar+'px');
+  }
 }
 addEventListener('resize', resize, { passive:true });
+addEventListener('orientationchange', resize, { passive:true });
+if(window.visualViewport) window.visualViewport.addEventListener('resize', resize, { passive:true });
 resize();
 
 /* ------------------------------------------------------------------ 1. UTILITIES ------ */
@@ -1562,6 +1626,134 @@ function toggleMenu(){
   if(!SND.ac) return;
   SND.music.gain.setTargetAtTime(save.music ? (G.paused?0.12:0.30) : 0, SND.ac.currentTime, .2);
 }
+
+/* ------------------------------------------------- touch input ------------------------- */
+/* One gesture drives the whole game: put a finger where Zip should fly and lift
+   it. For any reachable point there is exactly one *minimum-speed* arc through
+   it — launched 45 degrees above the line to the target — so a single touch
+   fixes both the angle and the power, and the sparkling guide-path confirms it
+   live before the finger comes off. */
+const TOUCH = { id:null, aiming:false };
+let MENU_HIT = [], MENU_CLOSE = null;
+
+function toVirtual(t){
+  const b = cvs.getBoundingClientRect();
+  return { x:(t.clientX-b.left)/Math.max(1e-6,b.width )*VW,
+           y:(t.clientY-b.top )/Math.max(1e-6,b.height)*VH };
+}
+function goFullscreen(){
+  if(!MOBILE) return;
+  try{
+    const el=document.documentElement;
+    if(!document.fullscreenElement && !document.webkitFullscreenElement){
+      const req=el.requestFullscreen || el.webkitRequestFullscreen;
+      if(req){ const p=req.call(el,{navigationUI:'hide'}); if(p&&p.catch) p.catch(function(){}); }
+    }
+    if(screen.orientation && screen.orientation.lock){
+      const q=screen.orientation.lock('landscape');
+      if(q&&q.catch) q.catch(function(){});
+    }
+  }catch(e){}
+}
+/* Solve the launch for a touched point.
+   The cheapest arc through a point is the 45-degree-to-the-line one, and its
+   speed is sqrt(g*(dy+r)). When that speed is below the cannon's floor the
+   cannon simply fires harder, and the *flat* of the two arcs that still pass
+   through the point is chosen — a fast direct shot, which is what a child
+   expects from a finger placed on a nearby star. */
+function aimAtPoint(px,py){
+  let ang=G.aimAng, pow=PMIN;
+  /* two passes, because the barrel mouth moves as the angle changes */
+  for(let i=0;i<2;i++){
+    const ox=LAUNCH_X+Math.sin(ang)*MUZZLE, oy=LAUNCH_Y-Math.cos(ang)*MUZZLE;
+    const dx=px-ox, dy=oy-py;              // dy>0 means the target is above
+    const r=Math.hypot(dx,dy);
+    if(r<2) break;
+    const vMin=Math.sqrt(GRAV*Math.max(0,dy+r));
+    const v=clamp(vMin,PMIN,PMAX);
+    const sgn=dx<0?-1:1, adx=Math.abs(dx);
+    if(adx<1e-3){
+      /* straight up: any speed that reaches the height passes through it */
+      ang=0; pow=v;
+    }else{
+      const v2=v*v;
+      const disc=v2*v2 - GRAV*(GRAV*adx*adx + 2*dy*v2);
+      if(disc>0){
+        const th=Math.atan2(v2 - Math.sqrt(disc), GRAV*adx);   // the flatter arc
+        ang=sgn*(Math.PI/2 - th);
+      }else{
+        ang=sgn*(Math.PI/4 - Math.atan2(dy,adx)/2);            // out of reach: best effort
+      }
+      pow=v;
+    }
+    ang=clamp(ang,-AIM_MAX,AIM_MAX);
+  }
+  G.aimAng=ang;
+  G.aimPow=clamp(inv(PMIN,PMAX,pow),0,1);
+  G.aimVel=0; G.powVel=0;
+}
+function startAudioOnce(){
+  if(!started){ started=true; SND.init(); SND.setMusic(save.music); SND.setSfx(save.sfx); }
+  SND.resume();
+}
+function menuTap(x,y){
+  if(MENU_CLOSE && x>=MENU_CLOSE.x && x<=MENU_CLOSE.x+MENU_CLOSE.w &&
+     y>=MENU_CLOSE.y && y<=MENU_CLOSE.y+MENU_CLOSE.h){ toggleMenu(); return; }
+  for(const r of MENU_HIT){
+    if(x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h){
+      G.menuSel=r.i; menuKey(' '); return;
+    }
+  }
+}
+
+if(MOBILE){
+  cvs.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    goFullscreen(); startAudioOnce();
+    if(TOUCH.id!==null) return;
+    const t=e.changedTouches[0];
+    TOUCH.id=t.identifier; TOUCH.aiming=false;
+    if(G.paused) return;
+    if(G.state==='aim' && G.reload<=0){
+      TOUCH.aiming=true;
+      const p=toVirtual(t); aimAtPoint(p.x,p.y);
+    }
+  }, {passive:false});
+
+  cvs.addEventListener('touchmove', function(e){
+    e.preventDefault();
+    if(TOUCH.id===null || !TOUCH.aiming) return;
+    let t=null;
+    for(const c of e.changedTouches) if(c.identifier===TOUCH.id) t=c;
+    if(!t || G.state!=='aim') return;
+    const p=toVirtual(t); aimAtPoint(p.x,p.y);
+    if(Math.random()<0.12) SND.aim();
+  }, {passive:false});
+
+  const endTouch=function(e){
+    e.preventDefault();
+    if(TOUCH.id===null) return;
+    let t=null;
+    for(const c of e.changedTouches) if(c.identifier===TOUCH.id) t=c;
+    if(!t) return;
+    TOUCH.id=null;
+    const p=toVirtual(t);
+    if(G.paused){ TOUCH.aiming=false; menuTap(p.x,p.y); return; }
+    if(TOUCH.aiming && G.state==='aim'){ aimAtPoint(p.x,p.y); doLaunch(); }
+    else if(G.state==='title' || G.state==='over') pressSpace();
+    TOUCH.aiming=false;
+  };
+  cvs.addEventListener('touchend', endTouch, {passive:false});
+  cvs.addEventListener('touchcancel', function(){ TOUCH.id=null; TOUCH.aiming=false; }, {passive:false});
+
+  /* the two round buttons in the bottom corners stand in for Q and H */
+  document.getElementById('mbtnMenu').addEventListener('click', function(e){
+    e.preventDefault(); goFullscreen(); startAudioOnce(); toggleMenu();
+  });
+  document.getElementById('mbtnHome').addEventListener('click', function(e){
+    e.preventDefault(); window.location.href='../index.html';
+  });
+}
 function menuKey(k){
   if(k==='ArrowUp'){ G.menuSel=(G.menuSel+2)%3; SND.ui(true); }
   else if(k==='ArrowDown'){ G.menuSel=(G.menuSel+1)%3; SND.ui(false); }
@@ -2105,6 +2297,7 @@ function keycap(c,x,y,glyph,label,w){
   return w;
 }
 function drawHintBar(c){
+  if(MOBILE){ drawTouchHintBar(c); return; }
   const key = (G.state==='aim'||G.state==='fly') ? 'aim' : 'go';
   let spr=drawHintBar.cache[key];
   if(!spr){
@@ -2135,6 +2328,16 @@ function drawHintBar(c){
     drawHintBar.cache[key]=spr;
   }
   c.drawImage(spr, VW/2-spr.width/2, VH-16-spr.height/2);
+}
+/* the finger version of the strip — the ☰ / ⌂ buttons live in the DOM corners */
+function drawTouchHintBar(c){
+  const line = (G.state==='aim'||G.state==='fly')
+    ? 'TOUCH where Zip should fly  ·  drag to fine-tune  ·  LIFT to launch'
+    : 'TAP anywhere to play';
+  const w = measure(c,line,22,800);
+  panel(c, VW/2-w/2-26, VH-62, w+52, 46, 23, 0.72);
+  text(c,line,VW/2,VH-38,{size:22,weight:800,align:'center',fill:['#ffffff','#ded7ff'],
+    stroke:3.4,strokeColor:'rgba(20,8,46,.9)',shadow:false});
 }
 
 /* static header chrome is baked once — only the live numbers are drawn per frame */
@@ -2211,7 +2414,8 @@ function drawHUD(c){
   }
   // first-run nudges
   if(G.tutorial>0){
-    const msg = G.tutorial===1 ? 'Hold \u25c0 \u25b6 to aim, \u25b2 \u25bc for power — then press SPACE!'
+    const msg = G.tutorial===1 ? (MOBILE ? 'Touch a star \u2014 then lift your finger to launch!'
+                                         : 'Hold \u25c0 \u25b6 to aim, \u25b2 \u25bc for power — then press SPACE!')
                                : 'Pop the golden stars — bounce off the walls and jelly blobs!';
     text(c,msg,VW/2,VH-74,{size:26,fill:['#ffffff',hsl(45,100,72)],stroke:6,shadowBlur:12});
     if(G.state==='aim' && G.tutorial===1){
@@ -2230,11 +2434,12 @@ drawHintBar.cache={};
 /* ================================================================== 13. SCREENS ========= */
 const TIPS = [
   'Bounce off the candy walls to reach the tricky stars!',
-  'Hold  \u25b2  for a long shot,  \u25bc  for a gentle lob.',
+  'Touch a star and Zip will arc right through it.',
   'Jelly blobs bounce Zip — aim at them on purpose!',
   'Aim a little ABOVE a star. Zip curves down as it flies.',
   'Pop two stars in one shot for a big combo!'
 ];
+if(!MOBILE) TIPS[1] = 'Hold  \u25b2  for a long shot,  \u25bc  for a gentle lob.';
 
 function bigZip(c,x,y,r,t,mood='happy'){
   const bob=Math.sin(t*2.4)*r*0.09;
@@ -2264,6 +2469,10 @@ function bigZip(c,x,y,r,t,mood='happy'){
 function pressHint(c,y,label,tail){
   const t=G.t, pulse=1+Math.sin(t*4)*0.035;
   c.save(); c.translate(VW/2,y); c.scale(pulse,pulse);
+  if(MOBILE){
+    text(c,'TAP  '+tail,0,-2,{size:30,weight:800,fill:['#ffffff','#ffe9a3'],stroke:6});
+    c.restore(); return;
+  }
   const lw=Math.max(52, measure(c,label,17,900)+26);
   const tw=measure(c,tail,26,800);
   const total=lw+14+tw;
@@ -2342,7 +2551,7 @@ function drawParentMenu(c){
   const w=1170,h=700,x=VW/2-w/2,y=VH/2-h/2;
   panel(c,x,y,w,h,30,0.94);
   text(c,'FOR GROWN-UPS',x+40,y+44,{size:33,align:'left',fill:['#ffffff','#ffd97a'],stroke:6});
-  text(c,'Game paused — nothing is lost.',x+w-40,y+46,
+  text(c,'Game paused — nothing is lost.',x+w-(MOBILE?104:40),y+46,
     {size:19,align:'right',fill:'rgba(255,255,255,.72)',stroke:0,shadowBlur:6});
   c.strokeStyle='rgba(255,255,255,.18)'; c.lineWidth=2;
   c.beginPath(); c.moveTo(x+36,y+70); c.lineTo(x+w-36,y+70); c.stroke();
@@ -2368,8 +2577,10 @@ function drawParentMenu(c){
      'predictably, so "in equals out" is learned by feel, not by rule.'],
     ['Spatial planning','Choosing which star to aim for, and which surface to',
      'bank off to get there, is multi-step mental simulation.'],
-    ['Fine motor control','Holding an arrow key for exactly the right fraction of',
-     'a second to land an angle trains graded, precise input.']
+    ['Fine motor control', MOBILE ? 'Placing a fingertip on exactly the right spot, and'
+                                  : 'Holding an arrow key for exactly the right fraction of',
+     MOBILE ? 'sliding it a hair at a time, trains graded, precise input.'
+            : 'a second to land an angle trains graded, precise input.']
   ];
   for(const s2 of skills){
     c.fillStyle='#ffd447'; c.beginPath(); c.arc(lx+6,ly-6,5,0,TAU); c.fill();
@@ -2380,11 +2591,17 @@ function drawParentMenu(c){
 
   /* ---------- right column ---------- */
   let ry=y+108;
-  H('CONTROLS  (keyboard only — no mouse)',rx,ry); ry+=34;
-  const rows=[
+  H(MOBILE?'CONTROLS  (touch only \u2014 no keyboard needed)':'CONTROLS  (keyboard only \u2014 no mouse)',rx,ry); ry+=34;
+  const rows = MOBILE ? [
+    [[],'TOUCH','Touch the star you want Zip to fly through'],
+    [[],'DRAG', 'Slide to fine-tune \u2014 the sparkly path follows'],
+    [[],'LIFT', 'Take the finger off to launch  \u00b7  tap to start a round'],
+    [[],'\u2630',  'Open and close this menu (pauses the game)'],
+    [[],'\u2302',  'Leave the game and go back to all games']
+  ] : [
     [['left','right'],null,'Aim the cannon left and right'],
     [['up','down'],null,'More power / less power'],
-    [[],'SPACE','Launch Zip  ·  start or replay a round'],
+    [[],'SPACE','Launch Zip  \u00b7  start or replay a round'],
     [[],'Q','Open and close this menu (pauses the game)'],
     [[],'H','Leave the game and go back to all games']
   ];
@@ -2398,11 +2615,21 @@ function drawParentMenu(c){
   ry+=10;
 
   H('HOW IT ADAPTS TO YOUR CHILD',rx,ry); ry+=32;
-  P('A sparkling guide-path shows where Zip will fly. The game',rx,ry,.85); ry+=24;
-  P('measures how well each shot was predicted and quietly',rx,ry,.85); ry+=24;
-  P('SHORTENS that guide as accuracy grows — so the prediction',rx,ry,.85); ry+=24;
-  P('moves off the screen and into their head. Miss a few and it',rx,ry,.85); ry+=24;
-  P('grows back: the support is always there when it is needed.',rx,ry,.85); ry+=32;
+  /* the same explanation, tightened on a phone: the space it saves is what
+     lets all three settings rows sit inside the card where a finger can
+     reach them */
+  const adapt = MOBILE ? [
+    'A sparkling guide-path shows where Zip will fly. The game',
+    'measures each shot and quietly SHORTENS that guide as',
+    'accuracy grows — then grows it back after a few misses.'
+  ] : [
+    'A sparkling guide-path shows where Zip will fly. The game',
+    'measures how well each shot was predicted and quietly',
+    'SHORTENS that guide as accuracy grows — so the prediction',
+    'moves off the screen and into their head. Miss a few and it',
+    'grows back: the support is always there when it is needed.'
+  ];
+  for(let i=0;i<adapt.length;i++){ P(adapt[i],rx,ry,.85); ry += i===adapt.length-1 ? 32 : 24; }
 
   const pct=Math.round((1 - inv(0.42,2.30,G.guideT))*100);
   panel(c,rx,ry-6,colW,50,14,0.35);
@@ -2418,15 +2645,17 @@ function drawParentMenu(c){
     {size:16,align:'right',fill:'rgba(255,255,255,.66)',stroke:0});
   ry+=64;
 
-  H('SETTINGS   ( \u25b2 \u25bc choose  ·  SPACE toggle )',rx,ry); ry+=28;
+  H(MOBILE?'SETTINGS   ( tap a row to change it )':'SETTINGS   ( \u25b2 \u25bc choose  ·  SPACE toggle )',rx,ry); ry+=28;
   const opts=[
     ['Music', save.music?'ON':'OFF'],
     ['Sound effects', save.sfx?'ON':'OFF'],
-    ['Reset best score & Star Sense', 'PRESS SPACE']
+    ['Reset best score & Star Sense', MOBILE?'TAP HERE':'PRESS SPACE']
   ];
+  MENU_HIT.length=0;
   for(let i=0;i<opts.length;i++){
     const sel=i===G.menuSel;
     const oy=ry+i*38;
+    MENU_HIT.push({i:i,x:rx-8,y:oy-2,w:colW+16,h:32});
     if(sel){
       rrect(c,rx-8,oy-2,colW+16,32,11);
       c.fillStyle=`rgba(255,212,71,${0.16+0.08*Math.sin(t*5)})`; c.fill();
@@ -2441,8 +2670,22 @@ function drawParentMenu(c){
   }
 
   const pulse=0.55+0.45*Math.sin(t*4);
-  text(c,'Press  Q  to close and jump right back in',VW/2,y+h-28,
-    {size:22,fill:['#ffffff',hsl(45,100,lerp(70,92,pulse))],stroke:5});
+  if(MOBILE){
+    /* a round close button in the corner of the card: the foot of the card is
+       already full of settings rows, so there is nowhere down there for it */
+    const r=28, cx=x+w-r-22, cy=y+r+18;
+    c.save();
+    c.fillStyle=`rgba(255,212,71,${0.14+0.10*Math.sin(t*4)})`;
+    c.beginPath(); c.arc(cx,cy,r,0,TAU); c.fill();
+    c.lineWidth=2.5; c.strokeStyle='rgba(255,212,71,.75)'; c.stroke();
+    c.restore();
+    text(c,'\u2715',cx,cy+1,{size:28,fill:'#ffd447',stroke:0,shadowBlur:8});
+    MENU_CLOSE={x:cx-r-6,y:cy-r-6,w:(r+6)*2,h:(r+6)*2};
+  } else {
+    MENU_CLOSE=null;
+    text(c,'Press  Q  to close and jump right back in',VW/2,y+h-28,
+      {size:22,fill:['#ffffff',hsl(45,100,lerp(70,92,pulse))],stroke:5});
+  }
 }
 
 /* ================================================================== 15. MAIN LOOP ======= */
@@ -2487,7 +2730,8 @@ G.world = genArena((Math.random()*0xffffffff)>>>0);
 for(let i=0;i<STAR_COUNT;i++) spawnStar();
 setState('title');
 G.lastSkillPips = Math.round(G.skill*5);
-window.__G = G; window.__SND = SND;
+window.__G = G; window.__SND = SND; window.__save = save;
+window.__menuHit = ()=>MENU_HIT; window.__menuClose = ()=>MENU_CLOSE;
 requestAnimationFrame(loop);
 setTimeout(()=>{ const b=document.getElementById('boot'); if(b) b.classList.add('hide');
   setTimeout(()=>b && b.remove(), 600); }, 380);
