@@ -88,7 +88,7 @@
     padding:9px 17px;border-radius:999px;
     box-shadow:0 1px 2px rgba(20,10,50,.25);
   }
-  .game:nth-child(2) .play{background:linear-gradient(180deg,#c48bf0,#8b4fd0);}
+  .game:nth-child(2) .play{background:linear-gradient(180deg,#7fd07e,#3f9a52);}
   .game:nth-child(3) .play{background:linear-gradient(180deg,#ffd08a,#e08a3c);}
   .game:nth-child(4) .play{background:linear-gradient(180deg,#7fd0a8,#35937a);}
 
@@ -165,63 +165,104 @@
       </div>
     </a>
 
-    <a class="game" href="starbounce/index.html">
+    <a class="game" href="owlet-grove/index.html">
       <div class="art">
         <svg viewBox="0 0 400 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
           <defs>
-            <linearGradient id="sbSky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#2b1d5e"/><stop offset="52%" stop-color="#7d3f9e"/><stop offset="1" stop-color="#e87a4e"/>
+            <linearGradient id="ogSky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#3fb6e4"/><stop offset="46%" stop-color="#8bdcee"/>
+              <stop offset="78%" stop-color="#d5f2df"/><stop offset="1" stop-color="#f7f0c8"/>
             </linearGradient>
-            <linearGradient id="sbStar" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#fff3b0"/><stop offset="55%" stop-color="#ffc21f"/><stop offset="1" stop-color="#ff8207"/>
+            <linearGradient id="ogMid" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#82cb70"/><stop offset="55%" stop-color="#4da65e"/><stop offset="1" stop-color="#2f7a48"/>
             </linearGradient>
-            <radialGradient id="sbZip" cx="38%" cy="32%">
-              <stop offset="0" stop-color="#fffdf2"/><stop offset="45%" stop-color="#ffdc4a"/><stop offset="1" stop-color="#f2652b"/>
+            <linearGradient id="ogGrass" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#7fd06a"/><stop offset="1" stop-color="#2b7a45"/>
+            </linearGradient>
+            <linearGradient id="ogBody" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#f0b878"/><stop offset="1" stop-color="#a9662f"/>
+            </linearGradient>
+            <radialGradient id="ogFly" cx="50%" cy="50%">
+              <stop offset="0" stop-color="#fffdf0"/><stop offset="34%" stop-color="#ffe27a" stop-opacity=".95"/>
+              <stop offset="1" stop-color="#ffc21f" stop-opacity="0"/>
             </radialGradient>
-            <linearGradient id="sbRail" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#bdf0ff"/><stop offset="1" stop-color="#37a8d8"/>
-            </linearGradient>
           </defs>
-          <rect width="400" height="150" fill="url(#sbSky)"/>
-          <g fill="#fff">
-            <circle cx="36" cy="26" r="1.6" opacity=".9"/><circle cx="112" cy="16" r="1.2" opacity=".7"/>
-            <circle cx="196" cy="30" r="1.7" opacity=".85"/><circle cx="286" cy="18" r="1.3" opacity=".7"/>
-            <circle cx="352" cy="44" r="1.6" opacity=".85"/><circle cx="76" cy="66" r="1.2" opacity=".6"/>
-            <circle cx="248" cy="60" r="1.4" opacity=".7"/><circle cx="330" cy="96" r="1.3" opacity=".6"/>
+          <rect width="400" height="150" fill="url(#ogSky)"/>
+          <circle cx="330" cy="24" r="30" fill="#fff6d0" opacity=".55"/>
+          <ellipse cx="72" cy="36" rx="30" ry="12" fill="#fff" opacity=".9"/>
+          <ellipse cx="96" cy="31" rx="20" ry="10" fill="#fff" opacity=".9"/>
+          <ellipse cx="268" cy="46" rx="26" ry="11" fill="#fff" opacity=".8"/>
+          <!-- far, hazy treeline -->
+          <g fill="#a9dbd1" opacity=".85">
+            <ellipse cx="30" cy="104" rx="30" ry="21"/><ellipse cx="96" cy="108" rx="26" ry="18"/>
+            <path d="M160 84l19 34h-38z"/><path d="M160 98l22 26h-44z"/>
+            <ellipse cx="232" cy="104" rx="30" ry="20"/><ellipse cx="310" cy="107" rx="26" ry="18"/>
+            <path d="M368 86l20 36h-40z"/>
           </g>
-          <rect x="0" y="0" width="9" height="150" rx="4.5" fill="#a54fd0" opacity=".9"/>
-          <rect x="391" y="0" width="9" height="150" rx="4.5" fill="#a54fd0" opacity=".9"/>
-          <g opacity=".95">
-            <circle cx="126" cy="52" r="13" fill="#4fc9f0" stroke="#fff" stroke-width="2" opacity=".85"/>
-            <circle cx="122" cy="48" r="4" fill="#eafaff" opacity=".9"/>
-            <circle cx="272" cy="44" r="13" fill="#e05fc8" stroke="#fff" stroke-width="2" opacity=".85"/>
-            <circle cx="268" cy="40" r="4" fill="#ffeafa" opacity=".9"/>
-            <circle cx="322" cy="74" r="12" fill="#7d6ef0" stroke="#fff" stroke-width="2" opacity=".8"/>
+          <!-- mid trees -->
+          <g fill="#7a5330">
+            <rect x="45" y="106" width="8" height="24" rx="3"/>
+            <rect x="196" y="108" width="8" height="22" rx="3"/>
+            <rect x="330" y="106" width="8" height="24" rx="3"/>
           </g>
-          <rect x="176" y="82" width="58" height="10" rx="5" fill="url(#sbRail)" stroke="#fff" stroke-width="1.6" transform="rotate(-24 205 87)"/>
-          <path d="M72 92 Q112 50 152 62 Q192 74 199 52" stroke="#ffe9a3" stroke-width="2.6" stroke-dasharray="5 9"
-                stroke-linecap="round" fill="none" opacity=".95"/>
-          <path d="M200 26l6.6 13.4L221 41.6l-10.5 10.2 2.5 14.4L200 59.4l-13 6.8 2.5-14.4L179 41.6l14.4-2.2z"
-                fill="url(#sbStar)" stroke="#3f1560" stroke-width="2.6" stroke-linejoin="round"/>
-          <g transform="translate(78,120)">
-            <ellipse cx="0" cy="16" rx="34" ry="9" fill="#57c05f"/>
-            <rect x="-8" y="-31" width="16" height="36" rx="8" fill="#3fa4e0" stroke="#1d0a3a" stroke-width="2.6"
-                  transform="rotate(-24 0 -13)"/>
-            <circle cx="0" cy="2" r="14" fill="url(#sbZip)" stroke="#1d0a3a" stroke-width="2.6"/>
+          <g fill="url(#ogMid)">
+            <ellipse cx="49" cy="98" rx="34" ry="24"/><ellipse cx="28" cy="106" rx="22" ry="16"/><ellipse cx="70" cy="107" rx="22" ry="15"/>
+            <ellipse cx="200" cy="100" rx="32" ry="23"/><ellipse cx="180" cy="108" rx="21" ry="15"/><ellipse cx="220" cy="108" rx="21" ry="15"/>
+            <ellipse cx="334" cy="98" rx="34" ry="24"/><ellipse cx="312" cy="107" rx="22" ry="15"/><ellipse cx="356" cy="107" rx="22" ry="15"/>
           </g>
-          <g transform="translate(300,120)">
-            <ellipse cx="-12" cy="0" rx="15" ry="11" fill="#fff" opacity=".95"/>
-            <ellipse cx="6" cy="-2" rx="17" ry="13" fill="#fff" opacity=".95"/>
-            <ellipse cx="20" cy="2" rx="12" ry="9" fill="#fff" opacity=".95"/>
-            <circle cx="0" cy="0" r="1.8" fill="#33255c"/><circle cx="10" cy="0" r="1.8" fill="#33255c"/>
-            <path d="M2 5 Q5 8 8 5" stroke="#33255c" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+          <g fill="#2f8850">
+            <ellipse cx="118" cy="120" rx="26" ry="15"/><ellipse cx="262" cy="121" rx="24" ry="14"/><ellipse cx="392" cy="120" rx="24" ry="14"/>
+          </g>
+          <!-- grass -->
+          <path d="M0 126 Q60 119 120 125 T250 123 T400 127 L400 150 L0 150Z" fill="url(#ogGrass)"/>
+          <g fill="#fff6d8" opacity=".9">
+            <circle cx="42" cy="139" r="2.4"/><circle cx="150" cy="143" r="2.2"/><circle cx="286" cy="138" r="2.4"/>
+          </g>
+          <!-- top canopy -->
+          <g fill="#2a7a4c">
+            <ellipse cx="24" cy="-2" rx="34" ry="17"/><ellipse cx="86" cy="-4" rx="32" ry="16"/>
+            <ellipse cx="150" cy="-2" rx="34" ry="17"/><ellipse cx="216" cy="-5" rx="30" ry="15"/>
+            <ellipse cx="282" cy="-2" rx="34" ry="17"/><ellipse cx="352" cy="-4" rx="34" ry="16"/>
+          </g>
+          <!-- flight path with the three collectibles -->
+          <path d="M108 74 Q160 44 214 62 Q262 78 300 52" stroke="#ffffff" stroke-width="2.4"
+                stroke-dasharray="5 9" stroke-linecap="round" fill="none" opacity=".75"/>
+          <g transform="translate(160,52)">
+            <path d="M11 -8C1 -8 -4 -3 -4 5c0 2 1 3 3 3 8 0 13-5 13-15 0-.6-.4-1-1-1z" fill="#5cc25a" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
+          </g>
+          <g transform="translate(216,74)">
+            <circle cx="-5" cy="3" r="5.4" fill="#e8323b" stroke="#fff" stroke-width="1.6"/>
+            <circle cx="5" cy="4" r="4.8" fill="#c9202c" stroke="#fff" stroke-width="1.6"/>
+            <circle cx="0" cy="-4" r="5.2" fill="#ff5a5f" stroke="#fff" stroke-width="1.6"/>
+          </g>
+          <g transform="translate(302,48)">
+            <circle cx="0" cy="0" r="17" fill="url(#ogFly)"/>
+            <circle cx="0" cy="0" r="6" fill="#fff8c8" stroke="#ffc21f" stroke-width="1.8"/>
+            <path d="M0 -10v-6M0 10v6M-10 0h-6M10 0h6" stroke="#ffe27a" stroke-width="2.2" stroke-linecap="round"/>
+          </g>
+          <!-- Pip -->
+          <g transform="translate(88,80)">
+            <ellipse cx="2" cy="30" rx="17" ry="4" fill="#1d5233" opacity=".2"/>
+            <path d="M-16 4q-14-6-12-18 8 2 14 12z" fill="#a9662f"/>
+            <path d="M-8 -20q-6-14 4-11 2 5-4 11z" fill="#a9662f"/>
+            <path d="M14 -20q4-14-5-11-1 5 5 11z" fill="#a9662f"/>
+            <ellipse cx="2" cy="0" rx="20" ry="22" fill="url(#ogBody)"/>
+            <ellipse cx="4" cy="7" rx="13" ry="15" fill="#fff0d4"/>
+            <path d="M3 16c-14-6-14-24-3-27 4 3 8 3 12 0 11 3 11 21-3 27-2 1-4 1-6 0z" fill="#fff7e6"/>
+            <circle cx="-4" cy="-1" r="5.6" fill="#fff"/><circle cx="11" cy="-1" r="5.6" fill="#fff"/>
+            <circle cx="-3" cy="-1" r="3.4" fill="#2b2440"/><circle cx="12" cy="-1" r="3.4" fill="#2b2440"/>
+            <circle cx="-4.4" cy="-2.4" r="1.3" fill="#fff"/><circle cx="10.6" cy="-2.4" r="1.3" fill="#fff"/>
+            <path d="M0.6 5.4h6.6L3.9 12z" fill="#ffb33c"/>
+            <ellipse cx="-10" cy="6" rx="4" ry="2.6" fill="#ff8c96" opacity=".45"/>
+            <ellipse cx="18" cy="6" rx="4" ry="2.6" fill="#ff8c96" opacity=".45"/>
+            <path d="M4 -4q-12-8-25-2 4 8 11 8-2 6 4 7 8 1 10-13z" fill="#d69b5c" stroke="#a9662f" stroke-width="1.2" stroke-linejoin="round"/>
           </g>
         </svg>
       </div>
       <div class="cap">
         <div class="name">
-          <h2>Starbounce</h2>
-          <p class="sub">Angles &middot; 90 seconds</p>
+          <h2>Owlet Grove</h2>
+          <p class="sub">Timing &middot; 60 seconds</p>
         </div>
         <span class="play">Play &rarr;</span>
       </div>
@@ -409,7 +450,7 @@
     </a>
   </div>
 
-  <footer>Arrow keys and <kbd>Enter</kbd> to pick a game &middot; <kbd>H</kbd> in any game comes back here.</footer>
+  <footer>Arrow keys and <kbd>Enter</kbd> to pick a game &middot; <kbd>Q</kbd> opens the grown-ups menu in any game.</footer>
 
 <script>
   /* Keyboard navigation, to match the arrow-keys-only spirit of both games. */

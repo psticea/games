@@ -7,12 +7,14 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 | Game | Play | Ages | Round | Tech |
 | --- | --- | --- | --- | --- |
 | Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
-| Starbounce — Zip's Sky Rescue | [play](https://psticea.github.io/games/starbounce/) · [`starbounce/`](starbounce/index.html) | ~7–10 | 90s | 2D canvas, no dependencies |
+| Owlet Grove | [play](https://psticea.github.io/games/owlet-grove/) · [`owlet-grove/`](owlet-grove/index.html) | ~4–9 | 60s | 2D canvas, no dependencies |
 | Beacon Bridge | [play](https://psticea.github.io/games/beacon-bridge/) · [`beacon-bridge/`](beacon-bridge/index.html) | ~7–10 | 90s a crossing | 2D canvas, no dependencies |
 | Foxglove Trail | [play](https://psticea.github.io/games/foxglove-trail/) · [`foxglove-trail/`](foxglove-trail/index.html) | ~7–10 | 3 nights, <2 min | 2D canvas, no dependencies |
 
-All of them use **arrow keys, Space, `Q` and `H` only** — no mouse — and none of them has a "Game Over".
-`H` closes the game and comes straight back to the picker.
+None of them has a "Game Over". Starfall Meadow, Beacon Bridge and Foxglove Trail use **arrow keys, Space, `Q` and `H` only** — no
+mouse — and `H` closes the game and comes straight back to the picker.
+Owlet Grove is the phone-first one: **Space** to fly and **`Q`** for the grown-ups menu on a keyboard, a tap anywhere to fly on a
+touch screen, and an "All games" link inside its menu.
 Beacon Bridge also plays on a phone: opened on a touch device it goes full screen in portrait and is driven by
 swipes (left/right to slide, down to drop) and a tap (to turn), with on-screen buttons for the grown-ups menu and home.
 On a narrow screen it zooms out just far enough to hold the fox and the span being mended in the same shot, and the
@@ -92,39 +94,63 @@ Gradients are baked into sprite caches and particles render in two batched passe
 
 ---
 
-## Starbounce — Zip's Sky Rescue
+## Owlet Grove
 
-A 90-second aim-and-launch game for roughly ages 7–10. Open `starbounce/index.html` — no runtime dependencies, works offline.
+A 60-second flight for roughly ages 4–9. Open `owlet-grove/index.html` — no runtime dependencies, works offline, and it is the
+one game here built for a phone first.
 
-**Play:** `←` `→` aim the cannon · `↑` `↓` power · `Space` launch · `Q` grown-ups menu · `H` back to all games.
+**Play:** `Space` fly (and start / play again) · `Q` grown-ups menu. On a touch screen, **tap anywhere** to fly and use the small
+**Menu** button for the grown-ups page. That is the whole control scheme — there is nothing else to press and no mouse input.
 
-Zip is a little star-comet. Aim a cannon, set its power, and launch Zip in an arc to pop the **golden stars** and free the sky-friends inside. Bank off the candy walls, jelly blobs and candy rails to reach the awkward ones. Popped stars are instantly replaced, so the sky never empties and there is always another shot worth taking.
+Pip the owl drifts right through a forest. Gravity pulls down, a flap lifts, and the round is a pure score attack: **green leaves
+are 1 point, red berries are 2, glowing fireflies are 5**. One round is exactly 60 seconds.
 
-One round is 90 seconds and that is the whole game — no levels, no lives, no progression to grind. When the clock runs out you get a score, a 1–3 star rating and a single Space press to go again.
+### No failure state, by construction
+
+There are no obstacles at all — nothing to hit, no damage, no lives and no "Game Over". The ceiling and the grass are soft
+bounces with a little puff of sparks, so a child who cannot yet hold a rhythm still flies for the full minute and still scores.
+The only resource is the clock, and leaving the tab or opening the menu pauses it rather than draining it.
 
 ### The skill it builds
 
-**Trajectory prediction and angle of reflection** — spatial reasoning, plus the fine motor control of holding an arrow key for exactly the right fraction of a second.
+**Interception under a constant force.** The owl is always falling, so a flap has to be aimed at where Pip *will be* — reading a
+curved path forward in time is the same coincidence–anticipation timing used to catch a ball. On top of that sits a **risk/reward
+choice**: the spawner deliberately offers a firefly (5) off the easy line with three leaves (3) on it, and items arrive faster
+than they can be deliberated over, so the decision has to be quick and then lived with.
 
-The interesting part is the scaffold. A sparkling guide-path shows exactly where Zip will fly, simulated with the *same integrator the ball actually uses*, so it never lies. The game scores how well each shot was predicted and shrinks the guide from **2.30 s down to 0.42 s** as accuracy climbs — the prediction migrates off the screen and into the child's head. Miss a few and the scaffold grows straight back, an invisible grace radius on the stars widens, and the guide returns. The skill estimate persists in `localStorage`, and the grown-ups menu shows the live readout ("guide reduced 46%").
+### The spawner is the game design
 
-New stars also drift toward trickier positions — closer to the walls and the ceiling — as the rescue count climbs, so banking becomes necessary rather than optional.
+Items are not scattered randomly. A scheduler emits one *cluster* at a time from a small set of hand-authored shapes — a leaf arc
+that follows a natural flapping line, a berry pair, a firefly alone, a two-leaf ramp leading up to a firefly, a stacked
+berry-and-firefly, and an explicit fork with leaves low and a firefly high. The screen takes about 4.5 seconds to cross, clusters
+are separated by 1.4–2.3 seconds of scroll time, on-screen items are capped, and the next cluster starts near where the last one
+ended, so the screen holds about **five or six items at a time** and every one of them is visible long enough to be seen, valued
+and aimed for. A firefly is guaranteed at least every 7.5 seconds. Difficulty ramps only gently: the world speeds up about 12%
+across the minute and the weighting shifts toward fireflies and forks.
 
-### No failure state
-
-There is nothing to lose. Missing costs only a couple of seconds, the sky refills itself, and the round always ends the same friendly way. The only resource is the clock.
+Collection is forgiving on purpose — a generous radius plus a light magnet once the child is nearly there.
 
 ### Built with
 
-Plain canvas 2D and the Web Audio API. Clouds, floating islands, golden stars, jelly bumpers, candy rails and the aurora sky are all drawn from gradients and baked into offscreen sprite canvases at load, then blitted. Audio is a major-pentatonic combo scale (nothing can sound wrong), a convolution reverb built from generated noise, and a I–V–vi–IV arpeggio bed that speeds up during a combo streak.
+Plain canvas 2D and the Web Audio API — nothing else, no CDN, no build step. Every pixel is generated at load: broadleaf and
+conifer canopies from gradient blob clusters, shrubs, a grass strip with blades and flowers, a hanging top canopy and foreground
+fern fronds, all baked into offscreen tiles and painted as repeating patterns across five parallax layers. Pip is drawn live each
+frame — each wing is a long crescent with an arched leading edge and four feather scallops, keyframed through a raise / snap-down
+/ settle stroke with the far wing a phase behind, plus velocity-driven head tilt, squash-and-stretch, blinking, and pupils that
+track the next collectible.
 
-Bloom is a downsample pyramid (÷3 → ÷6 → ÷12) composited additively rather than a per-frame blur filter, about 4× cheaper. Particles use a compact pool drawn in two batched passes. An adaptive quality governor watches a frame-time EMA and scales burst sizes or drops the particle glow pass.
+Layout is resolution-independent: the world is re-derived from the viewport aspect on every resize, band sizes are referenced to
+`min(height, width × 1.15)` so a tall phone does not get a wall of over-zoomed trees, and the HUD scales up in portrait.
 
-Physics runs on a clamped timestep so a stutter can never tunnel Zip through a wall, while the round clock runs on real elapsed time so "90 seconds" means 90 seconds even on a slow machine. Leaving the tab pauses the round rather than draining it.
+Audio is a major-pentatonic collect scale whose pitch climbs with a streak, an FM bell for the firefly, filtered-noise wingbeats,
+a convolution reverb built from generated noise and a very quiet pad-and-pluck bed. Nothing is sharp or loud, and the grown-ups
+menu has a sound toggle.
 
-Every arena is generated fresh, then a fan of real trajectories is swept once to work out which star positions a shot can actually reach — stars only ever spawn in those, so the game cannot present a target that is impossible to hit.
+The round clock runs on real elapsed time so "60 seconds" means 60 seconds on any machine, while physics runs on a clamped
+timestep. The frame is wrapped so a draw exception unwinds the canvas state and keeps running — a child should never reach a
+frozen screen.
 
-`window.__G` exposes the game state for debugging.
+`window.__OWL` exposes the game state for debugging.
 
 ---
 
