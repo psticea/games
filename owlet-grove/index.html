@@ -7,6 +7,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <meta name="description" content="Owlet Grove — a gentle 60-second owl flight for kids. Flap through the forest and collect leaves, berries and fireflies. No losing, ever.">
 <title>Owlet Grove — Pip's 60-Second Flight</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2359c6e8'/%3E%3Cpath d='M8 7l3 3h10l3-3 1 7a10 10 0 0 1-18 0z' fill='%23c98a4b'/%3E%3Cellipse cx='16' cy='19' rx='7.5' ry='8' fill='%23d79a5c'/%3E%3Cpath d='M8.5 15a7.5 7.5 0 0 1 15 0 7.5 7.5 0 0 1-15 0z' fill='%23fff3de'/%3E%3Ccircle cx='12.4' cy='15' r='2.6' fill='%232e2340'/%3E%3Ccircle cx='19.6' cy='15' r='2.6' fill='%232e2340'/%3E%3Ccircle cx='13.3' cy='14.2' r='.9' fill='%23fff'/%3E%3Ccircle cx='20.5' cy='14.2' r='.9' fill='%23fff'/%3E%3Cpath d='M16 17.4l1.7 2.4h-3.4z' fill='%23ffb33c'/%3E%3C/svg%3E">
@@ -30,11 +32,14 @@
   body{position:fixed;inset:0;}
   canvas#game{display:block;position:fixed;inset:0;width:100%;height:100%;touch-action:none;}
 
-  /* ---------- unobtrusive grown-ups button ---------- */
-  #menuBtn{
+  /* ---------- unobtrusive top-right chrome: home + grown-ups ---------- */
+  #chrome{
     position:fixed;z-index:6;
     top:calc(env(safe-area-inset-top,0px) + 10px);
     right:calc(env(safe-area-inset-right,0px) + 10px);
+    display:flex;align-items:center;gap:8px;
+  }
+  .chip{
     display:inline-flex;align-items:center;gap:7px;
     padding:8px 13px 8px 11px;border:0;border-radius:999px;
     font-family:var(--font);font-weight:800;font-size:14px;line-height:1;
@@ -42,16 +47,22 @@
     box-shadow:0 1px 2px rgba(0,0,0,.16),0 6px 16px rgba(0,0,0,.14);
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
     cursor:pointer;opacity:.82;transition:opacity .2s,transform .2s;
-    touch-action:manipulation;
+    touch-action:manipulation;text-decoration:none;
+    min-height:40px;
   }
-  #menuBtn:hover,#menuBtn:focus-visible{opacity:1;transform:translateY(-1px);outline:none;}
-  #menuBtn svg{display:block;}
-  #menuBtn .k{
+  .chip:hover,.chip:focus-visible{opacity:1;transform:translateY(-1px);outline:none;}
+  .chip svg{display:block;}
+  .chip .k{
     display:none;align-items:center;justify-content:center;min-width:19px;height:19px;
     padding:0 4px;border-radius:6px;font-size:11.5px;font-weight:800;color:#4a5a46;
     background:linear-gradient(180deg,#fff,#e9efe4);border:1px solid #ccd8c6;border-bottom-width:2px;
   }
-  body.has-keys #menuBtn .k{display:inline-flex;}
+  body.has-keys .chip .k{display:inline-flex;}
+  /* on a narrow phone the labels go, leaving two clean round buttons */
+  @media (max-width:560px){
+    .chip{padding:0;width:42px;height:42px;justify-content:center;gap:0;}
+    .chip .lbl,.chip .k{display:none !important;}
+  }
 
   /* ---------- parent overlay ---------- */
   #veil{
@@ -142,14 +153,25 @@
 <body>
 <canvas id="game" aria-label="Owlet Grove — fly the owl and collect leaves, berries and fireflies"></canvas>
 
-<button id="menuBtn" type="button" aria-label="Open the grown-ups menu">
-  <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
-    <g fill="none" stroke="#4a5a46" stroke-width="2.1" stroke-linecap="round">
-      <path d="M3 5h12M3 9h12M3 13h12"/>
-    </g>
-  </svg>
-  <span>Menu</span><span class="k">Q</span>
-</button>
+<div id="chrome">
+  <a id="homeBtn" class="chip" href="../index.html" aria-label="Back to all games">
+    <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+      <path d="M2.6 8.2 9 2.8l6.4 5.4" fill="none" stroke="#4a5a46" stroke-width="2.1"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M4.4 8.5v6.1h9.2V8.5" fill="none" stroke="#4a5a46" stroke-width="2.1"
+            stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <span class="lbl">Games</span>
+  </a>
+  <button id="menuBtn" class="chip" type="button" aria-label="Open the grown-ups menu">
+    <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden="true">
+      <g fill="none" stroke="#4a5a46" stroke-width="2.1" stroke-linecap="round">
+        <path d="M3 5h12M3 9h12M3 13h12"/>
+      </g>
+    </svg>
+    <span class="lbl">Menu</span><span class="k">Q</span>
+  </button>
+</div>
 
 <div id="veil" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
   <div id="sheet">
@@ -2229,11 +2251,28 @@ document.addEventListener('keyup', function (e) {
 
 /* --- touch: a tap anywhere flaps, but never through the UI chrome --- */
 function fromUI(t) {
-  return !!(t && t.closest && (t.closest('#veil') || t.closest('#menuBtn')));
+  return !!(t && t.closest && (t.closest('#veil') || t.closest('#chrome')));
+}
+/* On a phone the first touch also asks for full screen. This has to happen on a
+   real user gesture, and it has to happen on this page: the Fullscreen API is
+   per-document, so it cannot be inherited from the picker. iPhone Safari has no
+   element fullscreen at all — there the manifest + "Add to Home Screen" is what
+   makes the game chrome-free, which is why the site ships a manifest too. */
+function goFullscreen() {
+  if (!Touch.on) return;
+  try {
+    var el = document.documentElement;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    var req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req) return;
+    var p = req.call(el, { navigationUI: 'hide' });
+    if (p && p.catch) p.catch(function () { });
+  } catch (e) { }
 }
 document.addEventListener('touchstart', function (e) {
   if (fromUI(e.target)) return;
   Touch.on = true;
+  goFullscreen();
   if (e.cancelable) e.preventDefault();
   primary();
 }, { passive: false });

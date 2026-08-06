@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#12102a">
+<link rel="manifest" href="../site.webmanifest">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <title>Starfall Meadow</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23fff3c0'/%3E%3Cstop offset='1' stop-color='%23ffae33'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='%233fa6e0'/%3E%3Cpath d='M0 46c10-6 22-6 32-2s22 4 32-2v22H0z' fill='%2352b457'/%3E%3Cpath d='M32 12l6.2 12.6L52 26.4l-10 9.7 2.4 13.7L32 43.3l-12.4 6.5L22 36.1l-10-9.7 13.8-1.8z' fill='url(%23s)' stroke='%23fff' stroke-width='2.4' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -199,6 +201,16 @@
     font-family:'Baloo 2','Nunito',system-ui,sans-serif;font-weight:700;font-size:20px;
   }
   body.touch.portrait #rotate{display:flex;}
+  /* the rotate screen sits above the round buttons, so it carries its own way
+     out — otherwise a child who opens the game in portrait is stuck here */
+  #rotate .rhome{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-height:44px;padding:0 20px;border-radius:999px;
+    background:rgba(255,233,184,.12);border:1.5px solid rgba(255,233,184,.42);
+    color:#FFE9B8;font-size:15px;font-weight:700;text-decoration:none;
+    -webkit-tap-highlight-color:transparent;
+  }
+  #rotate .rhome:active{background:rgba(255,233,184,.24);}
   #rotate .ph{
     width:54px;height:92px;border-radius:12px;border:3.5px solid #FFE9B8;
     animation:tipover 2.2s ease-in-out infinite;
@@ -212,7 +224,7 @@
 
 <button id="mbtnMenu" class="mbtn" type="button" aria-label="Grown-ups menu">&#9776;</button>
 <button id="mbtnHome" class="mbtn" type="button" aria-label="Back to all games">&#8962;</button>
-<div id="rotate"><div class="ph"></div><div>Turn your phone sideways<br>to play in the meadow</div></div>
+<div id="rotate"><div class="ph"></div><div>Turn your phone sideways<br>to play in the meadow</div><a class="rhome" href="../index.html">&larr; All games</a></div>
 
 <div id="parent" role="dialog" aria-modal="true" aria-label="Grown-Ups Menu">
   <div class="card">

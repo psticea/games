@@ -13,16 +13,34 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 
 None of them has a "Game Over". Starfall Meadow, Beacon Bridge and Foxglove Trail use **arrow keys, Space, `Q` and `H` only** — no
 mouse — and `H` closes the game and comes straight back to the picker.
-Owlet Grove is the phone-first one: **Space** to fly and **`Q`** for the grown-ups menu on a keyboard, a tap anywhere to fly on a
-touch screen, and an "All games" link inside its menu.
-Beacon Bridge also plays on a phone: opened on a touch device it goes full screen in portrait and is driven by
-swipes (left/right to slide, down to drop) and a tap (to turn), with on-screen buttons for the grown-ups menu and home.
-On a narrow screen it zooms out just far enough to hold the fox and the span being mended in the same shot, and the
+Owlet Grove uses **Space** to fly and **`Q`** for the grown-ups menu on a keyboard, and a tap anywhere to fly on a touch screen.
+Beacon Bridge zooms out on a narrow screen just far enough to hold the fox and the span being mended in the same shot, and the
 sky and the gorge run past the top and bottom of the frame so the picture still fills the screen.
 The root page is a compact picker: a painting, the game's name and a Play button for each of those four.
 
 Comet Catch is still here and still playable — [play](https://psticea.github.io/games/comet-catch/) ·
 [`comet-catch/`](comet-catch/index.html) — it is just no longer listed on the picker, to keep the front page short.
+
+## On a phone
+
+Every game is driven by touch, every game has an always-visible **home button** that returns to the picker, and the picker and
+all four games try to run without browser chrome.
+
+Full screen on the mobile web is more awkward than it looks, so it is worth being plain about what actually happens:
+
+- The Fullscreen API is **per document**. The spec fully exits fullscreen when a document unloads, so it can never survive the
+  tap that opens a game — every page has to ask for itself, on its own user gesture. Each page therefore requests full screen on
+  its first touch.
+- **Safari on iPhone does not implement element fullscreen at all**, so on the most common kids' device that request does
+  nothing.
+
+So the site also ships a [web app manifest](site.webmanifest) (`display: fullscreen`, `scope: "./"`). Added to the home screen,
+the whole site runs chrome-free *and stays that way across every page*, on iPhone as well as Android — this is the only approach
+that survives navigating from the picker into a game. The picker shows a small, dismissible note on iOS explaining the
+Add to Home Screen step, since that is the only route to full screen there.
+
+Starfall Meadow needs the long edge of the screen and asks you to turn the phone sideways; that screen carries its own
+"All games" link so a child can never get stuck on it.
 
 ---
 
@@ -99,8 +117,8 @@ Gradients are baked into sprite caches and particles render in two batched passe
 A 60-second flight for roughly ages 4–9. Open `owlet-grove/index.html` — no runtime dependencies, works offline, and it is the
 one game here built for a phone first.
 
-**Play:** `Space` fly (and start / play again) · `Q` grown-ups menu. On a touch screen, **tap anywhere** to fly and use the small
-**Menu** button for the grown-ups page. That is the whole control scheme — there is nothing else to press and no mouse input.
+**Play:** `Space` fly (and start / play again) · `Q` grown-ups menu. On a touch screen, **tap anywhere** to fly. A **home**
+button and a **Menu** button sit in the top-right corner on every device; on a narrow phone they collapse to two round icons.
 
 Pip the owl drifts right through a forest. Gravity pulls down, a flap lifts, and the round is a pure score attack: **green leaves
 are 1 point, red berries are 2, glowing fireflies are 5**. One round is exactly 60 seconds.
