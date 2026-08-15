@@ -738,11 +738,11 @@ function handleKey(k){
 /* One swipe, one move. A horizontal swipe slides the block exactly one column
    and then stops listening until the finger lifts, so two columns take two
    swipes and a drifting thumb never runs the block across the bridge. The drop
-   is deliberately hard to trigger: it wants a long, clearly vertical pull,
-   because dropping a block by accident is the one mistake that costs a span. */
+   wants a short but clearly vertical pull: easy to mean, hard to do by accident
+   while sliding sideways. */
 const TOUCH = { id:null, x0:0, y0:0, t0:0, moved:false, used:false, slid:false };
 function slidePx(){ return Math.max(58, window.innerWidth*0.14); }
-function dropPx(){ return Math.max(118, window.innerHeight*0.20); }
+function dropPx(){ return Math.max(55, window.innerHeight*0.065); }
 function touchBtns(){
   if(!MOBILE) return [];
   const r = Math.min(21, Math.max(15, VW*0.055));
@@ -848,7 +848,7 @@ if(MOBILE){
   if(cl) cl.innerHTML =
     '<ul><li><b>Swipe left or right</b> Moves the block one square \u2014 two squares takes two swipes</li>'+
     '<li><b>Tap</b> Turn the block a quarter turn</li></ul>'+
-    '<ul><li><b>A long swipe down</b> Drop the block into the gap</li>'+
+    '<ul><li><b>A swipe down</b> Drop the block into the gap</li>'+
     '<li><b>The \u2630 button</b> Open and close this menu</li>'+
     '<li><b>The \u2302 button</b> Leave the game and go back to all games</li></ul>';
   const chint=document.getElementById('closeHint');
@@ -1981,7 +1981,7 @@ function drawHint0(){
 function drawTouchHint(){
   ctx.save();
   const lines = G.scene==='play'
-    ? ['\u25C0 swipe \u25B6  one square   \u00B7   tap  turn', 'long swipe down \u25BC  drop']
+    ? ['\u25C0 swipe \u25B6  one square   \u00B7   tap  turn', 'swipe down \u25BC  drop']
     : ['tap anywhere to play'];
   const w=Math.min(VW-24, 320), x0=LW/2-w/2, h=lines.length>1?46:30, y=vB()-62-h;
   pill(x0,y,w,h,.42);
