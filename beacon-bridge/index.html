@@ -81,7 +81,7 @@
       <h1>Beacon Bridge</h1>
       <p class="sub">A note for grown-ups &nbsp;&middot;&nbsp; the game is paused</p>
 
-      <p>A fox has to cross a canyon before the light goes. Each of the three stone spans has a bite
+      <p>A reindeer has to cross a canyon before the light goes. Each of the three stone spans has a bite
       out of it, and it takes <b>two</b> blocks to mend one: a lower one that slots into the notch, then
       an upper one that caps it off.</p>
 
@@ -600,7 +600,7 @@ const piece = {
   tt:0, dur:0, from:0, to:0
 };
 
-const fox = { x:0, y:DECK_Y, tx:0, walking:false, t:0, gait:0, speed:0, cheer:0, blink:0, ear:0 };
+const deer = { x:0, y:DECK_Y, tx:0, walking:false, t:0, gait:0, speed:0, cheer:0, blink:0, ear:0 };
 
 /* The level carries over between sittings, so a child picks up where they
    left off rather than starting from scratch every time. */
@@ -639,14 +639,14 @@ function buildCrossing(){
   G.deckL = G.spans[0].x - PIER_W;
   G.deckR = G.bridgeEnd + PIER_W;
   G.worldW = G.deckR + 430;
-  /* the fox waits at the bridgehead, the same spot it rests on between spans,
+  /* the deer waits at the bridgehead, the same spot it rests on between spans,
      so the camera can always hold it and the span being mended together */
-  fox.x = G.spans[0].x - PIER_W/2 - 2; fox.tx = fox.x; fox.walking=false; fox.cheer=0; fox.speed=0;
+  deer.x = G.spans[0].x - PIER_W/2 - 2; deer.tx = deer.x; deer.walking=false; deer.cheer=0; deer.speed=0;
   spawnPiece();
   G.camX = camTargetFor();
 }
 /* Centre the span being mended, then slide the window along if that would push
-   the fox off the edge: on a narrow screen the fox has to stay in shot. */
+   the deer off the edge: on a narrow screen the deer has to stay in shot. */
 function camTargetFor(){
   const lo = -40 - VX, hi = G.worldW + 40 - VX - VW;
   let t;
@@ -657,8 +657,8 @@ function camTargetFor(){
     const c = sp ? sp.x + sp.w/2 : LW/2;
     t = c - VX - VW/2 + 20;
   }
-  /* the fox is about 70 units of tail to 66 units of nose across, at rest */
-  const fl = fox.x - 70, fr = fox.x + 66;
+  /* the reindeer is about 46 units of tail to 76 units of nose across, at rest */
+  const fl = deer.x - 46, fr = deer.x + 76;
   if(fl < t + VX)            t = fl - VX;
   else if(fr > t + VX + VW)  t = fr - VX - VW;
   return clamp(t, lo, hi);
@@ -735,10 +735,14 @@ function handleKey(k){
   }
 }
 /* ------------------------------------------------------------ touch input */
-/* Swipe left/right slides the block a column at a time, swipe down drops it,
-   a tap turns it a quarter turn clockwise. Two round buttons stand in for the
-   Q and H keys. */
-const TOUCH = { id:null, x0:0, y0:0, sx:0, t0:0, moved:false, used:false };
+/* One swipe, one move. A horizontal swipe slides the block exactly one column
+   and then stops listening until the finger lifts, so two columns take two
+   swipes and a drifting thumb never runs the block across the bridge. The drop
+   is deliberately hard to trigger: it wants a long, clearly vertical pull,
+   because dropping a block by accident is the one mistake that costs a span. */
+const TOUCH = { id:null, x0:0, y0:0, t0:0, moved:false, used:false, slid:false };
+function slidePx(){ return Math.max(58, window.innerWidth*0.14); }
+function dropPx(){ return Math.max(118, window.innerHeight*0.20); }
 function touchBtns(){
   if(!MOBILE) return [];
   const r = Math.min(21, Math.max(15, VW*0.055));
@@ -782,8 +786,8 @@ if(MOBILE){
     if(TOUCH.id!==null) return;
     const t=e.changedTouches[0];
     TOUCH.id=t.identifier; TOUCH.x0=t.clientX; TOUCH.y0=t.clientY;
-    TOUCH.sx=t.clientX; TOUCH.t0=performance.now();
-    TOUCH.moved=false; TOUCH.used=false;
+    TOUCH.t0=performance.now();
+    TOUCH.moved=false; TOUCH.used=false; TOUCH.slid=false;
     e.preventDefault();
   }, {passive:false});
 
@@ -796,13 +800,15 @@ if(MOBILE){
     const dx=t.clientX-TOUCH.x0, dy=t.clientY-TOUCH.y0;
     if(Math.abs(dx)>8 || Math.abs(dy)>8) TOUCH.moved=true;
     if(TOUCH.used) return;
-    const drop = Math.max(38, window.innerHeight*0.055);
-    if(dy>drop && Math.abs(dy)>Math.abs(dx)*1.2){
+    /* a drop has to be long and honestly downwards, never a diagonal slip */
+    if(dy>dropPx() && dy>Math.abs(dx)*1.7){
       handleKey(' '); TOUCH.used=true; return;
     }
-    const step=stepPx();
-    while(t.clientX-TOUCH.sx >= step){ handleKey('ArrowRight'); TOUCH.sx+=step; }
-    while(TOUCH.sx-t.clientX >= step){ handleKey('ArrowLeft');  TOUCH.sx-=step; }
+    /* one swipe moves one column, and that is the end of this gesture's say */
+    if(!TOUCH.slid && Math.abs(dx)>slidePx() && Math.abs(dx)>Math.abs(dy)*1.4){
+      handleKey(dx>0 ? 'ArrowRight' : 'ArrowLeft');
+      TOUCH.slid=true;
+    }
   }, {passive:false});
 
   const endTouch = function(e){
@@ -840,9 +846,9 @@ if(MOBILE){
   const ch=document.getElementById('ctrlHead'), cl=document.getElementById('ctrlList');
   if(ch) ch.textContent='Controls \u2014 swipe and tap, nothing to type';
   if(cl) cl.innerHTML =
-    '<ul><li><b>Swipe left or right</b> Slide the block across</li>'+
+    '<ul><li><b>Swipe left or right</b> Moves the block one square \u2014 two squares takes two swipes</li>'+
     '<li><b>Tap</b> Turn the block a quarter turn</li></ul>'+
-    '<ul><li><b>Swipe down</b> Drop the block into the gap</li>'+
+    '<ul><li><b>A long swipe down</b> Drop the block into the gap</li>'+
     '<li><b>The \u2630 button</b> Open and close this menu</li>'+
     '<li><b>The \u2302 button</b> Leave the game and go back to all games</li></ul>';
   const chint=document.getElementById('closeHint');
@@ -868,7 +874,7 @@ function update(dt){
     if(G.warn<1 && G.time<=30){ G.warn=1; sfx.chime(); }
     if(G.warn<2 && G.time<=10){ G.warn=2; sfx.chime(); }
     G.dayT = clamp(0.10 + (1-G.time/ROUND_TIME)*0.90, 0, 1);
-    if(G.time<=0){ G.scene='dusk'; sfx.dusk(); piece.phase='idle'; fox.walking=false; }
+    if(G.time<=0){ G.scene='dusk'; sfx.dusk(); piece.phase='idle'; deer.walking=false; }
   }
 
   G.camTarget = camTargetFor();
@@ -883,17 +889,17 @@ function update(dt){
     if(s.t>s.life) G.sparks.splice(i,1);
   }
 
-  /* fox timers run in every scene so he keeps breathing */
-  fox.t += dt;
-  if(fox.blink>0) fox.blink=Math.max(0,fox.blink-dt);
-  else if(Math.random()<dt*0.30) fox.blink=0.16;
-  if(fox.ear>0) fox.ear=Math.max(0,fox.ear-dt);
-  else if(Math.random()<dt*0.18) fox.ear=0.5;
-  if(fox.cheer>0) fox.cheer=Math.max(0,fox.cheer-dt);
+  /* deer timers run in every scene so he keeps breathing */
+  deer.t += dt;
+  if(deer.blink>0) deer.blink=Math.max(0,deer.blink-dt);
+  else if(Math.random()<dt*0.30) deer.blink=0.16;
+  if(deer.ear>0) deer.ear=Math.max(0,deer.ear-dt);
+  else if(Math.random()<dt*0.18) deer.ear=0.5;
+  if(deer.cheer>0) deer.cheer=Math.max(0,deer.cheer-dt);
 
-  const targetSpeed = fox.walking?1:0;
-  fox.speed = lerp(fox.speed, targetSpeed, 1-Math.pow(0.0005,dt));
-  fox.gait += dt*8.4*Math.max(fox.speed,0.001);
+  const targetSpeed = deer.walking?1:0;
+  deer.speed = lerp(deer.speed, targetSpeed, 1-Math.pow(0.0005,dt));
+  deer.gait += dt*8.4*Math.max(deer.speed,0.001);
 
   if(G.scene!=='play') return;
 
@@ -934,18 +940,18 @@ function update(dt){
     if(piece.tt>0.62){
       piece.phase='idle';
       const i=G.idx;
-      fox.tx = (i<SPANS-1) ? (G.spans[i].x + G.spans[i].w + PIER_W/2 - 2)
+      deer.tx = (i<SPANS-1) ? (G.spans[i].x + G.spans[i].w + PIER_W/2 - 2)
                            : (G.deckR + 96);
-      fox.walking=true;
+      deer.walking=true;
     }
   }
 
-  if(fox.walking){
-    const dir = fox.tx>fox.x ? 1 : -1;
-    fox.x += dir*186*dt;
-    if(Math.floor(fox.gait/Math.PI)!==Math.floor((fox.gait-dt*8.4)/Math.PI)) sfx.step();
-    if((dir>0 && fox.x>=fox.tx)||(dir<0 && fox.x<=fox.tx)){
-      fox.x=fox.tx; fox.walking=false;
+  if(deer.walking){
+    const dir = deer.tx>deer.x ? 1 : -1;
+    deer.x += dir*186*dt;
+    if(Math.floor(deer.gait/Math.PI)!==Math.floor((deer.gait-dt*8.4)/Math.PI)) sfx.step();
+    if((dir>0 && deer.x>=deer.tx)||(dir<0 && deer.x<=deer.tx)){
+      deer.x=deer.tx; deer.walking=false;
       if(G.idx<SPANS-1){ G.idx++; spawnPiece(); }
       else { piece.phase='idle'; startBeacon(); }
     }
@@ -978,10 +984,10 @@ function completeSpan(sp){
   G.attemptSum+=sp.attempts;
   sfx.fit();
   if(sp.clean){ G.cleanSpans++; burstStars(sp); sfx.star(); }
-  fox.cheer=0.9;
+  deer.cheer=0.9;
   piece.phase='settle'; piece.tt=0;
 }
-function startBeacon(){ G.beaconLit=0.001; sfx.beacon(); fox.cheer=1.6; }
+function startBeacon(){ G.beaconLit=0.001; sfx.beacon(); deer.cheer=1.6; }
 function burstStars(sp){
   const cx=sp.x+sp.w/2, cy=DECK_Y-16;
   for(let i=0;i<9;i++){
@@ -1142,7 +1148,7 @@ function draw(){
   drawGuide();
   drawHint();
   drawPlacedBlocks();
-  drawFox();
+  drawDeer();
   drawPiece();
   drawSparks();
   drawFireflies();
@@ -1599,22 +1605,23 @@ function drawBeaconTower(){
   }
 }
 
-/* ====================================================================== FOX
+/* ================================================================= REINDEER
    Drawn live: two-bone legs solved with a little IK so the walk has real
-   knees, a brush tail that lags behind the body, and a head that counter-bobs
-   against the gait. */
-const FOXC={
-  body:'#E07A3C', bodyHi:'#F2955A', bodyLo:'#BC5C29', deep:'#994720',
-  cream:'#FBEEDD', creamLo:'#E3CCB2',
-  ink:'#31222B', earIn:'#C4775C', iris:'#F3B85F'
+   knees, antlers that carry a beat behind the head, and a head that
+   counter-bobs against the gait. */
+const DEERC={
+  body:'#A87A52', bodyHi:'#C79A6E', bodyLo:'#7E5730', deep:'#5C3C1F',
+  cream:'#F5E7D2', creamLo:'#D9C2A4',
+  ink:'#2B2130', earIn:'#8A5F3C', iris:'#F3B85F',
+  antler:'#EADAC0', antlerLo:'#AD9070', hoof:'#3A2B2E'
 };
-let _fcT=-1, FC={};
-function foxPal(){
+let _dcT=-1, DC={};
+function deerPal(){
   const q=Math.round(G.dayT*32)/32;
-  if(q===_fcT) return FC;
-  _fcT=q; FC={};
-  for(const k in FOXC) FC[k]=mix(FOXC[k],'#342740',q*0.40);
-  return FC;
+  if(q===_dcT) return DC;
+  _dcT=q; DC={};
+  for(const k in DEERC) DC[k]=mix(DEERC[k],'#342740',q*0.40);
+  return DC;
 }
 
 function ik2(hx,hy,fx,fy,l1,l2,bend){
@@ -1625,144 +1632,145 @@ function ik2(hx,hy,fx,fy,l1,l2,bend){
   const b=Math.acos(clamp((d*d+l1*l1-l2*l2)/(2*d*l1),-1,1));
   return {x:hx+Math.cos(a+b*bend)*l1, y:hy+Math.sin(a+b*bend)*l1};
 }
-function foxLeg(hx,hy,fx,fy,bend,w1,w2,c1,c2,sock){
-  const k=ik2(hx,hy,fx,fy,17,19,bend);
+/* A reindeer leg runs pale at the thigh and darkens down the cannon bone into
+   a small cloven hoof — the opposite of the fox's pale sock. */
+function deerLeg(hx,hy,fx,fy,bend,w1,w2,c1,c2,dark,hoof){
+  const k=ik2(hx,hy,fx,fy,24,26,bend);
   ctx.lineCap='round'; ctx.lineJoin='round';
   ctx.strokeStyle=c1; ctx.lineWidth=w1;
   ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(k.x,k.y); ctx.stroke();
   ctx.strokeStyle=c2; ctx.lineWidth=w2;
   ctx.beginPath(); ctx.moveTo(k.x,k.y); ctx.lineTo(fx,fy); ctx.stroke();
-  ctx.strokeStyle=sock; ctx.lineWidth=w2*0.95;
-  ctx.beginPath(); ctx.moveTo(lerp(k.x,fx,.66),lerp(k.y,fy,.66)); ctx.lineTo(fx,fy); ctx.stroke();
-  ctx.fillStyle=sock;
-  ctx.beginPath(); ctx.ellipse(fx+1.8,fy-1.4,5.0,3.2,0,0,6.2832); ctx.fill();
+  ctx.strokeStyle=dark; ctx.lineWidth=w2*0.84;
+  ctx.beginPath(); ctx.moveTo(lerp(k.x,fx,.46),lerp(k.y,fy,.46)); ctx.lineTo(fx,fy-1.2); ctx.stroke();
+  ctx.fillStyle=hoof;
+  ctx.beginPath(); ctx.ellipse(fx+0.8,fy-1.0,4.3,3.0,0,0,6.2832); ctx.fill();
 }
-function foxEar(x,y,rot,C){
-  ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.scale(1.25,1.3);
-  ctx.fillStyle=C.bodyLo;
-  ctx.beginPath();
-  ctx.moveTo(-8,6); ctx.quadraticCurveTo(-8,-14, 0,-21);
-  ctx.quadraticCurveTo(9,-13, 9,5); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=C.earIn;
-  ctx.beginPath();
-  ctx.moveTo(-4,4); ctx.quadraticCurveTo(-4,-10, 0,-15);
-  ctx.quadraticCurveTo(5,-9, 5,3); ctx.closePath(); ctx.fill();
-  ctx.fillStyle=C.ink;
-  ctx.beginPath();
-  ctx.moveTo(-6,-12); ctx.quadraticCurveTo(0,-22, 7,-11);
-  ctx.quadraticCurveTo(0,-15, -6,-12); ctx.closePath(); ctx.fill();
-  ctx.restore();
-}
-function foxHead(C,bob,tilt){
-  ctx.save();
-  ctx.translate(47,-64+bob*0.45);
-  ctx.rotate(tilt);
-
-  const twitch = fox.ear>0 ? Math.sin(fox.ear*26)*0.15 : 0;
-  foxEar(-10,-11,-0.40+twitch,C);
-  foxEar(6,-15,-0.06+twitch*0.6,C);
-
-  /* skull, muzzle and cheek ruff in one silhouette */
-  const g=ctx.createLinearGradient(0,-20,0,14);
-  g.addColorStop(0,C.bodyHi); g.addColorStop(.62,C.body); g.addColorStop(1,C.bodyLo);
-  ctx.fillStyle=g;
-  ctx.beginPath();
-  ctx.moveTo(-16,-2);
-  ctx.bezierCurveTo(-18,-16,-6,-22, 6,-17);        // brow
-  ctx.bezierCurveTo(12,-15, 16,-12, 23,-8);        // bridge of the nose
-  ctx.quadraticCurveTo(29,-5.5, 28,-1);            // nose
-  ctx.quadraticCurveTo(26,3, 19,3.5);              // under the muzzle
-  ctx.quadraticCurveTo(13,7, 7,7);                 // jaw
-  ctx.lineTo(2,13); ctx.lineTo(-1,6.5);            // ruff spikes
-  ctx.lineTo(-9,14); ctx.lineTo(-10,5);
-  ctx.lineTo(-19,9);
-  ctx.closePath(); ctx.fill();
-
-  /* cream muzzle and chin */
-  ctx.fillStyle=C.cream;
-  ctx.beginPath();
-  ctx.moveTo(9,-5);
-  ctx.bezierCurveTo(16,-4, 23,-3, 27.4,-1.2);
-  ctx.quadraticCurveTo(25.6,3, 19,3.5);
-  ctx.quadraticCurveTo(13,7, 7,6.6);
-  ctx.quadraticCurveTo(5.5,0, 9,-5);
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle=C.creamLo;
-  ctx.beginPath();
-  ctx.moveTo(-10,5); ctx.lineTo(-1,6.5); ctx.lineTo(2,13); ctx.lineTo(-9,14); ctx.closePath(); ctx.fill();
-
-  /* eye */
-  const bl = fox.blink>0 ? clamp(1-Math.sin((1-fox.blink/0.16)*Math.PI)*1.35,0.08,1) : 1;
-  ctx.fillStyle=C.iris;
-  ctx.beginPath(); ctx.ellipse(5.5,-7,3.6,3.8*bl,0.12,0,6.2832); ctx.fill();
-  ctx.fillStyle=C.ink;
-  ctx.beginPath(); ctx.ellipse(6.4,-7,2.0,3.1*bl,0.12,0,6.2832); ctx.fill();
-  ctx.strokeStyle=C.ink; ctx.lineWidth=1.6; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(1.2,-10.6); ctx.quadraticCurveTo(6,-12.6, 9.8,-9.6); ctx.stroke();
-  ctx.fillStyle='rgba(255,255,255,.9)';
-  ctx.beginPath(); ctx.arc(4.4,-8.6,1.05,0,6.2832); ctx.fill();
-
-  /* nose and whiskers */
-  ctx.fillStyle=C.ink;
-  ctx.beginPath();
-  ctx.moveTo(23.6,-3.4); ctx.quadraticCurveTo(29.2,-2.6, 27.8,0.6);
-  ctx.quadraticCurveTo(25.4,2.2, 23.4,0.2); ctx.closePath(); ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,.32)';
-  ctx.beginPath(); ctx.arc(25.6,-2,0.9,0,6.2832); ctx.fill();
-  ctx.save();
-  ctx.strokeStyle='rgba(255,246,232,.34)'; ctx.lineWidth=0.9; ctx.lineCap='round';
-  for(let i=0;i<3;i++){
-    ctx.beginPath();
-    ctx.moveTo(22.5,-0.4+i*1.3);
-    ctx.quadraticCurveTo(30,-1+i*3.4, 38,-5+i*5.2);
+/* One antler: a swept main beam, a brow tine reaching forward over the face,
+   two uppers and a back point. Drawn as tapered strokes so it stays legible
+   at the size a reindeer actually appears on a phone. */
+function deerAntler(ox,oy,sc,lean,col){
+  ctx.save(); ctx.translate(ox,oy); ctx.scale(sc,sc); ctx.rotate(lean);
+  ctx.strokeStyle=col; ctx.lineCap='round'; ctx.lineJoin='round';
+  const beams=[
+    [5.0,  0,0,    -4,-12,   3,-23],   // main beam, sweeping back then up
+    [4.1,  3,-23,   9,-32,   4,-42],   // upper beam
+    [3.3,  1,-15,  10,-17,  15,-25],   // brow tine, forward over the eye
+    [2.9,  4,-27,  13,-29,  18,-38],   // second forward point
+    [2.5,  2,-31,  -6,-35,  -9,-44],   // back point
+    [2.3,  4,-42,   9,-48,   6,-54]    // crown tip
+  ];
+  for(const b of beams){
+    ctx.lineWidth=b[0];
+    ctx.beginPath(); ctx.moveTo(b[1],b[2]);
+    ctx.quadraticCurveTo(b[3],b[4],b[5],b[6]);
     ctx.stroke();
   }
   ctx.restore();
+}
+function deerEar(x,y,rot,sc,outer,inner){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot); ctx.scale(sc,sc);
+  ctx.fillStyle=outer;
+  ctx.beginPath(); ctx.ellipse(-7,0,10,5.4,0,0,6.2832); ctx.fill();
+  ctx.fillStyle=inner;
+  ctx.beginPath(); ctx.ellipse(-7.5,0,6.4,3.1,0,0,6.2832); ctx.fill();
   ctx.restore();
 }
-function foxTail(C,sway){
+function deerHead(C,bob,tilt){
   ctx.save();
-  ctx.translate(-25,-38);
-  ctx.rotate(sway*0.011);
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  const spine=()=>{
-    ctx.beginPath();
-    ctx.moveTo(4,-1);
-    ctx.quadraticCurveTo(-19,-6,-33,-14);
-    ctx.quadraticCurveTo(-52,-24,-52,-40);
-  };
-  ctx.strokeStyle=C.bodyLo; ctx.lineWidth=26; spine(); ctx.stroke();
-  ctx.strokeStyle=C.body;   ctx.lineWidth=18; spine(); ctx.stroke();
-  ctx.save(); ctx.globalAlpha=.45;
-  ctx.strokeStyle=C.bodyHi; ctx.lineWidth=7;
+  ctx.translate(56,-88+bob*0.45);
+  ctx.rotate(tilt);
+
+  const twitch = deer.ear>0 ? Math.sin(deer.ear*26)*0.16 : 0;
+
+  /* far ear and far antler live behind the skull, knocked back in tone */
+  deerEar(-11,-6,-1.05+twitch,0.84,C.bodyLo,C.deep);
+  deerAntler(-3,-13,0.84,0.16+twitch*0.3,C.antlerLo);
+
+  /* skull, muzzle and jaw in one silhouette */
+  const g=ctx.createLinearGradient(0,-19,0,12);
+  g.addColorStop(0,C.bodyHi); g.addColorStop(.62,C.body); g.addColorStop(1,C.bodyLo);
+  ctx.fillStyle=g;
   ctx.beginPath();
-  ctx.moveTo(0,-8); ctx.quadraticCurveTo(-19,-13,-32,-21);
-  ctx.stroke(); ctx.restore();
-  /* pale brush tip */
-  ctx.strokeStyle=C.cream; ctx.lineWidth=17;
-  ctx.beginPath(); ctx.moveTo(-52,-32); ctx.quadraticCurveTo(-53,-36,-52,-40); ctx.stroke();
+  ctx.moveTo(-13,-4);
+  ctx.bezierCurveTo(-15,-15, -3,-19, 7,-15);       // forehead
+  ctx.bezierCurveTo(15,-12, 23,-8, 29,-4);         // bridge of the nose
+  ctx.quadraticCurveTo(34,-1, 32,4);               // nose
+  ctx.quadraticCurveTo(29,8, 22,8);                // upper lip
+  ctx.quadraticCurveTo(13,11, 3,10);               // jaw
+  ctx.quadraticCurveTo(-9,9, -13,-4);              // cheek
+  ctx.closePath(); ctx.fill();
+
+  /* pale muzzle band and throat, the way a reindeer's face lightens */
+  ctx.fillStyle=C.cream;
+  ctx.beginPath();
+  ctx.moveTo(17,-8.5);
+  ctx.bezierCurveTo(23,-7, 28,-4.5, 31.4,-1.6);
+  ctx.quadraticCurveTo(29.4,7.4, 22,8);
+  ctx.quadraticCurveTo(15,10.4, 9,9.6);
+  ctx.quadraticCurveTo(11,-1, 17,-8.5);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=.55; ctx.fillStyle=C.creamLo;
+  ctx.beginPath();
+  ctx.moveTo(9,9.6); ctx.quadraticCurveTo(15,10.4, 22,8);
+  ctx.quadraticCurveTo(15,4.6, 10,4.4);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=1;
+
+  /* eye, set high and calm */
+  const bl = deer.blink>0 ? clamp(1-Math.sin((1-deer.blink/0.16)*Math.PI)*1.35,0.08,1) : 1;
+  ctx.fillStyle=C.iris;
+  ctx.beginPath(); ctx.ellipse(6,-7.4,3.5,3.7*bl,0.10,0,6.2832); ctx.fill();
+  ctx.fillStyle=C.ink;
+  ctx.beginPath(); ctx.ellipse(6.8,-7.4,2.1,3.1*bl,0.10,0,6.2832); ctx.fill();
+  ctx.strokeStyle=C.ink; ctx.lineWidth=1.6; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(1.8,-11); ctx.quadraticCurveTo(6.6,-13, 10.4,-10); ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.9)';
+  ctx.beginPath(); ctx.arc(4.9,-9,1.05,0,6.2832); ctx.fill();
+
+  /* nose */
+  ctx.fillStyle=C.ink;
+  ctx.beginPath();
+  ctx.moveTo(26.6,-2.6); ctx.quadraticCurveTo(32.6,-1.4, 31.2,2.2);
+  ctx.quadraticCurveTo(28.4,3.8, 26.4,1.4); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.30)';
+  ctx.beginPath(); ctx.arc(28.6,-1.2,0.9,0,6.2832); ctx.fill();
+
+  /* near ear, then the near antler over the top of everything */
+  deerEar(-8,-3,-0.62+twitch,1,C.body,C.earIn);
+  deerAntler(3,-14,1,-0.04+twitch*0.4,C.antler);
   ctx.restore();
 }
-function drawFox(){
-  const C=foxPal();
-  const sp=fox.speed, g=fox.gait;
-  const bob = -(0.5+0.5*Math.sin(g*2))*2.4*sp + Math.sin(fox.t*1.7)*0.8*(1-sp);
-  const cheer = fox.cheer>0 ? Math.max(0,Math.sin(fox.cheer*6.5))*fox.cheer*3.4 : 0;
-  const sway = Math.sin(g*0.5-0.7)*11*sp + Math.sin(fox.t*1.25)*5 + cheer*3;
+/* A reindeer tail is a short pale flag, not a brush — it sits high on the rump
+   and lifts a little when the walk gets going. */
+function deerTail(C,sway){
+  ctx.save();
+  ctx.translate(-31,-62);
+  ctx.rotate(-0.35 + sway*0.006);
+  ctx.fillStyle=C.bodyLo;
+  ctx.beginPath(); ctx.ellipse(-4,3,7.0,4.8,0.55,0,6.2832); ctx.fill();
+  ctx.fillStyle=C.cream;
+  ctx.beginPath(); ctx.ellipse(-6,5,5.0,3.4,0.55,0,6.2832); ctx.fill();
+  ctx.restore();
+}
+function drawDeer(){
+  const C=deerPal();
+  const sp=deer.speed, g=deer.gait;
+  const bob = -(0.5+0.5*Math.sin(g*2))*2.6*sp + Math.sin(deer.t*1.7)*0.8*(1-sp);
+  const cheer = deer.cheer>0 ? Math.max(0,Math.sin(deer.cheer*6.5))*deer.cheer*3.4 : 0;
+  const sway = Math.sin(g*0.5-0.7)*11*sp + Math.sin(deer.t*1.25)*5 + cheer*3;
 
   ctx.save();
-  ctx.translate(fox.x, fox.y);
-  ctx.scale(0.74,0.74);
+  ctx.translate(deer.x, deer.y);
+  ctx.scale(0.70,0.70);
   ctx.rotate(-cheer*0.012);
 
   /* contact shadow */
   ctx.save(); ctx.globalAlpha=.28; ctx.fillStyle='#150E1E';
-  ctx.beginPath(); ctx.ellipse(0,-1,36,5,0,0,6.2832); ctx.fill(); ctx.restore();
+  ctx.beginPath(); ctx.ellipse(2,-1,34,5,0,0,6.2832); ctx.fill(); ctx.restore();
 
-  foxTail(C,sway);
-
-  const HIP_B=-18, HIP_F=17, HIP_Y=-34+bob;
-  const stride=15*sp, lift=9*sp;
+  const HIP_B=-22, HIP_F=20, HIP_Y=-48+bob;
+  const stride=17*sp, lift=10*sp;
   const foot=(base,ph)=>({
     x: base - stride*Math.cos(g+ph),
     y: -lift*Math.max(0,Math.sin(g+ph)) - cheer*(base>0?1.6:0)
@@ -1771,44 +1779,58 @@ function drawFox(){
   /* far side legs, pushed back in tone so the body reads in front */
   let f;
   f=foot(HIP_B,0.55*Math.PI);
-  foxLeg(HIP_B-4,HIP_Y,f.x-4,f.y, 1, 13,8.5, C.bodyLo, C.deep, C.ink);
+  deerLeg(HIP_B-4,HIP_Y,f.x-4,f.y, 1, 10,6.2, C.bodyLo, C.deep, C.deep, C.ink);
   f=foot(HIP_F,1.55*Math.PI);
-  foxLeg(HIP_F-4,HIP_Y,f.x-4,f.y,-1, 12,8,   C.bodyLo, C.deep, C.ink);
+  deerLeg(HIP_F-4,HIP_Y,f.x-4,f.y,-1, 9.5,6,  C.bodyLo, C.deep, C.deep, C.ink);
 
-  /* body and neck as one silhouette, so the head is never detached */
   ctx.save(); ctx.translate(0,bob);
-  const bg=ctx.createLinearGradient(0,-58,0,-24);
+  deerTail(C,sway);
+
+  /* body, shoulder hump and neck as one silhouette, so the head is never
+     detached from the animal carrying it */
+  const bg=ctx.createLinearGradient(0,-74,0,-38);
   bg.addColorStop(0,C.bodyHi); bg.addColorStop(.5,C.body); bg.addColorStop(1,C.bodyLo);
   ctx.fillStyle=bg;
   ctx.beginPath();
-  ctx.moveTo(-27,-29);
-  ctx.bezierCurveTo(-37,-35,-38,-50,-26,-54);      // rump
-  ctx.bezierCurveTo(-8,-60, 8,-58, 19,-53);        // back
-  ctx.bezierCurveTo(27,-51, 32,-58, 38,-65);       // withers into the neck
-  ctx.lineTo(48,-56);
-  ctx.bezierCurveTo(42,-47, 33,-38, 24,-31);       // chest
-  ctx.bezierCurveTo(10,-25,-13,-25,-27,-29);       // belly
+  ctx.moveTo(-29,-44);
+  ctx.bezierCurveTo(-39,-51,-38,-64,-26,-67);      // rump
+  ctx.bezierCurveTo(-11,-71, 5,-71, 17,-73);       // back
+  ctx.bezierCurveTo(25,-74, 29,-71, 33,-79);       // shoulder hump into the neck
+  ctx.bezierCurveTo(39,-89, 47,-94, 56,-93);       // crest of the neck
+  ctx.lineTo(59,-82);                              // poll
+  ctx.bezierCurveTo(51,-78, 45,-70, 39,-60);       // front of the neck
+  ctx.bezierCurveTo(35,-52, 31,-46, 25,-42);       // chest
+  ctx.bezierCurveTo(11,-38,-15,-38,-29,-44);       // belly
   ctx.closePath();
   ctx.fill();
 
   ctx.save(); ctx.clip();
-  /* cream bib, throat and belly */
+  /* the pale throat mane a reindeer carries down its neck, running on into a
+     light belly. Traced as a band that hugs the underside from the inside, so
+     the clip keeps all of it. */
   ctx.fillStyle=C.cream;
   ctx.beginPath();
-  ctx.moveTo(52,-57);
-  ctx.bezierCurveTo(45,-47, 35,-38, 23,-33);
-  ctx.bezierCurveTo(7,-28,-14,-28,-29,-32);
-  ctx.lineTo(-31,-14); ctx.lineTo(56,-14);
+  ctx.moveTo(59,-82);
+  ctx.bezierCurveTo(51,-78, 45,-70, 39,-60);       // down the front of the neck
+  ctx.bezierCurveTo(35,-52, 31,-46, 25,-42);       // chest
+  ctx.bezierCurveTo(11,-38,-15,-38,-29,-44);       // belly
+  ctx.lineTo(-25,-50);
+  ctx.bezierCurveTo(-8,-46, 12,-47, 25,-51);       // back along, just inside
+  ctx.bezierCurveTo(33,-57, 40,-67, 47,-75);       // up inside the neck
+  ctx.bezierCurveTo(51,-79, 55,-82, 59,-82);
   ctx.closePath(); ctx.fill();
   ctx.globalAlpha=.5; ctx.fillStyle=C.creamLo;
   ctx.beginPath();
-  ctx.moveTo(-31,-27); ctx.bezierCurveTo(-12,-23, 6,-24, 21,-30);
-  ctx.lineTo(23,-14); ctx.lineTo(-31,-14); ctx.closePath(); ctx.fill();
-  /* darker saddle along the spine */
-  ctx.globalAlpha=.20; ctx.fillStyle=C.deep;
+  ctx.moveTo(-29,-44); ctx.bezierCurveTo(-12,-39, 8,-40, 25,-45);
+  ctx.lineTo(25,-38); ctx.bezierCurveTo(8,-33,-12,-33,-29,-38);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha=.85; ctx.fillStyle=C.cream;
+  ctx.beginPath(); ctx.ellipse(-30,-57,9,11,0.2,0,6.2832); ctx.fill();
+  /* a darker saddle along the spine */
+  ctx.globalAlpha=.22; ctx.fillStyle=C.deep;
   ctx.beginPath();
-  ctx.moveTo(30,-56); ctx.bezierCurveTo(12,-62,-12,-62,-28,-52);
-  ctx.lineTo(-28,-45); ctx.bezierCurveTo(-10,-55, 12,-55, 30,-49);
+  ctx.moveTo(28,-72); ctx.bezierCurveTo(10,-77,-12,-74,-27,-64);
+  ctx.lineTo(-27,-57); ctx.bezierCurveTo(-10,-67, 10,-68, 28,-65);
   ctx.closePath(); ctx.fill();
   ctx.restore();
 
@@ -1816,18 +1838,20 @@ function drawFox(){
   ctx.strokeStyle='rgba(255,224,172,'+(0.18+G.dayT*0.30)+')';
   ctx.lineWidth=2.2; ctx.lineCap='round';
   ctx.beginPath();
-  ctx.moveTo(-26,-54); ctx.bezierCurveTo(-8,-60, 8,-58, 19,-53);
-  ctx.bezierCurveTo(27,-51, 32,-58, 38,-65);
+  ctx.moveTo(-26,-67); ctx.bezierCurveTo(-11,-71, 5,-71, 17,-73);
+  ctx.bezierCurveTo(25,-74, 29,-71, 33,-79);
+  ctx.bezierCurveTo(39,-89, 47,-94, 56,-93);
   ctx.stroke();
   ctx.restore();
 
   /* near side legs */
   f=foot(HIP_B,1.55*Math.PI);
-  foxLeg(HIP_B+4,HIP_Y,f.x+4,f.y, 1, 15,9.5, C.body, C.bodyLo, C.ink);
+  deerLeg(HIP_B+4,HIP_Y,f.x+4,f.y, 1, 12,7.2, C.body, C.bodyLo, C.deep, C.hoof);
   f=foot(HIP_F,0.55*Math.PI);
-  foxLeg(HIP_F+4,HIP_Y,f.x+4,f.y,-1, 14,9,   C.body, C.bodyLo, C.ink);
+  deerLeg(HIP_F+4,HIP_Y,f.x+4,f.y,-1, 11,7,   C.body, C.bodyLo, C.deep, C.hoof);
 
-  foxHead(C, bob, Math.sin(g*2+1.1)*0.035*sp - cheer*0.02);
+  deerHead(C, bob, Math.sin(g*2+1.1)*0.035*sp - cheer*0.02);
+
   ctx.restore();
 }
 
@@ -1957,9 +1981,9 @@ function drawHint0(){
 function drawTouchHint(){
   ctx.save();
   const lines = G.scene==='play'
-    ? ['\u25C0 swipe \u25B6  move   \u00B7   tap  turn', '\u25BC swipe down  drop']
+    ? ['\u25C0 swipe \u25B6  one square   \u00B7   tap  turn', 'long swipe down \u25BC  drop']
     : ['tap anywhere to play'];
-  const w=Math.min(VW-24, 300), x0=LW/2-w/2, h=lines.length>1?46:30, y=vB()-62-h;
+  const w=Math.min(VW-24, 320), x0=LW/2-w/2, h=lines.length>1?46:30, y=vB()-62-h;
   pill(x0,y,w,h,.42);
   for(let i=0;i<lines.length;i++){
     txt(lines[i],LW/2,y+(lines.length>1?16+i*17:15),
@@ -1988,7 +2012,7 @@ function drawTitle(){ withUIScale(drawTitle0); }
 function drawTitle0(){
   panel(590,222,168);
   txt('Beacon Bridge',LW/2,114,'600 50px Fredoka, Trebuchet MS, sans-serif','#FFD79A','center','middle');
-  txt('Turn the stone. Fill the gap. Walk the fox home.',LW/2,162,
+  txt('Turn the stone. Fill the gap. Walk the reindeer home.',LW/2,162,
       '600 17px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.78)','center','middle');
   txt('Three spans \u00B7 two blocks each \u00B7 ninety seconds of light',LW/2,190,
       '600 13px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.45)','center','middle');
@@ -2020,7 +2044,7 @@ function drawDusk0(){
   const built=G.spans.filter(s=>s.filled).length;
   panel(510,192,168);
   txt('Dusk',LW/2,112,'600 40px Fredoka, Trebuchet MS, sans-serif','#FFD79A','center','middle');
-  txt(built===0 ? 'The fox settles in to wait for morning.'
+  txt(built===0 ? 'The reindeer settles in to wait for morning.'
                 : 'You built '+built+' of '+SPANS+' spans before the light went.',
       LW/2,152,'600 16px Nunito, Trebuchet MS, sans-serif','rgba(246,235,225,.78)','center','middle');
   txt('The next bridge will be a little kinder.',LW/2,178,
@@ -2031,7 +2055,7 @@ function drawDusk0(){
 }
 
 /* ===================================================================== BOOT */
-/* On a phone the world is drawn a little smaller so that the fox and the span
+/* On a phone the world is drawn a little smaller so that the deer and the span
    being mended fit on screen together; the sky above and the gorge below then
    have to stretch past the 600-unit frame to fill the rest of the screen. */
 const MIN_VW = 380;
@@ -2083,7 +2107,7 @@ function frame(now){
 }
 requestAnimationFrame(frame);
 
-window.__BB={G,piece,fox,SHAPES,handleKey,makeSpan};
+window.__BB={G,piece,deer,SHAPES,handleKey,makeSpan};
 </script>
 <script>
 /* H — close the game and go back to the four-game picker. */

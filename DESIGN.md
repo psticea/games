@@ -68,7 +68,8 @@ commitment — the whole site speaks in one voice.
 The plaque goes wherever the character is not.
 
 - Phone: top-left of each land, since every hero lives in the lower half —
-  except Beacon Bridge, whose fox sits high, so its plaque takes the bottom.
+  except Beacon Bridge, whose reindeer stands high in its scene, so its plaque
+  takes the bottom.
 - 680px and up: the four outer corners of the board (TL, TR, BL, BR), which
   clears the middle for the medallion.
 

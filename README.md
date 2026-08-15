@@ -14,7 +14,7 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 None of them has a "Game Over". Starfall Meadow, Beacon Bridge and Foxglove Trail use **arrow keys, Space, `Q` and `H` only** — no
 mouse — and `H` closes the game and comes straight back to the picker.
 Owlet Grove uses **Space** to fly and **`Q`** for the grown-ups menu on a keyboard, and a tap anywhere to fly on a touch screen.
-Beacon Bridge zooms out on a narrow screen just far enough to hold the fox and the span being mended in the same shot, and the
+Beacon Bridge zooms out on a narrow screen just far enough to hold the reindeer and the span being mended in the same shot, and the
 sky and the gorge run past the top and bottom of the frame so the picture still fills the screen.
 The root page is a compact picker: a painting, the game's name and a Play button for each of those four.
 
@@ -178,7 +178,7 @@ A mental-rotation puzzle for roughly ages 7–10. Open `beacon-bridge/index.html
 
 **Play:** `←` `→` slide the block · `↑` `↓` turn it a quarter turn · `Space` drop it into the gap · `Q` grown-ups menu · `H` back to all games.
 
-A fox has to cross a canyon before the light goes. Each of the three stone spans has a bite taken out of its deck, and **two** wooden blocks are needed to make it whole again — a lower one that slots into the notch, then an upper one that caps it off flush with the road. Three spans, six blocks, ninety seconds. Fill all three and the beacon on the far cliff lights up.
+A reindeer has to cross a canyon before the light goes. Each of the three stone spans has a bite taken out of its deck, and **two** wooden blocks are needed to make it whole again — a lower one that slots into the notch, then an upper one that caps it off flush with the road. Three spans, six blocks, ninety seconds. Fill all three and the beacon on the far cliff lights up.
 
 The next block is always shown in the corner, so the first drop has to be chosen with the second one already in mind. If the finished span is wrong, **both** blocks float back up and the span is offered again — the section restarts, nothing else is lost.
 

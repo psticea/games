@@ -778,12 +778,20 @@ const Touch = {
   /* how far a finger has to travel before it counts as a flick rather than a hold */
   swipe() { return Math.max(24, window.innerHeight * 0.05); },
 
-  /* fold every finger down into the four flags the game actually reads */
+  /* fold every finger down into the four flags the game actually reads.
+     Only fingers that are still steering have a say in which way Pip runs: a
+     finger that has just flicked upwards has handed its steering back, so the
+     hop goes straight up instead of drifting off to one side. */
   apply() {
-    Input.down.left = this.dir < 0;
-    Input.down.right = this.dir > 0;
-    let hold = false, dive = false;
-    this.pts.forEach((p) => { if (p.hold) hold = true; if (p.dive) dive = true; });
+    let dir = 0, hold = false, dive = false;
+    this.pts.forEach((p) => {
+      if (p.steer) dir = p.dir;          // the newest steering finger wins
+      if (p.hold) hold = true;
+      if (p.dive) dive = true;
+    });
+    this.dir = dir;
+    Input.down.left = dir < 0;
+    Input.down.right = dir > 0;
     Input.down.down = dive;
     Input.down.space = hold && !dive;   // holding after a flick gives a taller hop
   },
@@ -803,11 +811,13 @@ const Touch = {
     for (const t of e.changedTouches) {
       this.pts.set(t.identifier, {
         dir: this.half(t.clientX),
+        steer: true,        // this finger is currently saying which way to run
+        anchorX: t.clientX,  // where it stopped steering, if it flicked upwards
+        t0: performance.now(),
         lowY: t.clientY,    // the lowest the finger has been since its last hop
         highY: t.clientY,   // the highest it has been since its last dive
         hold: false, dive: false
       });
-      this.dir = this.half(t.clientX);   // the newest finger takes the steering
     }
     this.apply();
   },
@@ -816,23 +826,34 @@ const Touch = {
     e.preventDefault();
     if (ParentMenu.open) return;
     const thr = this.swipe();
+    /* how far sideways a finger must travel to ask for the steering back */
+    const back = Math.max(30, Stage.cssW * 0.06);
     for (const t of e.changedTouches) {
       const p = this.pts.get(t.identifier);
       if (!p) continue;
-      const y = t.clientY;
+      const y = t.clientY, x = t.clientX;
 
       /* Steering follows the finger, so sliding across the middle of the screen
-         turns Pip round without lifting off. */
-      p.dir = this.half(t.clientX);
-      this.dir = p.dir;
+         turns Pip round without lifting off. A finger that has flicked upwards
+         has to travel sideways again before it steers, which is what keeps a
+         hop going straight up. */
+      if (!p.steer && Math.abs(x - p.anchorX) > back) p.steer = true;
+      if (p.steer) p.dir = this.half(x);
 
-      /* A flick upwards hops. Measuring from the lowest point the finger has
-         reached re-arms the gesture by itself: drift back down, flick again,
-         and that second flick is the flutter-jump. */
+      /* A flick upwards hops, and hands back the steering so the hop is
+         straight up. Measuring from the lowest point the finger has reached
+         re-arms the gesture by itself: drift back down, flick again, and that
+         second flick is the flutter-jump. */
       if (p.lowY - y > thr) {
         Input.pressed.space = true;
         p.hold = true; p.dive = false;
         p.lowY = y; p.highY = y;
+        p.steer = false; p.anchorX = x;
+        /* A flick that arrives this soon after the finger landed was always a
+           jump, never a run, so the sideways nudge the touch-down gave Pip is
+           taken back and the hop is honestly straight up. A flick after a real
+           run keeps its momentum, which is what a child expects. */
+        if (performance.now() - p.t0 < 260) Pip.vx = 0;
       } else if (y > p.lowY) {
         p.lowY = y;
       }
@@ -850,18 +871,21 @@ const Touch = {
 
   end(e) {
     e.preventDefault();
-    for (const t of e.changedTouches) this.pts.delete(t.identifier);
     /* A child may well end up with a thumb on each side. If the steering finger
-       lifts, hand the steering to whichever one is still down rather than
-       stopping dead. */
-    if (this.pts.size === 0) this.dir = 0;
-    else this.pts.forEach((p) => { this.dir = p.dir; });
+       lifts, apply() hands the steering to whichever one is still down rather
+       than stopping dead. */
+    for (const t of e.changedTouches) this.pts.delete(t.identifier);
     this.apply();
   }
 };
 
 /* ─────────────────────── 4. Stage: virtual canvas + layers ─────────────── */
-const VW = 1280, VH = 720, GROUND_Y = 618;
+/* The meadow is 720 virtual units tall, always. Its WIDTH follows the screen,
+   so the canvas is edge to edge at any aspect ratio and there are never any
+   letterbox bars — a phone held sideways simply sees more meadow. */
+let VW = 1280;
+const VH = 720, GROUND_Y = 618;
+let worldReady = false;
 
 const cv = document.getElementById('game');
 const ctx = cv.getContext('2d', { alpha: false });
@@ -879,10 +903,24 @@ const Stage = {
     this.cssW = w; this.cssH = h; this.dpr = dpr;
     cv.width = Math.max(1, Math.floor(w * dpr));
     cv.height = Math.max(1, Math.floor(h * dpr));
-    const s = Math.min(w / VW, h / VH);
+    const s = h / VH;
+    /* the clamp only ever bites on an absurd window shape; inside it the world
+       is exactly as wide as the screen, so ox stays 0 */
+    const want = clamp(Math.round(w / s), 900, 2600);
+    if (want !== VW) {
+      /* A big change means new ground to fill, so the scenery is re-seeded.
+         The small changes a mobile URL bar causes only resize the cache, since
+         re-seeding on every one of those would visibly reshuffle the meadow. */
+      const big = Math.abs(want - VW) > 24;
+      VW = want;
+      if (worldReady) {
+        if (big) { World.init(); World.bakeClouds(true); }
+        Backdrop.init();
+      }
+    }
     this.scale = s;
     this.ox = (w - VW * s) / 2;
-    this.oy = (h - VH * s) / 2;
+    this.oy = 0;
   },
   begin() {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -2647,22 +2685,27 @@ const HUD = {
     }
     return g;
   },
+  /* How far in from the screen edge the top pills start. On a phone the world
+     now runs edge to edge, so the pills have to step aside for the round ☰ and
+     ⌂ buttons sitting in the corners; on a desktop there are no buttons. */
+  edge() { return MOBILE ? Math.round(54 / Math.max(0.05, Stage.scale)) + 14 : 26; },
   draw(c) {
     const g = Game;
+    const E = this.edge(), dx = E - 26;
     // ── stars pill ──
     const sp = 1 + this.scorePop * 0.16;
-    panel(c, 26, 22, 268, 74, 24, 0.34, true);
-    c.save(); c.translate(66, 59); c.scale(sp, sp);
+    panel(c, E, 22, 268, 74, 24, 0.34, true);
+    c.save(); c.translate(66 + dx, 59); c.scale(sp, sp);
     starIcon(c, 0, 0, 23, '#FFF3C0', '#FFAE33', performance.now() * 0.0009);
     c.restore();
-    c.save(); c.translate(104, 60); c.scale(sp, sp);
+    c.save(); c.translate(104 + dx, 60); c.scale(sp, sp);
     outlineText(c, String(g.score), 0, 0, 44, '#FFFFFF', 'rgba(40,26,66,0.92)', 'left');
     c.restore();
-    outlineText(c, 'STARS', 106, 32, 17, 'rgba(255,236,180,0.95)', 'rgba(40,26,66,0.75)', 'left', 4);
+    outlineText(c, 'STARS', 106 + dx, 32, 17, 'rgba(255,236,180,0.95)', 'rgba(40,26,66,0.75)', 'left', 4);
 
     // ── combo ──
     if (g.combo >= 2) {
-      const w = 268, x = 26, y = 104;
+      const w = 268, x = E, y = 104;
       const mult = g.multiplier();
       panel(c, x, y, w, 44, 16, 0.30, true);
       const p = clamp((g.combo % 6) / 6, 0, 1);
@@ -2706,7 +2749,7 @@ const HUD = {
     c.restore();
 
     // ── sky level ──
-    const lw = 300, lx = VW - lw - 26;
+    const lw = 300, lx = VW - lw - E;
     panel(c, lx, 22, lw, 74, 24, 0.34, true);
     outlineText(c, 'SKY ' + (g.level + 1), lx + lw - 18, 44, 24, '#FFE9A8', 'rgba(40,26,66,0.9)', 'right', 5);
     outlineText(c, Theme.name.toUpperCase(), lx + lw - 18, 74, 20, '#FFFFFF', 'rgba(40,26,66,0.9)', 'right', 5);
@@ -3319,6 +3362,7 @@ function tick(rdt, t0) {
 Stage.resize();
 World.init();
 Backdrop.init();
+worldReady = true;   // from here a resize may re-seed the meadow for a new width
 World.bakeClouds(true);
 Pip.reset();
 Input.init();

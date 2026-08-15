@@ -36,7 +36,7 @@ Opened from a phone browser or added to the home screen, then played full screen
 
 ## Brand Commitments
 
-The four game names and their illustrated cast (Pip the fox cub, the owlet, the fox and the beacon, the trail fox) are fixed, as is the existing in-game art of each. The voice is warm, plain and unhurried, and speaks to a child without baby-talk.
+The four game names and their illustrated cast (Pip the fox cub, the owlet, the reindeer and the beacon, the trail fox) are fixed, as is the existing in-game art of each. The voice is warm, plain and unhurried, and speaks to a child without baby-talk.
 
 ## Evidence on Hand
 
