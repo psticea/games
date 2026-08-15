@@ -772,6 +772,10 @@ function goFullscreen(){
 function stepPx(){ return Math.max(22, CELL*viewScale*0.7); }
 
 if(MOBILE){
+  /* Chrome only counts a *finished* tap as the user gesture the Fullscreen API
+     insists on, so the request on touchstart below is backed up by this one. */
+  document.addEventListener('touchend', goFullscreen, {once:true, passive:true});
+
   cv.addEventListener('touchstart', function(e){
     goFullscreen(); initAudio();
     if(ac && ac.state==='suspended') ac.resume();

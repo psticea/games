@@ -42,7 +42,7 @@
   }
   /* ---------- Parent overlay ---------- */
   #parent{
-    position:absolute;inset:0;z-index:20;
+    position:absolute;inset:0;z-index:60;
     display:flex;align-items:center;justify-content:center;
     background:rgba(24,18,48,.62);
     backdrop-filter:blur(10px) saturate(120%);
@@ -175,11 +175,11 @@
     -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
     -webkit-tap-highlight-color:transparent;
   }
-  /* the two round buttons that stand in for the Q and H keys.
-     They sit at the TOP of each run rail, out in the letterbox beside the
-     meadow, as far as possible from where a thumb rests to run. */
+  /* The two round buttons that stand in for the Q and H keys. They sit in the
+     top corners, well away from where a thumb rests to steer, and they stay put
+     in portrait so there is always a way out and a way into the grown-ups menu. */
   .mbtn{
-    display:none;position:fixed;z-index:30;
+    display:none;position:fixed;z-index:50;
     top:calc(8px + env(safe-area-inset-top));
     width:44px;height:44px;border-radius:50%;padding:0;
     align-items:center;justify-content:center;
@@ -189,9 +189,9 @@
     -webkit-tap-highlight-color:transparent;
   }
   body.touch .mbtn{display:flex;}
-  body.touch.portrait .mbtn,body.touch.menuopen .mbtn{display:none;}
-  #mbtnMenu{left:calc((var(--rail-w, 60px) - 44px) / 2);}
-  #mbtnHome{right:calc((var(--rail-w, 60px) - 44px) / 2);}
+  body.touch.menuopen .mbtn{display:none;}
+  #mbtnMenu{left:calc(10px + env(safe-area-inset-left));}
+  #mbtnHome{right:calc(10px + env(safe-area-inset-right));}
   .mbtn:active{background:rgba(70,48,110,.8);transform:scale(.94);}
   /* the game needs the long edge of the screen, so portrait is politely refused */
   #rotate{
@@ -690,8 +690,11 @@ const Input = {
 
 /* ────────────────── 3b. Mobile: full screen, landscape, touch ──────────── */
 /* A phone has no keyboard, so on a coarse-pointer device the meadow is driven
-   by two thumbs: the left half of the screen is a sliding run pad, the right
-   half is hop / flutter / dive. None of this is even created on a desktop. */
+   by the screen itself: the half of the screen a finger is on is the way Pip
+   runs, a flick upwards hops, a drag downwards dives. Nothing is drawn for it —
+   there is no on-screen d-pad to cover the meadow, and the only visible chrome
+   is the pair of round buttons in the top corners. None of this exists on a
+   desktop. */
 const MOBILE = (function () {
   try {
     const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
@@ -718,8 +721,9 @@ function goFullscreen() {
 }
 
 const Touch = {
-  railId: null, dir: 0,
-  jumpId: null, jumpY0: 0, diving: false,
+  /* one entry per finger, in the order they went down, so the newest one steers */
+  pts: new Map(),
+  dir: 0,
 
   init() {
     if (!MOBILE) return;
@@ -728,6 +732,14 @@ const Touch = {
     cvEl.addEventListener('touchmove', (e) => this.move(e), { passive: false });
     cvEl.addEventListener('touchend', (e) => this.end(e), { passive: false });
     cvEl.addEventListener('touchcancel', (e) => this.end(e), { passive: false });
+
+    /* The first completed tap anywhere asks for full screen, not just a tap on
+       the canvas: in portrait the "turn your phone" screen covers the canvas, and
+       a child tapping that should still get a full-screen, landscape game rather
+       than nothing at all. It has to be touchEND — Chrome rejects a fullscreen
+       request made from a passive touchstart as having no user gesture — and the
+       orientation lock inside needs full screen first, which this provides. */
+    document.addEventListener('touchend', goFullscreen, { once: true, passive: true });
 
     const menuBtn = document.getElementById('mbtnMenu');
     const homeBtn = document.getElementById('mbtnHome');
@@ -755,16 +767,25 @@ const Touch = {
 
   /* clear every held key — used when the menu opens or a touch is lost */
   releaseAll() {
-    this.railId = null; this.jumpId = null; this.dir = 0; this.diving = false;
+    this.pts.clear(); this.dir = 0;
     Input.down.left = Input.down.right = Input.down.space = Input.down.up = Input.down.down = false;
   },
 
-  /* -1 for the left rail, 1 for the right, 0 for the meadow in between */
-  zoneAt(x) {
-    const rw = Stage.railW;
-    if (x <= rw) return -1;
-    if (x >= Stage.cssW - rw) return 1;
-    return 0;
+  /* -1 for the left half of the screen, 1 for the right. There is no dead zone:
+     wherever the finger is, that is the way Pip runs. */
+  half(x) { return x < Stage.cssW / 2 ? -1 : 1; },
+
+  /* how far a finger has to travel before it counts as a flick rather than a hold */
+  swipe() { return Math.max(24, window.innerHeight * 0.05); },
+
+  /* fold every finger down into the four flags the game actually reads */
+  apply() {
+    Input.down.left = this.dir < 0;
+    Input.down.right = this.dir > 0;
+    let hold = false, dive = false;
+    this.pts.forEach((p) => { if (p.hold) hold = true; if (p.dive) dive = true; });
+    Input.down.down = dive;
+    Input.down.space = hold && !dive;   // holding after a flick gives a taller hop
   },
 
   start(e) {
@@ -780,62 +801,62 @@ const Touch = {
     }
 
     for (const t of e.changedTouches) {
-      const zone = this.zoneAt(t.clientX);
-      if (zone !== 0) {
-        /* Hold a rail, keep running. The rail owns its direction until the
-           finger lifts, so a thumb that drifts off the strip mid-run does not
-           stop dead. A second rail press simply takes over the direction. */
-        this.railId = t.identifier;
-        this.dir = zone;
-        Input.down.left = zone < 0;
-        Input.down.right = zone > 0;
-      } else if (this.jumpId === null) {
-        this.jumpId = t.identifier; this.jumpY0 = t.clientY; this.diving = false;
-        Input.pressed.space = true;      // a hop, or a flutter if already airborne
-        Input.down.space = true;         // held = a taller hop
-        Input.down.down = false;
-      }
+      this.pts.set(t.identifier, {
+        dir: this.half(t.clientX),
+        lowY: t.clientY,    // the lowest the finger has been since its last hop
+        highY: t.clientY,   // the highest it has been since its last dive
+        hold: false, dive: false
+      });
+      this.dir = this.half(t.clientX);   // the newest finger takes the steering
     }
+    this.apply();
   },
 
   move(e) {
     e.preventDefault();
     if (ParentMenu.open) return;
-    /* Only the meadow finger cares about movement: dragging it down dives.
-       A rail finger is deliberately ignored — holding is the whole gesture. */
+    const thr = this.swipe();
     for (const t of e.changedTouches) {
-      if (t.identifier !== this.jumpId) continue;
-      const dy = t.clientY - this.jumpY0;
-      const want = dy > Math.max(30, window.innerHeight * 0.07);
-      if (want !== this.diving) {
-        this.diving = want;
-        if (want) { Input.down.space = false; Input.down.down = true; }
-        else { Input.down.down = false; }
+      const p = this.pts.get(t.identifier);
+      if (!p) continue;
+      const y = t.clientY;
+
+      /* Steering follows the finger, so sliding across the middle of the screen
+         turns Pip round without lifting off. */
+      p.dir = this.half(t.clientX);
+      this.dir = p.dir;
+
+      /* A flick upwards hops. Measuring from the lowest point the finger has
+         reached re-arms the gesture by itself: drift back down, flick again,
+         and that second flick is the flutter-jump. */
+      if (p.lowY - y > thr) {
+        Input.pressed.space = true;
+        p.hold = true; p.dive = false;
+        p.lowY = y; p.highY = y;
+      } else if (y > p.lowY) {
+        p.lowY = y;
+      }
+
+      /* Dragging downwards dives, and keeps diving while the finger stays low. */
+      if (y < p.highY) p.highY = y;
+      const wantDive = (y - p.highY) > thr;
+      if (wantDive !== p.dive) {
+        p.dive = wantDive;
+        if (wantDive) p.hold = false;
       }
     }
+    this.apply();
   },
 
   end(e) {
     e.preventDefault();
-    for (const t of e.changedTouches) {
-      if (t.identifier === this.railId) {
-        this.railId = null; this.dir = 0;
-      } else if (t.identifier === this.jumpId) {
-        this.jumpId = null; this.diving = false;
-        Input.down.space = false; Input.down.down = false;
-      }
-    }
-    /* A child may well end up with a thumb on each edge. If the tracked one
-       lifts, adopt whichever rail is still held rather than stopping dead. */
-    if (this.railId === null) {
-      for (const t of e.touches) {
-        if (t.identifier === this.jumpId) continue;
-        const z = this.zoneAt(t.clientX);
-        if (z !== 0) { this.railId = t.identifier; this.dir = z; break; }
-      }
-    }
-    Input.down.left = this.dir < 0;
-    Input.down.right = this.dir > 0;
+    for (const t of e.changedTouches) this.pts.delete(t.identifier);
+    /* A child may well end up with a thumb on each side. If the steering finger
+       lifts, hand the steering to whichever one is still down rather than
+       stopping dead. */
+    if (this.pts.size === 0) this.dir = 0;
+    else this.pts.forEach((p) => { this.dir = p.dir; });
+    this.apply();
   }
 };
 
@@ -851,7 +872,7 @@ let CAN_FILTER = true;
 try { gctx.filter = 'blur(2px)'; CAN_FILTER = (gctx.filter === 'blur(2px)'); gctx.filter = 'none'; } catch (e) { CAN_FILTER = false; }
 
 const Stage = {
-  scale: 1, ox: 0, oy: 0, dpr: 1, cssW: 0, cssH: 0, railW: 0,
+  scale: 1, ox: 0, oy: 0, dpr: 1, cssW: 0, cssH: 0,
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = window.innerWidth, h = window.innerHeight;
@@ -862,15 +883,6 @@ const Stage = {
     this.scale = s;
     this.ox = (w - VW * s) / 2;
     this.oy = (h - VH * s) / 2;
-    /* The run zones are the outer eighth of the screen on each side, and the
-       six eighths between them are one big hop button. They are deliberately
-       not drawn: on a tall phone in landscape they sit almost entirely on the
-       letterbox bars beside the 16:9 meadow, and a thumb resting there covers
-       nothing that matters. The hint strip along the bottom does the teaching. */
-    if (MOBILE) {
-      this.railW = w / 8;
-      document.body.style.setProperty('--rail-w', this.railW + 'px');
-    }
   },
   begin() {
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -2745,10 +2757,10 @@ const HUD = {
     }
   },
   /* the finger version of the strip — the round ☰ / ⌂ buttons live in the DOM,
-     at the top of each run rail, so only the gestures need explaining here */
+     in the top corners, so only the gestures need explaining here */
   touchControls(c) {
     const y = VH - 36;
-    const line = 'HOLD an edge to RUN   ·   TAP the meadow to HOP   ·   SWIPE DOWN to DIVE';
+    const line = 'TOUCH the LEFT or RIGHT half to RUN   ·   SWIPE UP to HOP   ·   SWIPE DOWN to DIVE';
     setFont(c, 21);
     const w = c.measureText(line).width;
     panel(c, VW / 2 - w / 2 - 24, y - 24, w + 48, 48, 24, 0.30, true);
@@ -2794,14 +2806,14 @@ const ParentMenu = {
      and the card closes by tapping the backdrop or the close bar. */
   enableTouch() {
     const head = document.getElementById('ctrlHead');
-    if (head) head.textContent = 'Controls — hold and tap, nothing to type';
+    if (head) head.textContent = 'Controls — touch and swipe, nothing to type';
     const panel = document.getElementById('ctrlPanel');
     if (panel) panel.innerHTML =
-      '<div class="ctrl-row"><span><span class="kbd">&#9664;</span></span><span class="what"><b>Hold the left edge</b> of the screen to run left</span></div>' +
-      '<div class="ctrl-row"><span><span class="kbd">&#9654;</span></span><span class="what"><b>Hold the right edge</b> to run right &mdash; keep holding, keep running</span></div>' +
-      '<div class="ctrl-row"><span><span class="kbd">TAP</span></span><span class="what">Tap <b>the meadow</b> to hop &mdash; tap again in the air for a flutter-jump</span></div>' +
-      '<div class="ctrl-row"><span><span class="kbd">HOLD</span></span><span class="what">Keep holding for a taller hop</span></div>' +
-      '<div class="ctrl-row"><span><span class="kbd">&#9660;</span></span><span class="what">Swipe down on the meadow to dive</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9664;</span></span><span class="what"><b>Touch the left half</b> of the screen to run left</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9654;</span></span><span class="what"><b>Touch the right half</b> to run right &mdash; slide across to turn round</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9650;</span></span><span class="what"><b>Swipe up</b> to hop &mdash; swipe up again in the air for a flutter-jump</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">HOLD</span></span><span class="what">Keep the finger down after a swipe for a taller hop</span></div>' +
+      '<div class="ctrl-row"><span><span class="kbd">&#9660;</span></span><span class="what">Swipe down to dive</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">TAP</span></span><span class="what">Tap anywhere to start / play again on menus</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">&#9776;</span></span><span class="what">Open &amp; close this menu</span></div>' +
       '<div class="ctrl-row"><span><span class="kbd">&#8962;</span></span><span class="what">Leave the game and go back to all games</span></div>';

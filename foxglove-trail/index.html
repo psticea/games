@@ -1937,6 +1937,12 @@ function localPoint(t) {
 }
 
 if (MOBILE) {
+  /* Chrome only counts a *finished* tap as the user gesture the Fullscreen API
+     insists on — a request made from touchstart is rejected outright when that
+     listener is passive, and is unreliable even when it is not. So the request
+     on touchstart below is backed up by this one, on the first touchend. */
+  document.addEventListener('touchend', goFullscreen, { once: true, passive: true });
+
   cv.addEventListener('touchstart', function (e) {
     goFullscreen();
     if (!Snd.ready) Snd.init();

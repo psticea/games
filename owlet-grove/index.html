@@ -312,7 +312,11 @@ function layout() {
   ctx.setTransform(V.k, 0, 0, V.k, 0, 0);
   ctx.imageSmoothingQuality = 'high';
 }
-function CEIL() { return V.h * 0.125; }     /* soft ceiling */
+/* The owl may climb to 95% of the screen height; the soft ceiling is what stops
+   it there. Collectibles are held to the lower 85%, so nothing a child is asked
+   to reach for is ever pressed against the ceiling. */
+function CEIL() { return V.h * 0.05; }      /* soft ceiling — 95% of the height */
+function ITEM_TOP() { return V.h * 0.15; }  /* nothing spawns above 85% of it   */
 function GND() { return V.h * 0.862; }      /* soft ground  */
 
 /* ------------------------------------------------------------------ bake / blit */
@@ -1007,7 +1011,10 @@ function buildScene() {
   var midH = Math.round(R * 0.46);
   var nearH = Math.round(R * 0.30);
   var shrubH = Math.round(R * 0.13);
-  var canopyH = Math.round(Math.max(R * 0.135, H * 0.10));
+  /* The canopy is a frame along the very top, and the owl is now allowed to
+     climb to 95% of the height, so it is kept thin: any deeper and a child
+     flying high would disappear behind the leaves. */
+  var canopyH = Math.round(Math.max(R * 0.075, H * 0.052));
   var fernH = Math.round(Math.max(R * 0.085, H * 0.058));
   var groundH = Math.round(H * 0.175);
 
@@ -1482,7 +1489,7 @@ var ITEM = {
 };
 function addItem(kind, x, ny) {
   var r = ITEM[kind].r * V.S;
-  var y = clamp(ny * V.h, CEIL() + r + 8 * V.S, GND() - r - 8 * V.S);
+  var y = clamp(ny * V.h, ITEM_TOP() + r + 8 * V.S, GND() - r - 8 * V.S);
   G.items.push({
     kind: kind, x: x, y: y, base: y, r: r,
     ph: Math.random() * TAU, rot: rr(0, TAU), spin: rr(-0.8, 0.8),
@@ -2276,6 +2283,10 @@ document.addEventListener('touchstart', function (e) {
   if (e.cancelable) e.preventDefault();
   primary();
 }, { passive: false });
+/* Chrome only counts a *finished* tap as the user gesture the Fullscreen API
+   insists on, so the request above is backed up by this one, on the first
+   touchend anywhere — including a tap that lands on the chrome. */
+document.addEventListener('touchend', function () { Touch.on = true; goFullscreen(); }, { once: true, passive: true });
 document.addEventListener('touchmove', function (e) {
   if (fromUI(e.target)) return;
   if (e.cancelable) e.preventDefault();
@@ -2366,7 +2377,7 @@ function rebuild() {
       var it = G.items[i];
       it.x *= kx; it.base *= ky; it.y *= ky;
       it.r = ITEM[it.kind].r * V.S;
-      it.base = clamp(it.base, CEIL() + it.r + 8 * V.S, GND() - it.r - 8 * V.S);
+      it.base = clamp(it.base, ITEM_TOP() + it.r + 8 * V.S, GND() - it.r - 8 * V.S);
     }
     G.owl.y *= ky;
     G.parts.length = 0;
