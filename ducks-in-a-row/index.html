@@ -1863,19 +1863,25 @@ function blit(img, x, y, ang, sc, alpha, ax, ay){
   ctx.restore();
 }
 
-/* Which way a duck is turned, and how much of her we see.
+/* Which way a duck is turned, and which of its three views we draw.
    The art is drawn in profile, and a top-down world cannot rotate it: pointing
-   her south would stand her on her nose. So she foreshortens instead, exactly
-   as a real duck does — how side-on she is, is |cos(heading)|. Swimming east or
-   west shows the full profile; swimming up or down the screen shows her narrow
-   view, which is her front when she is coming towards the child and her back
-   when she is heading away. `sign` only mirrors the profile, and it is latched
-   with a little hysteresis so it can only change while she is near vertical —
-   which is exactly when the narrow view is covering her and the swap cannot be
-   seen. Render-only: kept out here so the pure layer stays pure. */
-const TILT = 0.22;                   // ~13 degrees of nose-up / nose-down
-const FRONT_BAND = 0.46;             // how far round the turn the narrow view fades in
-const FLAT_MIN = 0.54;               // the profile never squashes thinner than this
+   her south would stand her on her nose. So there are three poses and no
+   continuous squashing — a duck stretched to some in-between width just looks
+   compressed, which is worse than either honest pose.
+     - swimming left or right, and anywhere diagonal: the full profile,
+       at its true width, mirrored to whichever way she is going;
+     - within about ten degrees of straight up or straight down: her narrow
+       view — her front when she is coming towards the child, her back, tail up
+       and no face, when she is heading away.
+   In between is a band about eight degrees wide, crossed in a couple of frames,
+   where the two blend and the profile narrows sharply. That is a transition,
+   not a pose. `sign` is latched with a little hysteresis so the mirror can only
+   flip while she is near vertical — exactly when the narrow view is covering
+   her and the swap cannot be seen. Render-only, so the pure layer stays pure. */
+const TILT = 0.26;                   // ~15 degrees of lean, at its steepest
+const VERT_AT = 0.174;               // |cos(heading)| here is 10 degrees off vertical
+const SIDE_AT = 0.31;                // ...and here is 18 degrees off: full profile again
+const FLAT_MIN = 0.42;               // how far the profile narrows through the transition
 let faces = {}, motherFace = 1;
 function faceStep(cur, ang){
   const c = Math.cos(ang);
@@ -1914,19 +1920,22 @@ function drawFloater(x, y, ang, isMother, bobT, popT, lift, face){
      through zero width — a duck as thin as paper — so the front view fades in
      across that band instead, and the profile never narrows past FLAT_MIN. */
   const sign = face == null ? 1 : (face >= 0 ? 1 : -1);
-  /* How side-on she is. 1 swimming east or west, 0 swimming straight up or
-     down the screen, and everything between is a real foreshortening. */
+  /* How side-on she is: 1 swimming east or west, 0 swimming straight up or
+     down the screen. Only the narrow band between the two thresholds blends. */
   const side = Math.abs(Math.cos(ang));
-  const t = clamp(1 - side / FRONT_BAND, 0, 1);
+  const t = clamp((SIDE_AT - side) / (SIDE_AT - VERT_AT), 0, 1);
   const narrow = t * t * (3 - 2 * t);
-  const w = FLAT_MIN + (1 - FLAT_MIN) * side;
+  const w = 1 - (1 - FLAT_MIN) * narrow;
   const toward = Math.sin(ang) >= 0;               // canvas y grows downwards
   const baseA = ctx.globalAlpha;
   ctx.rotate(TILT * Math.sin(ang) * side);
-  /* Whichever view is winning is drawn solid and the other blended over it,
-     rather than both at part opacity — two half-transparent sprites let the
-     pond show through the duck, and a murky see-through duck is the one
-     artifact worth avoiding here. */
+  /* The profile goes down first and opaque, the narrow view over the top of
+     it. The narrow sprite is the smaller of the two, so it always lands inside
+     the profile's silhouette and the pond can never show through the middle of
+     a duck — which is what a plain cross-fade between two half-transparent
+     sprites does, and it looks far worse than the flattening it replaced. The
+     profile only starts fading at the very end of the transition, by which
+     point it is narrow enough that almost nothing of it is left showing. */
   const sideImg = isMother ? tex.mother : tex.duckling;
   const narrowImg = isMother ? (toward ? tex.motherFront : tex.motherBack)
                              : (toward ? tex.ducklingFront : tex.ducklingBack);
@@ -1948,8 +1957,8 @@ function drawFloater(x, y, ang, isMother, bobT, popT, lift, face){
                   narrowImg.width / tex.s, narrowImg.height / tex.s);
     ctx.restore();
   };
-  if (narrow <= 0.5){ drawSide(1); drawNarrow(narrow); }
-  else { drawNarrow(1); drawSide(1 - narrow); }
+  drawSide(Math.min(1, (1 - narrow) * 3));
+  drawNarrow(narrow);
   ctx.restore();
 }
 

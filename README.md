@@ -161,16 +161,21 @@ rather than just listing it. They keep clear of the HUD, the two chrome buttons 
 ### Why the ducks never rotate
 
 The art is drawn in profile, which a top-down world cannot simply rotate: pointing her south would stand her on her nose and
-pointing her west would stand her on her head. So the ducks **foreshorten** instead, the way a real one does. How side-on a
-duck is, is `|cos(heading)|`: swimming east or west shows the full profile, and swimming up or down the screen shows a narrow
-view — her **front** when she is coming towards the child, her **back**, tail up and no face, when she is heading away. Six
-sprites in all, three per bird.
+pointing her west would stand her on her head. So there are **three poses per bird** and no continuous squashing — a duck
+stretched to some in-between width just looks compressed, which is worse than either honest pose.
 
-Two details make it hold together. The profile never squashes below 54% of its width, so a duck halfway through a turn is
-never thin as paper; and whichever view is winning is drawn solid with the other blended over it, because two half-transparent
-sprites let the pond show through the duck and a murky see-through duck is the one artifact worth avoiding. The left/right
-mirror is latched with a little hysteresis so it can only flip while she is near vertical — which is exactly when the narrow
-view is covering her and the swap cannot be seen.
+| Heading | What you see |
+| --- | --- |
+| Left, right, or anywhere diagonal | The full profile at its true width, mirrored to whichever way she is going |
+| Within ~10° of straight **down** the screen | Her front: both eyes, both wings, beak foreshortened towards you |
+| Within ~10° of straight **up** the screen | Her back: tail cocked up, both wings, no face — she is swimming away |
+
+Between them is a band about eight degrees wide, crossed in a couple of frames, where the profile narrows sharply and the two
+blend. That is a transition, not a pose. The profile is drawn first and opaque with the narrow view over the top, because the
+narrow sprite is the smaller of the two and so always lands inside the profile's silhouette — a plain cross-fade between two
+half-transparent sprites lets the pond show through the middle of the duck, which looks far worse than the flattening it
+replaced. The left/right mirror is latched with hysteresis so it can only flip while she is near vertical, which is exactly
+when the narrow view is covering her and the swap cannot be seen.
 
 The line itself is a **path buffer**: each duckling rides a fixed arc-length behind her, so it follows exactly where she went.
 An earlier build added a per-index "stretch" scaled by how hard she was turning, which slid every duckling backwards along
