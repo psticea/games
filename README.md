@@ -135,10 +135,9 @@ Every constant lives in one `K` object at the top of the file.
 | `SPEED_FALL` / `SPEED_FLOOR` | 3% per duckling, floor 62% | How much a long line slows her |
 | `TURN_MAX` / `TURN_MIN` | 250°/s → 195°/s at ten ducklings | How much a long line costs her agility |
 | `SPACING` / `SPACING_MIN` | 34 units, bunching to 78% | Gap along the line; they bunch when she slows |
-| `STRETCH` / `LAG` | 9 / 6 units | The line strings out in a hard turn; the last one always trails, then hurries |
+| `LAG` | 5 units | The last one trails, then hurries to catch up |
 | `GATHER_R` | 36 units | **Forgiveness:** bigger than the duckling, so a near-enough sweep always collects |
-| `SELF_R` | 14 units | **Forgiveness:** smaller than the line, so a visible near-miss never scatters |
-| `SELF_SKIP` | 3 | The three ducklings closest to her never startle — that is where accidental brushes happen |
+| `SELF_R` | 14 units | **Forgiveness:** smaller than the line, so a visible near-miss never scatters || `SELF_SKIP` | 3 | The three ducklings closest to her never startle — that is where accidental brushes happen |
 | `SCATTER_MAX` | 4 | The most a single mistake can ever cost |
 | `GRACE` | 1.4 s | No second scatter for this long |
 | `MAX_FREE` | 5 | Free-swimming ducklings on the pond at once |
@@ -151,6 +150,26 @@ Scoring is `10 × (place in the line)`, so the first duckling is worth 10 and th
 ever pays for the **best place it has reached this round**, and ten for anything less. That one rule is what stops a child being
 paid for wrecking their own line and collecting the same ducklings twice. A bot that farms scatters deliberately scores about
 1,000 against roughly 6,000 for honest play.
+
+### Reading the pond on a phone
+
+The pond is larger than a phone screen, so free ducklings are often off it. Up to **three arrows** sit on the edge of the
+screen, one per off-screen duckling, nearest first — a ring with the duckling drawn upright inside it and a point on the
+outside saying which way to go. The nearer the duckling, the bigger and brighter its arrow, so the arrows rank the choice
+rather than just listing it. They keep clear of the HUD, the two chrome buttons and the hint line.
+
+### Why the ducks never rotate
+
+The art is drawn in profile, which a top-down world cannot simply rotate: pointing her south stands her on her nose and
+pointing her west stands her on her head. So every duck is **mirrored** left or right instead, with the heading showing up as
+a slight tilt (about 17°) and, mostly, as the wake behind her. The mirror eases through zero rather than snapping, which reads
+as the duck swinging round towards you. Near due north or south the horizontal component is ignored, or she would flicker
+between left and right on the tiniest wobble.
+
+The line itself is a **path buffer**: each duckling rides a fixed arc-length behind her, so it follows exactly where she went.
+An earlier build added a per-index "stretch" scaled by how hard she was turning, which slid every duckling backwards along
+the path — cumulatively, about three whole spacings by the tenth — and the line looked shoved rather than followed. Two of
+the self-tests now assert the gaps hold whether she is straight or hauling the line round as hard as she goes.
 
 ### Built with
 
@@ -173,12 +192,13 @@ deterministic and testable.
 There is no test runner in this repo and no build step to hang one on, so the game ships its own:
 
 **[`ducks-in-a-row/index.html?test=1`](ducks-in-a-row/index.html?test=1)** boots a self-test harness instead of the game, drives
-the pure layer headlessly and prints a PASS/FAIL list, with the verdict in `document.title`. Thirty-eight checks, no dependencies,
+the pure layer headlessly and prints a PASS/FAIL list, with the verdict in `document.title`. Forty checks, no dependencies,
 works offline and from `file://`. Among them: a fixed-seed run scores an exact expected total; scatter detaches exactly the right
 ducklings and never more than four; banked score survives; the round ends exactly on time and a simulated 30-second tab-out cannot
-fast-forward it; 30, 60 and 144 Hz swim the same path; spawns never land inside the line; a greedy pursuit bot can always reach
-something before it drifts off; collisions are honest in both directions; farming scatters loses; and **planning a route beats
-grabbing the nearest duckling**, which is the check that says the loop holds a real decision rather than being a toy.
+fast-forward it; 30, 60 and 144 Hz swim the same path; the line holds its spacing straight and through a hard turn; spawns never
+land inside the line; a greedy pursuit bot can always reach something before it drifts off; collisions are honest in both
+directions; farming scatters loses; and **planning a route beats grabbing the nearest duckling**, which is the check that says the
+loop holds a real decision rather than being a toy.
 
 ### Known deviations from the brief
 
