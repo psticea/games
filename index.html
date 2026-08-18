@@ -135,7 +135,7 @@
   .land:active .token{transform:translateY(1px);box-shadow:0 2px 0 rgba(22,16,32,.5), 0 4px 10px rgba(12,7,24,.3);}
 
   /* the four inks, each taken from the world it belongs to */
-  .land--meadow{--land:#2E8FC9;--plaque:#0F5183;}
+  .land--pond  {--land:#1E7F9B;--plaque:#0A4356;}
   .land--grove {--land:#3AA36E;--plaque:#156045;}
   .land--bridge{--land:#6B4A72;--plaque:#3E2758;}
   /* the trail's hero is a small fox in a lamplit clearing, so this land pushes
@@ -291,44 +291,91 @@
 
 <main class="board" id="board">
 
-  <a class="land land--meadow" href="starfall-meadow/index.html">
+  <a class="land land--pond" href="ducks-in-a-row/index.html">
     <svg viewBox="0 0 400 150" preserveAspectRatio="xMinYMid slice" aria-hidden="true">
               <defs>
-                <linearGradient id="sfSky" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#3fa6e0"/><stop offset="55%" stop-color="#95ddf5"/><stop offset="1" stop-color="#fff6cf"/>
+                <linearGradient id="dkSky" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#ffd79b"/><stop offset="1" stop-color="#ffb268"/>
                 </linearGradient>
-                <linearGradient id="sfStar" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#fff3c0"/><stop offset="1" stop-color="#ffae33"/>
+                <linearGradient id="dkWater" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#3a97a8"/><stop offset="55%" stop-color="#1f7386"/>
+                  <stop offset="1" stop-color="#0e5262"/>
                 </linearGradient>
               </defs>
-              <rect width="400" height="150" fill="url(#sfSky)"/>
-              <circle cx="330" cy="34" r="20" fill="#fffbe0"/>
-              <ellipse cx="70" cy="40" rx="34" ry="16" fill="#fff" opacity=".92"/>
-              <ellipse cx="96" cy="34" rx="24" ry="14" fill="#fff" opacity=".92"/>
-              <path d="M0 118 Q60 100 120 112 T260 106 T400 116 L400 150 L0 150Z" fill="#79ce6b"/>
-              <path d="M0 130 Q80 118 160 128 T320 124 T400 132 L400 150 L0 150Z" fill="#52b457"/>
-              <path d="M40 108 Q140 34 250 74" stroke="#fff" stroke-width="3" stroke-dasharray="6 10" fill="none" opacity=".85" stroke-linecap="round"/>
-              <ellipse cx="250" cy="120" rx="28" ry="8" fill="none" stroke="#fff" stroke-width="3" opacity=".8"/>
-              <path d="M150 44l6.4 13L171 59.2l-10.4 10 2.5 14.2L150 76.7l-13.1 6.7 2.5-14.2-10.4-10 14.6-2.2z" fill="url(#sfStar)" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
-              <g transform="translate(66,112)">
-                <ellipse cx="0" cy="6" rx="17" ry="5" fill="#2f7a3c" opacity=".3"/>
-                <path d="M-14 -6 Q-30 -14 -26 -32 Q-16 -26 -10 -12Z" fill="#c9a077"/>
-                <circle cx="0" cy="-14" r="16" fill="#ffd8a8"/>
-                <ellipse cx="2" cy="-10" rx="9" ry="10" fill="#fff9ec"/>
-                <path d="M-11 -26 Q-9 -37 -1 -32 Q-3 -26 -11 -26Z" fill="#ffd8a8"/>
-                <path d="M11 -26 Q9 -37 1 -32 Q3 -26 11 -26Z" fill="#ffd8a8"/>
-                <circle cx="-5" cy="-17" r="2.6" fill="#3a2850"/><circle cx="5" cy="-17" r="2.6" fill="#3a2850"/>
-                <circle cx="-5.8" cy="-18" r="1" fill="#fff"/><circle cx="4.2" cy="-18" r="1" fill="#fff"/>
-                <ellipse cx="-10" cy="-13" rx="3" ry="2" fill="#ff8caa" opacity=".5"/>
-                <ellipse cx="10" cy="-13" rx="3" ry="2" fill="#ff8caa" opacity=".5"/>
+              <rect width="400" height="150" fill="url(#dkWater)"/>
+              <rect width="400" height="34" fill="url(#dkSky)"/>
+              <circle cx="292" cy="20" r="15" fill="#fff4cd"/>
+              <path d="M0 34 Q54 22 108 30 T226 26 T330 32 T400 28 L400 44 L0 44Z" fill="#2c6b55"/>
+              <path d="M0 40 Q70 32 140 40 T280 36 T400 42 L400 50 L0 50Z" fill="#1d5241"/>
+              <path d="M0 44h400v9H0z" fill="#0f4b58" opacity=".55"/>
+              <g fill="#ffe9b6" opacity=".2">
+                <ellipse cx="120" cy="70" rx="74" ry="2.6"/><ellipse cx="300" cy="60" rx="58" ry="2.2"/>
+                <ellipse cx="230" cy="104" rx="86" ry="3"/><ellipse cx="60" cy="126" rx="52" ry="2.4"/>
+                <ellipse cx="350" cy="132" rx="46" ry="2.4"/>
+              </g>
+              <g fill="#5c9c5c">
+                <path d="M262 66a17 11 0 1 0 .1 0l-4-4z" opacity=".95"/>
+                <path d="M330 100a20 13 0 1 0 .1 0l-5-5z"/>
+                <path d="M206 132a15 10 0 1 0 .1 0l-4-4z" opacity=".9"/>
+              </g>
+              <g stroke="#2f6b4d" stroke-width="2.4" stroke-linecap="round" fill="none">
+                <path d="M14 150V96"/><path d="M24 150V84"/><path d="M33 150V104"/>
+                <path d="M382 150v-58"/><path d="M392 150v-72"/>
+              </g>
+              <g fill="#8a5330">
+                <ellipse cx="24" cy="80" rx="2.6" ry="7"/><ellipse cx="392" cy="74" rx="2.6" ry="7"/>
+              </g>
+              <g stroke="#ffe9b6" stroke-width="2" opacity=".38" fill="none" stroke-linecap="round">
+                <path d="M126 108 Q96 116 62 128"/><path d="M126 118 Q98 126 66 138"/>
+              </g>
+              <g>
+                <ellipse cx="64" cy="126" rx="9" ry="3" fill="#083c48" opacity=".4"/>
+                <ellipse cx="62" cy="123" rx="7.6" ry="6.2" fill="#ffd873"/>
+                <circle cx="67" cy="118.6" r="4.4" fill="#ffe49a"/>
+                <path d="M71 117.6l4.6.9-4.4 1.6z" fill="#f79a2c"/>
+                <circle cx="68.4" cy="117.6" r="1.15" fill="#2b1f14"/>
+              </g>
+              <g>
+                <ellipse cx="92" cy="120" rx="9" ry="3" fill="#083c48" opacity=".4"/>
+                <ellipse cx="90" cy="117" rx="7.6" ry="6.2" fill="#ffd873"/>
+                <circle cx="95" cy="112.6" r="4.4" fill="#ffe49a"/>
+                <path d="M99 111.6l4.6.9-4.4 1.6z" fill="#f79a2c"/>
+                <circle cx="96.4" cy="111.6" r="1.15" fill="#2b1f14"/>
+              </g>
+              <g>
+                <ellipse cx="120" cy="115" rx="9" ry="3" fill="#083c48" opacity=".4"/>
+                <ellipse cx="118" cy="112" rx="7.6" ry="6.2" fill="#ffd873"/>
+                <circle cx="123" cy="107.6" r="4.4" fill="#ffe49a"/>
+                <path d="M127 106.6l4.6.9-4.4 1.6z" fill="#f79a2c"/>
+                <circle cx="124.4" cy="107.6" r="1.15" fill="#2b1f14"/>
+              </g>
+              <g>
+                <ellipse cx="158" cy="110" rx="17" ry="5" fill="#083c48" opacity=".42"/>
+                <path d="M138 104q-9-5-12 1 5 3 12 4z" fill="#e8a72e"/>
+                <ellipse cx="154" cy="104" rx="17.5" ry="12.5" fill="#ffcf4d"/>
+                <ellipse cx="156" cy="109" rx="12" ry="5.6" fill="#fff3ce"/>
+                <path d="M142 100q11-7 21 0-9 7-21 0z" fill="#e8a02a"/>
+                <path d="M164 99q7-2 8-7l6 1q-3 8-10 11z" fill="#ffcf4d"/>
+                <circle cx="176" cy="88" r="8.8" fill="#ffe08a"/>
+                <ellipse cx="178" cy="90" rx="5.2" ry="4" fill="#fffae0"/>
+                <path d="M183 85.6l9.6 1.6-9.4 3z" fill="#ff9f2e"/>
+                <circle cx="179.4" cy="85.4" r="2.3" fill="#2b1f14"/>
+                <circle cx="180.2" cy="84.5" r=".85" fill="#fff"/>
+                <g fill="#ff8fb8">
+                  <ellipse cx="169" cy="77" rx="1.9" ry="3.4"/>
+                  <ellipse cx="172.4" cy="79.4" rx="3.4" ry="1.9"/>
+                  <ellipse cx="165.6" cy="79.4" rx="3.4" ry="1.9"/>
+                  <ellipse cx="169" cy="81.8" rx="1.9" ry="3.4"/>
+                </g>
+                <circle cx="169" cy="79.4" r="1.9" fill="#fff2a8"/>
               </g>
             </svg>
     <span class="plaque">
       <span class="naming">
-        <h2>Starfall Meadow</h2>
-        <p class="skill">Trajectory &middot; 60 seconds</p>
+        <h2>Ducks in a Row</h2>
+        <p class="skill">Route planning &middot; 90 seconds</p>
       </span>
-      <span class="token"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="4.6" r="3.05" fill="currentColor"/><path d="M10 8.6c2.62 0 4.2 2.05 4.55 4.35h-9.1C5.8 10.65 7.38 8.6 10 8.6Z" fill="currentColor"/><rect x="5.1" y="13.9" width="9.8" height="1.7" rx=".85" fill="currentColor"/><rect x="3.1" y="16.5" width="13.8" height="2" rx="1" fill="currentColor"/></svg></span>
+      <span class="token"><svg viewBox="0 0 20 20" aria-hidden="true"><ellipse cx="8.4" cy="12.4" rx="5.4" ry="4.1" fill="currentColor"/><path d="M11.6 9.6c0-2 1.1-3.4 2.4-3.4s2.3 1.2 2.3 2.9c0 1-.5 1.9-1.1 2.4l-.8 1-2.8-.7z" fill="currentColor"/><path d="M15.9 7.6l3 .8-2.9 1.1z" fill="currentColor"/><ellipse cx="3.4" cy="15.2" rx="2.5" ry="1.9" fill="currentColor"/><rect x="1" y="17.6" width="18" height="1.7" rx=".85" fill="currentColor"/></svg></span>
     </span>
   </a>
 

@@ -18,11 +18,11 @@ Four small, complete browser games, each a single round of 60–90 seconds, each
 
 ## Positioning
 
-Every game trains one named cognitive skill inside a very short round with **no way to lose**: Starfall Meadow — trajectory prediction; Owlet Grove — timing; Beacon Bridge — mental rotation; Foxglove Trail — map reading. No accounts, no ads, no purchases, no streaks, no score-chasing loops.
+Every game trains one named cognitive skill inside a very short round with **no way to lose**: Ducks in a Row — route planning; Owlet Grove — timing; Beacon Bridge — mental rotation; Foxglove Trail — map reading. No accounts, no ads, no purchases, no streaks, no score-chasing loops.
 
 ## Operating Context
 
-Opened from a phone browser or added to the home screen, then played full screen in one hand. The whole site is: pick a game → play a round → go home or open the grown-ups menu. Each game asks for full screen on the first tap; Starfall Meadow also asks for landscape. Phones are the primary device; a desktop keyboard path exists and must keep working.
+Opened from a phone browser or added to the home screen, then played full screen in one hand. The whole site is: pick a game → play a round → go home or open the grown-ups menu. Each game asks for full screen on the first tap. Phones are the primary device; a desktop keyboard path exists and must keep working.
 
 ## Capabilities and Constraints
 
@@ -36,11 +36,11 @@ Opened from a phone browser or added to the home screen, then played full screen
 
 ## Brand Commitments
 
-The four game names and their illustrated cast (Pip the fox cub, the owlet, the reindeer and the beacon, the trail fox) are fixed, as is the existing in-game art of each. The voice is warm, plain and unhurried, and speaks to a child without baby-talk.
+The four game names and their illustrated cast (the mother duck and her ducklings, the owlet, the reindeer and the beacon, the trail fox) are fixed, as is the existing in-game art of each. The voice is warm, plain and unhurried, and speaks to a child without baby-talk. Starfall Meadow and its fox cub Pip are no longer on the picker but remain playable by link, so their art is preserved rather than retired.
 
 ## Evidence on Hand
 
-All four games exist and are playable in this repository. Each has bespoke inline SVG key art on the home page and a full canvas-drawn world inside. There are no testimonials, download counts, reviews, or usage numbers, and none may be invented.
+All four picker games exist and are playable in this repository, alongside two delisted ones (Comet Catch, Starfall Meadow) that remain reachable by link. Each has bespoke inline SVG key art on the home page and a full canvas-drawn world inside. There are no testimonials, download counts, reviews, or usage numbers, and none may be invented.
 
 ## Product Principles
 

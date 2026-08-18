@@ -30,7 +30,7 @@ Each land carries two of its own inks, lifted from the world it opens:
 
 | Land | `--land` (ground) | `--plaque` (label) |
 |---|---|---|
-| Starfall Meadow | `#2E8FC9` | `#0F5183` |
+| Ducks in a Row | `#1E7F9B` | `#0A4356` |
 | Owlet Grove | `#3AA36E` | `#156045` |
 | Beacon Bridge | `#6B4A72` | `#3E2758` |
 | Foxglove Trail | `#1D4B3D` | `#0F3A30` |

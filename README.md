@@ -6,26 +6,28 @@ Single-file browser games for kids. No build step, no server, no accounts, no AP
 
 | Game | Play | Ages | Round | Tech |
 | --- | --- | --- | --- | --- |
-| Starfall Meadow | [play](https://psticea.github.io/games/starfall-meadow/) · [`starfall-meadow/`](starfall-meadow/index.html) | ~7–10 | 60s | 2D canvas, no dependencies |
+| Ducks in a Row | [play](https://psticea.github.io/games/ducks-in-a-row/) · [`ducks-in-a-row/`](ducks-in-a-row/index.html) | ~5–10 | 90s | 2D canvas, no dependencies |
 | Owlet Grove | [play](https://psticea.github.io/games/owlet-grove/) · [`owlet-grove/`](owlet-grove/index.html) | ~4–9 | 60s | 2D canvas, no dependencies |
 | Beacon Bridge | [play](https://psticea.github.io/games/beacon-bridge/) · [`beacon-bridge/`](beacon-bridge/index.html) | ~7–10 | 90s a crossing | 2D canvas, no dependencies |
 | Foxglove Trail | [play](https://psticea.github.io/games/foxglove-trail/) · [`foxglove-trail/`](foxglove-trail/index.html) | ~7–10 | 3 nights, <2 min | 2D canvas, no dependencies |
 
-None of them has a "Game Over". Starfall Meadow, Beacon Bridge and Foxglove Trail use **arrow keys, Space, `Q` and `H` only** — no
+None of them has a "Game Over". Beacon Bridge and Foxglove Trail use **arrow keys, Space, `Q` and `H` only** — no
 mouse — and `H` closes the game and comes straight back to the picker.
 Owlet Grove uses **Space** to fly and **`Q`** for the grown-ups menu on a keyboard, and a tap anywhere to fly on a touch screen.
+Ducks in a Row is steered by **holding anywhere** on a touch screen, or by holding `←` `→` on a keyboard.
 Beacon Bridge zooms out on a narrow screen just far enough to hold the reindeer and the span being mended in the same shot, and the
 sky and the gorge run past the top and bottom of the frame so the picture still fills the screen.
 The root page is a compact picker: a painting, the game's name and a Play button for each of those four.
 
-Comet Catch is still here and still playable — [play](https://psticea.github.io/games/comet-catch/) ·
-[`comet-catch/`](comet-catch/index.html) — it is just no longer listed on the picker, to keep the front page short.
+Two older games are still here and still playable, just no longer listed on the picker, to keep the front page short:
+Comet Catch — [play](https://psticea.github.io/games/comet-catch/) · [`comet-catch/`](comet-catch/index.html) — and
+Starfall Meadow — [play](https://psticea.github.io/games/starfall-meadow/) ·
+[`starfall-meadow/`](starfall-meadow/index.html), which Ducks in a Row replaced in the first slot.
 
 ## On a phone
 
 Every game is driven by touch, every game has an always-visible **home button** that returns to the picker, and the picker and
 all four games try to run without browser chrome.
-
 Full screen on the mobile web is more awkward than it looks, so it is worth being plain about what actually happens:
 
 - The Fullscreen API is **per document**. The spec fully exits fullscreen when a document unloads, so it can never survive the
@@ -40,7 +42,8 @@ that survives navigating from the picker into a game. The picker shows a small, 
 Add to Home Screen step, since that is the only route to full screen there.
 
 Starfall Meadow needs the long edge of the screen and asks you to turn the phone sideways; that screen carries its own
-"All games" link so a child can never get stuck on it.
+"All games" link so a child can never get stuck on it. Ducks in a Row works in either orientation and reshapes its pond to fit —
+portrait gets a pond that is taller than it is wide.
 
 ---
 
@@ -72,7 +75,151 @@ The renderer degrades in small ordered steps if a frame genuinely costs too much
 
 ---
 
+## Ducks in a Row
+
+A 90-second pond for roughly ages 5–10. Open `ducks-in-a-row/index.html` — no build step, no server, no keys, no dependencies.
+
+**Play:** hold **anywhere** and she turns towards your finger · `←` `→` (or `A` `D`) held down turn her on a keyboard ·
+`Space` start and play again · `Q` grown-ups menu · `H` back to all games.
+
+A mother duck paddles across a pond at golden hour, gathering her ducklings into a line behind her. She never stops swimming;
+the only thing a child chooses is where she points.
+
+### The decision the whole game rests on
+
+**Take the near duckling now, or keep open water ahead for the line you are already towing.** Her own line is the one thing on
+the pond she cannot swim through — brush it and a few ducklings pop out and have to be gathered again. A long line makes her
+slower and her turning circle tighter, so the same gap that was easy at three ducklings is a real problem at twelve. A child
+who chases whatever is closest spends the run repairing a scattered line; a child who sweeps wide and works the outside of the
+pond first ends up with a line worth bragging about.
+
+Nothing in the game says any of this. The first fifteen seconds are the tutorial.
+
+### The skill it builds
+
+- **Route planning** — the best duckling is usually not the nearest one, it is the one that leaves her pointing at open water.
+- **Delayed gratification** — grabbing the closest thing works early and stops working, and a child discovers that by doing it.
+- **Spatial judgement** — reading a turning circle that changes as the line grows.
+
+### How the difficulty works — no adaptation, on purpose
+
+Unlike Comet Catch and Foxglove Trail, this game keeps **no skill estimate and adapts to nobody**. It does not need to: the
+line *is* the difficulty curve. Each duckling costs her 3% of her speed to a floor of 62%, and her turn rate eases from 250°/s
+down to 195°/s, so a long line steers like a barge and the pond fills with an obstacle the child built themselves. The only
+scripted curve is the spawn pacing, which follows the shape of the round:
+
+| Time | What the pond does |
+| --- | --- |
+| 0–20s | Calm. Three ducklings at a time, a slow spawn. She discovers that they follow her. |
+| 20–55s | Escalation. More ducklings, a drifting current, lines long enough to be awkward. |
+| 55–65s | **The lily-pad lull.** Spawns thin out and the water quietens. This is deliberate: a run that only escalates flattens into noise, and a child needs a few seconds to consolidate a long line and feel proud of it. |
+| 65–90s | The sunset gathering. Double spawns, the light going amber, a visible crescendo. |
+
+### No failure state
+
+No "Game Over", no lives, no buzzer, no death. Brushing her own line **scatters at most four ducklings** and the rest of the
+line closes ranks — the score already earned is never taken away, and there is a 1.4-second grace afterwards so one mistake
+cannot chain into three. The reeds at the pond edge turn her gently back inward rather than stopping her. A scatter gets one
+worried quack and a ring of ripple; it never gets a screen shake, because shaking the screen at a child who has just lost their
+ducklings is punishment, which this game does not do. The screen only shakes — by at most two pixels — when they reach a new
+longest line.
+
+### The numbers, so the feel can be re-tuned
+
+Every constant lives in one `K` object at the top of the file.
+
+| Constant | Value | What it does |
+| --- | --- | --- |
+| `ROUND` | 90 s | Length of a round |
+| `SPEED` | 196 u/s | Her speed with nobody following |
+| `SPEED_FALL` / `SPEED_FLOOR` | 3% per duckling, floor 62% | How much a long line slows her |
+| `TURN_MAX` / `TURN_MIN` | 250°/s → 195°/s at ten ducklings | How much a long line costs her agility |
+| `SPACING` / `SPACING_MIN` | 34 units, bunching to 78% | Gap along the line; they bunch when she slows |
+| `STRETCH` / `LAG` | 9 / 6 units | The line strings out in a hard turn; the last one always trails, then hurries |
+| `GATHER_R` | 36 units | **Forgiveness:** bigger than the duckling, so a near-enough sweep always collects |
+| `SELF_R` | 14 units | **Forgiveness:** smaller than the line, so a visible near-miss never scatters |
+| `SELF_SKIP` | 3 | The three ducklings closest to her never startle — that is where accidental brushes happen |
+| `SCATTER_MAX` | 4 | The most a single mistake can ever cost |
+| `GRACE` | 1.4 s | No second scatter for this long |
+| `MAX_FREE` | 5 | Free-swimming ducklings on the pond at once |
+| `LIFE` / `WARN` | 8.5 s / 2.4 s | How long a duckling waits, and how long it peeps and bobs before paddling off |
+| `SPAWN_APART` / `SPAWN_FLOOR` | 168 / 100 units | Blue-noise spacing target, and its hard floor |
+| `LINE_CLEAR` / `DUCK_CLEAR` | 40 / 150 units | Never spawn inside the line or on top of her |
+| `POND_AREA` | 820² units | Pond area, reshaped to the viewport |
+
+Scoring is `10 × (place in the line)`, so the first duckling is worth 10 and the twelfth is worth 120 — but each duckling only
+ever pays for the **best place it has reached this round**, and ten for anything less. That one rule is what stops a child being
+paid for wrecking their own line and collecting the same ducklings twice. A bot that farms scatters deliberately scores about
+1,000 against roughly 6,000 for honest play.
+
+### Built with
+
+Plain Canvas 2D and the Web Audio API, and nothing else — no images, no audio files, no libraries. The palette is a single
+OKLCH ramp from deep water to low sun, evaluated in the page. The duck, ducklings, reeds and lily pads are drawn once into
+offscreen canvases at startup and on resize, then moved; ripples, foam and pollen come from one pooled array so the hot loop
+allocates nothing. The wake is read straight off the path buffer rather than built out of particles.
+
+Sound is all in **D major pentatonic**: each duckling peeps the next note up the scale as a chain builds, so a fast gather is
+consonant by construction. Her quack sits an octave below, and the bed is a slow warm pad with filtered-noise water lapping and
+occasional birdsong in the same key, ducking under every effect. The audio graph is built inside the first touch, so the *first*
+run has sound rather than the second.
+
+The simulation is a **pure layer** — fixed 1/120s timestep, seeded `mulberry32` throughout, no DOM, no canvas, no audio, no
+clock reads and no bare randomness — and the line is a ring-buffer path rather than a physics chain, which is what makes it
+deterministic and testable.
+
+### Testing it
+
+There is no test runner in this repo and no build step to hang one on, so the game ships its own:
+
+**[`ducks-in-a-row/index.html?test=1`](ducks-in-a-row/index.html?test=1)** boots a self-test harness instead of the game, drives
+the pure layer headlessly and prints a PASS/FAIL list, with the verdict in `document.title`. Thirty-eight checks, no dependencies,
+works offline and from `file://`. Among them: a fixed-seed run scores an exact expected total; scatter detaches exactly the right
+ducklings and never more than four; banked score survives; the round ends exactly on time and a simulated 30-second tab-out cannot
+fast-forward it; 30, 60 and 144 Hz swim the same path; spawns never land inside the line; a greedy pursuit bot can always reach
+something before it drifts off; collisions are honest in both directions; farming scatters loses; and **planning a route beats
+grabbing the nearest duckling**, which is the check that says the loop holds a real decision rather than being a toy.
+
+### Known deviations from the brief
+
+Expected to be non-empty, and it is.
+
+1. **Turn rate and speed curves are not the ones specified.** The brief asked for 200°/s → 120°/s and a 1.5% speed loss per
+   duckling. Both were measured and both were wrong, in the same way: her turning circle is speed ÷ turn rate, so dropping the
+   turn rate steeply makes the circle *wider* as the line grows, and a line can only reach its own head once `n × SPACING`
+   passes `2πr`. At the brief's numbers that needed about eighteen ducklings — a greedy bot took 27 in a row across ten seeds
+   and **never scattered once**, so the rule the entire game rests on was inert. Taking her speed rather than her agility
+   tightens the circle as the line grows, which is what "a long line is dangerous" actually requires. Crossing is now possible
+   from eight ducklings.
+2. **Scattering is capped at four ducklings** rather than everything behind the crossing point. Losing a line of twenty in one
+   brush ends the session for a six-year-old; losing four teaches the same lesson and she keeps her line.
+3. **Scoring is not `10 × the number already following`.** As written that pays nothing at all for the first duckling of every
+   line. It is `10 × place`, with the personal-best rule above bolted on to kill the scatter-farming exploit, which measurably
+   paid before it was added.
+4. **The pond is small — about 820 units square, reshaped to the viewport.** Measured across three sizes, the route-planning bot
+   beat the grab-the-nearest bot by 2% on a 1260-unit pond and by 12–36% on an 820-unit one. On a big pond her own line is never
+   in the way, so there is no decision to get right.
+5. **Two axes of control, not one key.** Route planning genuinely needs a direction. A virtual stick is useless to a five-year-old
+   holding a phone one-handed, so it is steer-towards-your-finger, which needs no learning at all.
+6. **The mother duck is yellow**, not the mallard brown a real one would be. She is told apart from her ducklings by size, by the
+   wing and cheek that give her internal contrast in greyscale, and by the lily behind her ear — never by hue alone.
+7. **Google Fonts is still loaded**, against the brief's no-third-party-requests rule, because Baloo 2 and Nunito are a
+   site-wide brand commitment and the picker has already loaded them before any game opens. A lone exception buys no privacy and
+   costs the site its single voice. If that request should go, it goes site-wide.
+
+### What has not been verified
+
+Honestly: **no child has played this yet.** Everything above about pacing and difficulty comes from bots and from measurement,
+not from watching a six-year-old, and bots are a poor model of a child still learning to steer. The playtest items in the brief —
+hand it to someone cold, watch a face at the moment a nine-duckling line comes round a wide turn, and put this and Starfall
+Meadow in front of the same child to see which they pick for a third round — are the ones that matter most and none of them has
+been done. Lighthouse has not been run against a deployed URL either.
+
+---
+
 ## Starfall Meadow
+
+> Not on the picker any more — reachable by link only: `starfall-meadow/index.html`. Ducks in a Row took its slot.
 
 A 60-second 2D catching game for roughly ages 7–10. Open `starfall-meadow/index.html` — it has no runtime dependencies and works offline.
 
