@@ -160,11 +160,17 @@ rather than just listing it. They keep clear of the HUD, the two chrome buttons 
 
 ### Why the ducks never rotate
 
-The art is drawn in profile, which a top-down world cannot simply rotate: pointing her south stands her on her nose and
-pointing her west stands her on her head. So every duck is **mirrored** left or right instead, with the heading showing up as
-a slight tilt (about 17°) and, mostly, as the wake behind her. The mirror eases through zero rather than snapping, which reads
-as the duck swinging round towards you. Near due north or south the horizontal component is ignored, or she would flicker
-between left and right on the tiniest wobble.
+The art is drawn in profile, which a top-down world cannot simply rotate: pointing her south would stand her on her nose and
+pointing her west would stand her on her head. So the ducks **foreshorten** instead, the way a real one does. How side-on a
+duck is, is `|cos(heading)|`: swimming east or west shows the full profile, and swimming up or down the screen shows a narrow
+view — her **front** when she is coming towards the child, her **back**, tail up and no face, when she is heading away. Six
+sprites in all, three per bird.
+
+Two details make it hold together. The profile never squashes below 54% of its width, so a duck halfway through a turn is
+never thin as paper; and whichever view is winning is drawn solid with the other blended over it, because two half-transparent
+sprites let the pond show through the duck and a murky see-through duck is the one artifact worth avoiding. The left/right
+mirror is latched with a little hysteresis so it can only flip while she is near vertical — which is exactly when the narrow
+view is covering her and the swap cannot be seen.
 
 The line itself is a **path buffer**: each duckling rides a fixed arc-length behind her, so it follows exactly where she went.
 An earlier build added a per-index "stretch" scaled by how hard she was turning, which slid every duckling backwards along
@@ -175,8 +181,9 @@ the self-tests now assert the gaps hold whether she is straight or hauling the l
 
 Plain Canvas 2D and the Web Audio API, and nothing else — no images, no audio files, no libraries. The palette is a single
 OKLCH ramp from deep water to low sun, evaluated in the page. The duck, ducklings, reeds and lily pads are drawn once into
-offscreen canvases at startup and on resize, then moved; ripples, foam and pollen come from one pooled array so the hot loop
-allocates nothing. The wake is read straight off the path buffer rather than built out of particles.
+offscreen canvases at startup and on resize, then moved — six duck sprites in all, a profile, a front and a back for each of
+the mother and a duckling. Ripples, foam and pollen come from one pooled array so the hot loop allocates nothing. The wake is
+read straight off the path buffer rather than built out of particles.
 
 Sound is all in **D major pentatonic**: each duckling peeps the next note up the scale as a chain builds, so a fast gather is
 consonant by construction. Her quack sits an octave below, and the bed is a slow warm pad with filtered-noise water lapping and

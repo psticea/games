@@ -1139,6 +1139,198 @@ function drawDuckling(g, s){
   g.restore();
 }
 
+/* ---- the same two birds, seen head-on ----
+   A profile squashed horizontally goes to nothing as it turns edge-on, and a
+   duck the thickness of paper is worse than one facing the wrong way. So the
+   turn cross-fades through a real front view: round body, both wings, both
+   eyes, and the beak foreshortened towards you. */
+function drawMotherFront(g, s){
+  g.save(); g.scale(s, s);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+
+  // the tail, just showing past the body
+  g.fillStyle = '#e8a72e';
+  g.beginPath(); g.ellipse(0, 9.5, 7.4, 4.4, 0, 0, TAU); g.fill();
+
+  // body, round from the front
+  const bodyG = g.createLinearGradient(0, -13, 0, 14);
+  bodyG.addColorStop(0, '#ffe07a'); bodyG.addColorStop(0.55, '#fcc63f'); bodyG.addColorStop(1, '#e0a02a');
+  g.fillStyle = bodyG;
+  g.beginPath(); g.ellipse(0, 0.5, 15.4, 12.8, 0, 0, TAU); g.fill();
+
+  // both folded wings — the front view's share of her greyscale contrast
+  g.fillStyle = '#e0a02a';
+  g.beginPath(); g.ellipse(-11.4, 0.5, 4.5, 8.6, 0.14, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(11.4, 0.5, 4.5, 8.6, -0.14, 0, TAU); g.fill();
+  g.strokeStyle = 'rgba(150,96,14,.42)'; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(-11.4, 0.5, 4.5, 8.6, 0.14, 0, TAU); g.stroke();
+  g.beginPath(); g.ellipse(11.4, 0.5, 4.5, 8.6, -0.14, 0, TAU); g.stroke();
+
+  // breast, on the waterline
+  g.fillStyle = '#fff3ce';
+  g.beginPath(); g.ellipse(0, 5.6, 9.2, 6.8, 0, 0, TAU); g.fill();
+
+  // neck and head
+  g.fillStyle = bodyG;
+  g.beginPath(); g.ellipse(0, -8, 6.4, 6, 0, 0, TAU); g.fill();
+  const headG = g.createLinearGradient(0, -26, 0, -9);
+  headG.addColorStop(0, '#ffe796'); headG.addColorStop(1, '#f7c246');
+  g.fillStyle = headG;
+  g.beginPath(); g.arc(0, -15.5, 9.4, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(255,250,224,.5)';
+  g.beginPath(); g.ellipse(0, -13.4, 6.6, 4.8, 0, 0, TAU); g.fill();
+
+  // beak, pointing at you — short, wide and foreshortened
+  g.fillStyle = '#ff9f2e';
+  g.beginPath();
+  g.moveTo(-4.2, -13.4);
+  g.quadraticCurveTo(0, -8.6, 4.2, -13.4);
+  g.quadraticCurveTo(0, -15, -4.2, -13.4);
+  g.closePath(); g.fill();
+  g.fillStyle = 'rgba(160,84,8,.4)';
+  g.beginPath(); g.ellipse(-1.6, -13.5, 0.8, 0.6, 0, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(1.6, -13.5, 0.8, 0.6, 0, 0, TAU); g.fill();
+
+  // both eyes
+  g.fillStyle = '#2b1f14';
+  g.beginPath(); g.arc(-4.4, -17.6, 2.4, 0, TAU); g.fill();
+  g.beginPath(); g.arc(4.4, -17.6, 2.4, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.95)';
+  g.beginPath(); g.arc(-3.5, -18.5, 0.9, 0, TAU); g.fill();
+  g.beginPath(); g.arc(5.3, -18.5, 0.9, 0, TAU); g.fill();
+
+  // the lily, still tucked behind one ear
+  g.save();
+  g.translate(8.6, -21.5);
+  for (let i = 0; i < 6; i++){
+    g.rotate(TAU / 6);
+    g.fillStyle = i % 2 ? '#ffa8c8' : '#ff8fb8';
+    g.beginPath(); g.ellipse(0, -3.6, 1.9, 3.5, 0, 0, TAU); g.fill();
+  }
+  g.fillStyle = '#fff2a8';
+  g.beginPath(); g.arc(0, 0, 1.9, 0, TAU); g.fill();
+  g.restore();
+
+  // rim light along the top, same sun as everything else
+  g.strokeStyle = 'rgba(255,248,214,.78)'; g.lineWidth = 1.9;
+  g.beginPath(); g.moveTo(-12.6, -4.4); g.quadraticCurveTo(0, -13, 12.6, -4.4); g.stroke();
+  g.beginPath(); g.moveTo(-7.4, -21.6); g.quadraticCurveTo(0, -26.4, 7.4, -21.6); g.stroke();
+  g.restore();
+}
+
+function drawDucklingFront(g, s){
+  g.save(); g.scale(s, s);
+  const bodyG = g.createLinearGradient(0, -7, 0, 8);
+  bodyG.addColorStop(0, '#ffe08a'); bodyG.addColorStop(0.6, '#f8c74d'); bodyG.addColorStop(1, '#dda434');
+  g.fillStyle = bodyG;
+  g.beginPath(); g.ellipse(0, 1.4, 8.4, 7.2, 0, 0, TAU); g.fill();
+
+  // little wings either side
+  g.fillStyle = '#e8b23c';
+  g.beginPath(); g.ellipse(-6.4, 1.4, 2.4, 4.6, 0.16, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(6.4, 1.4, 2.4, 4.6, -0.16, 0, TAU); g.fill();
+
+  g.fillStyle = '#fff0bd';
+  g.beginPath(); g.ellipse(0, 4, 5, 3.4, 0, 0, TAU); g.fill();
+
+  g.fillStyle = '#ffdf87';
+  g.beginPath(); g.arc(0, -5.4, 5.4, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(255,247,214,.55)';
+  g.beginPath(); g.ellipse(0, -4.4, 3.6, 2.6, 0, 0, TAU); g.fill();
+
+  g.fillStyle = '#f79a2c';
+  g.beginPath();
+  g.moveTo(-2.4, -4.2); g.quadraticCurveTo(0, -1.6, 2.4, -4.2);
+  g.quadraticCurveTo(0, -5.2, -2.4, -4.2); g.closePath(); g.fill();
+
+  g.fillStyle = '#2b1f14';
+  g.beginPath(); g.arc(-2.5, -7, 1.45, 0, TAU); g.fill();
+  g.beginPath(); g.arc(2.5, -7, 1.45, 0, TAU); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.95)';
+  g.beginPath(); g.arc(-2, -7.5, 0.55, 0, TAU); g.fill();
+  g.beginPath(); g.arc(3, -7.5, 0.55, 0, TAU); g.fill();
+
+  g.strokeStyle = 'rgba(255,240,190,.62)'; g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(-6.6, -1.6); g.quadraticCurveTo(0, -8.2, 6.6, -1.6); g.stroke();
+  g.restore();
+}
+
+/* ---- and seen from behind, swimming away ----
+   Half the time she is heading up the screen, which is away from the child.
+   Showing her face then would have her swimming backwards, so the away view
+   is a real one: tail up the middle, both wings, no face. */
+function drawMotherBack(g, s){
+  g.save(); g.scale(s, s);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+
+  // tail, cocked up towards the viewer
+  g.fillStyle = '#d99a26';
+  g.beginPath();
+  g.moveTo(-5.4, 9); g.quadraticCurveTo(0, 15.5, 5.4, 9);
+  g.quadraticCurveTo(0, 11, -5.4, 9); g.closePath(); g.fill();
+
+  const bodyG = g.createLinearGradient(0, -13, 0, 14);
+  bodyG.addColorStop(0, '#ffdc6e'); bodyG.addColorStop(0.55, '#f6bf3a'); bodyG.addColorStop(1, '#d69726');
+  g.fillStyle = bodyG;
+  g.beginPath(); g.ellipse(0, 0.5, 15.4, 12.8, 0, 0, TAU); g.fill();
+
+  // folded wings meeting down the middle of her back
+  g.fillStyle = '#e8a72e';
+  g.beginPath(); g.ellipse(-7.4, 1, 6.6, 9.4, 0.1, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(7.4, 1, 6.6, 9.4, -0.1, 0, TAU); g.fill();
+  g.strokeStyle = 'rgba(150,96,14,.4)'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(0, -8.6); g.lineTo(0, 9); g.stroke();
+
+  // neck and the back of her head
+  g.fillStyle = bodyG;
+  g.beginPath(); g.ellipse(0, -8, 6.2, 6, 0, 0, TAU); g.fill();
+  const headG = g.createLinearGradient(0, -26, 0, -9);
+  headG.addColorStop(0, '#ffe08a'); headG.addColorStop(1, '#efb63c');
+  g.fillStyle = headG;
+  g.beginPath(); g.arc(0, -15.5, 9.2, 0, TAU); g.fill();
+
+  // the lily, seen from behind
+  g.save();
+  g.translate(-8.6, -21.5);
+  for (let i = 0; i < 6; i++){
+    g.rotate(TAU / 6);
+    g.fillStyle = i % 2 ? '#f094b4' : '#e87fa6';
+    g.beginPath(); g.ellipse(0, -3.4, 1.8, 3.3, 0, 0, TAU); g.fill();
+  }
+  g.restore();
+
+  g.strokeStyle = 'rgba(255,248,214,.7)'; g.lineWidth = 1.8;
+  g.beginPath(); g.moveTo(-12.6, -4.4); g.quadraticCurveTo(0, -13, 12.6, -4.4); g.stroke();
+  g.beginPath(); g.moveTo(-7.2, -21.4); g.quadraticCurveTo(0, -26.2, 7.2, -21.4); g.stroke();
+  g.restore();
+}
+
+function drawDucklingBack(g, s){
+  g.save(); g.scale(s, s);
+  g.fillStyle = '#d9a234';
+  g.beginPath();
+  g.moveTo(-3, 5.4); g.quadraticCurveTo(0, 9.4, 3, 5.4);
+  g.quadraticCurveTo(0, 6.6, -3, 5.4); g.closePath(); g.fill();
+
+  const bodyG = g.createLinearGradient(0, -7, 0, 8);
+  bodyG.addColorStop(0, '#ffdb75'); bodyG.addColorStop(0.6, '#f2be44'); bodyG.addColorStop(1, '#d59c2f');
+  g.fillStyle = bodyG;
+  g.beginPath(); g.ellipse(0, 1.4, 8.4, 7.2, 0, 0, TAU); g.fill();
+
+  g.fillStyle = '#e8b23c';
+  g.beginPath(); g.ellipse(-4.4, 1.4, 3.6, 5.2, 0.12, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(4.4, 1.4, 3.6, 5.2, -0.12, 0, TAU); g.fill();
+  g.strokeStyle = 'rgba(150,96,14,.32)'; g.lineWidth = 0.9;
+  g.beginPath(); g.moveTo(0, -4.4); g.lineTo(0, 5.4); g.stroke();
+
+  g.fillStyle = '#fbd374';
+  g.beginPath(); g.arc(0, -5.4, 5.3, 0, TAU); g.fill();
+
+  g.strokeStyle = 'rgba(255,240,190,.55)'; g.lineWidth = 1.2;
+  g.beginPath(); g.moveTo(-6.6, -1.6); g.quadraticCurveTo(0, -8.2, 6.6, -1.6); g.stroke();
+  g.restore();
+}
+
 function drawLilyPad(g, s, r){
   g.save(); g.scale(s, s);
   const grd = g.createRadialGradient(-r * 0.3, -r * 0.35, r * 0.15, 0, 0, r);
@@ -1436,7 +1628,9 @@ const MOBILE  = COARSE || Math.min(screen.width, screen.height) < 760;
 const STORE_BEST = 'ducksInARow.best', STORE_SND = 'ducksInARow.sound';
 
 let VW = 0, VH = 0, dpr = 1, scale = 1;
-let tex = { key: '', mother: null, duckling: null, pad: null, reed: null, s: 1 };
+let tex = { key: '', mother: null, motherFront: null, motherBack: null,
+            duckling: null, ducklingFront: null, ducklingBack: null,
+            pad: null, reed: null, s: 1 };
 let noise = makeNoise(1);
 let pool = makePool(900);
 let pops = [];                       // floating "+50" marks
@@ -1486,9 +1680,25 @@ function buildTextures(){
   let g = tex.mother.getContext('2d');
   g.translate(34 * s, 40 * s); drawMother(g, s);
 
+  tex.motherFront = offscreen(56 * s, 62 * s);
+  g = tex.motherFront.getContext('2d');
+  g.translate(28 * s, 40 * s); drawMotherFront(g, s);
+
+  tex.motherBack = offscreen(56 * s, 62 * s);
+  g = tex.motherBack.getContext('2d');
+  g.translate(28 * s, 40 * s); drawMotherBack(g, s);
+
   tex.duckling = offscreen(38 * s, 34 * s);
   g = tex.duckling.getContext('2d');
   g.translate(15 * s, 20 * s); drawDuckling(g, s);
+
+  tex.ducklingFront = offscreen(30 * s, 34 * s);
+  g = tex.ducklingFront.getContext('2d');
+  g.translate(15 * s, 20 * s); drawDucklingFront(g, s);
+
+  tex.ducklingBack = offscreen(30 * s, 34 * s);
+  g = tex.ducklingBack.getContext('2d');
+  g.translate(15 * s, 20 * s); drawDucklingBack(g, s);
 
   tex.pad = offscreen(54 * s, 54 * s);
   g = tex.pad.getContext('2d');
@@ -1653,23 +1863,26 @@ function blit(img, x, y, ang, sc, alpha, ax, ay){
   ctx.restore();
 }
 
-/* Which way a duck is facing, as a smooth -1..1 rather than a hard flip.
-   The art is drawn in profile, so a top-down world cannot rotate it: pointing
-   her south stands her on her nose and pointing her west stands her on her
-   head. She is mirrored instead, and the heading shows up as a slight tilt
-   (see TILT below) plus the wake behind her. Easing through zero makes the
-   change read as the duck swinging round towards you rather than snapping.
-   Render-only: kept out here rather than on the simulation objects so the
-   pure layer stays pure. */
-const TILT = 0.30;                   // ~17 degrees of nose-up / nose-down
+/* Which way a duck is turned, and how much of her we see.
+   The art is drawn in profile, and a top-down world cannot rotate it: pointing
+   her south would stand her on her nose. So she foreshortens instead, exactly
+   as a real duck does — how side-on she is, is |cos(heading)|. Swimming east or
+   west shows the full profile; swimming up or down the screen shows her narrow
+   view, which is her front when she is coming towards the child and her back
+   when she is heading away. `sign` only mirrors the profile, and it is latched
+   with a little hysteresis so it can only change while she is near vertical —
+   which is exactly when the narrow view is covering her and the swap cannot be
+   seen. Render-only: kept out here so the pure layer stays pure. */
+const TILT = 0.22;                   // ~13 degrees of nose-up / nose-down
+const FRONT_BAND = 0.46;             // how far round the turn the narrow view fades in
+const FLAT_MIN = 0.54;               // the profile never squashes thinner than this
 let faces = {}, motherFace = 1;
 function faceStep(cur, ang){
   const c = Math.cos(ang);
   if (cur == null) return c >= 0 ? 1 : -1;
-  /* Ignore the horizontal component when she is swimming almost due north or
-     south, or she flickers between left and right on the tiniest wobble. */
-  if (Math.abs(c) <= 0.12) return cur;
-  return cur + ((c >= 0 ? 1 : -1) - cur) * Math.min(1, frameDt * 13);
+  if (c > 0.06) return 1;
+  if (c < -0.06) return -1;
+  return cur;
 }
 function faceFor(id, ang){
   const f = faceStep(faces[id], ang);
@@ -1696,16 +1909,47 @@ function drawFloater(x, y, ang, isMother, bobT, popT, lift, face){
   if (lift) ctx.translate(0, -lift);
   const sc = 1 + (popT > 0 ? popT * 0.4 : 0);
   /* Head up, always. The only rotation is a small tilt from how steeply she
-     is swimming up or down the screen; left and right are a mirror. Written
-     as one formula for both directions: after the mirror the nose ends up at
-     (f*cos t, sin t), so the same tilt reads correctly either way round. */
-  let f = face == null ? 1 : face;
-  if (Math.abs(f) < 0.06) f = f < 0 ? -0.06 : 0.06;   // never a degenerate matrix
-  ctx.rotate(TILT * Math.sin(ang));
-  ctx.scale(sc * f, sc);
-  const img = isMother ? tex.mother : tex.duckling;
-  ctx.drawImage(img, isMother ? -34 : -15, isMother ? -40 : -20,
-                img.width / tex.s, img.height / tex.s);
+     is swimming up or down the screen; left and right are a mirror.
+     Coming round from one side to the other, the profile would have to pass
+     through zero width — a duck as thin as paper — so the front view fades in
+     across that band instead, and the profile never narrows past FLAT_MIN. */
+  const sign = face == null ? 1 : (face >= 0 ? 1 : -1);
+  /* How side-on she is. 1 swimming east or west, 0 swimming straight up or
+     down the screen, and everything between is a real foreshortening. */
+  const side = Math.abs(Math.cos(ang));
+  const t = clamp(1 - side / FRONT_BAND, 0, 1);
+  const narrow = t * t * (3 - 2 * t);
+  const w = FLAT_MIN + (1 - FLAT_MIN) * side;
+  const toward = Math.sin(ang) >= 0;               // canvas y grows downwards
+  const baseA = ctx.globalAlpha;
+  ctx.rotate(TILT * Math.sin(ang) * side);
+  /* Whichever view is winning is drawn solid and the other blended over it,
+     rather than both at part opacity — two half-transparent sprites let the
+     pond show through the duck, and a murky see-through duck is the one
+     artifact worth avoiding here. */
+  const sideImg = isMother ? tex.mother : tex.duckling;
+  const narrowImg = isMother ? (toward ? tex.motherFront : tex.motherBack)
+                             : (toward ? tex.ducklingFront : tex.ducklingBack);
+  const drawSide = function(alpha){
+    if (alpha <= 0.002) return;
+    ctx.save();
+    ctx.globalAlpha = baseA * alpha;
+    ctx.scale(sc * w * sign, sc);
+    ctx.drawImage(sideImg, isMother ? -34 : -15, isMother ? -40 : -20,
+                  sideImg.width / tex.s, sideImg.height / tex.s);
+    ctx.restore();
+  };
+  const drawNarrow = function(alpha){
+    if (alpha <= 0.002) return;
+    ctx.save();
+    ctx.globalAlpha = baseA * alpha;
+    ctx.scale(sc * sign, sc);
+    ctx.drawImage(narrowImg, isMother ? -28 : -15, isMother ? -40 : -20,
+                  narrowImg.width / tex.s, narrowImg.height / tex.s);
+    ctx.restore();
+  };
+  if (narrow <= 0.5){ drawSide(1); drawNarrow(narrow); }
+  else { drawNarrow(1); drawSide(1 - narrow); }
   ctx.restore();
 }
 
