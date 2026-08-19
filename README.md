@@ -434,6 +434,17 @@ A map-reading game for roughly ages 7–10. Open `foxglove-trail/index.html` —
 
 A fox has to get home to the den before the evening fog closes in. You can only see a few paces of wood — but a paper map in the corner shows the **whole** forest, with the den marked by a dotted ring. **The map never rotates** — up on the paper is up the screen — so the work is reading the trail system, not un-turning the page. A round is three short nights and takes under two minutes.
 
+### The map is never covered
+
+Reaching a landmark raises a message — "The standing stone", *find it on your map*. That message used to be pinned to the top
+centre of the screen, which is fine on a desktop and wrong on a phone, where the paper disc is drawn much larger in proportion
+and lives in that same top strip: the note landed squarely on the map it was telling the child to look at.
+
+The message now knows where the paper is. Both read the same `mapPlacement()`, and the note is tested against the disc as a
+circle rather than a box, so it is not pushed aside at the corners for nothing. Three positions are tried in order — centred at
+the top as designed, then under the disc, then beside it — because on a short screen in landscape the disc is tall enough to
+rule the first two out. A long landmark name is scaled down to fit a narrow screen rather than run off the edge.
+
 ### The skill it builds
 
 The mechanic *is* the exercise: **allocentric → egocentric translation**, the real skill behind map reading and orienteering. You hold a bird's-eye model of the wood in mind while moving through it at ground level, and turn "the den is up-left on the paper" into "so I run up-left from here".

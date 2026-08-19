@@ -2504,31 +2504,89 @@ function drawMapDisc(cx, cy, R, opts) {
 
 
 /* ---------------------------------------------------------------- chrome */
+/* Where the paper disc sits while a night is being played. The renderer and
+   the toast both read this, so the toast can be certain of never covering the
+   map — half its messages are telling the child to go and look at it. `r`
+   includes the rim, so it is the whole drawn footprint. */
+function mapPlacement() {
+  var R, mx, my;
+  if (MOBILE) {
+    /* on a narrow screen the paper is drawn much larger in proportion, and
+       kept up in the corner so it never covers the fox or a running thumb */
+    R = clamp(VW * 0.235, 84, 150);
+    mx = VW - R - 12; my = R + 56;
+  } else {
+    R = clamp(Math.min(VW, VH) * 0.155, 76, 124);
+    mx = VW - R - 40; my = R + 44;
+  }
+  return { x: mx, y: my, r: R, foot: R + 8 };
+}
+/* Does a box touch the paper disc? The map is a circle, so a box-on-box test
+   would push the toast away needlessly at the corners. */
+function boxHitsDisc(bx, by, bw, bh, cx, cy, cr) {
+  var nx = clamp(cx, bx, bx + bw);
+  var ny = clamp(cy, by, by + bh);
+  var dx = cx - nx, dy = cy - ny;
+  return dx * dx + dy * dy < cr * cr;
+}
+
 function drawToast() {
   if (!G.toast) return;
   var a = G.toast.t < 0.25 ? G.toast.t / 0.25 : G.toast.t > 2.5 ? clamp((3.1 - G.toast.t) / 0.6, 0, 1) : 1;
-  var y = 96 - (1 - a) * 8;
+
+  var fTxt = 20, fSub = 13.5;
   ctx.save();
-  ctx.globalAlpha = a;
-  ctx.font = '800 20px "Baloo 2", system-ui, sans-serif';
+  ctx.font = '800 ' + fTxt + 'px "Baloo 2", system-ui, sans-serif';
   var wTxt = ctx.measureText(G.toast.text).width;
-  ctx.font = '700 13.5px Nunito, system-ui, sans-serif';
+  ctx.font = '700 ' + fSub + 'px Nunito, system-ui, sans-serif';
   var wSub = G.toast.sub ? ctx.measureText(G.toast.sub).width : 0;
-  var wBox = Math.max(wTxt, wSub) + 44;
+
+  /* A long label on a narrow phone is shrunk to fit rather than allowed to
+     run off the sides. */
+  var maxBox = VW - 24;
+  var widest = Math.max(wTxt, wSub);
+  if (widest + 44 > maxBox && widest > 0) {
+    var k = Math.max(0.72, (maxBox - 44) / widest);
+    fTxt *= k; fSub *= k; wTxt *= k; wSub *= k;
+  }
+
+  var wBox = Math.min(maxBox, Math.max(wTxt, wSub) + 44);
   var hBox = G.toast.sub ? 62 : 44;
+  var x = VW / 2 - wBox / 2;
+  var y = 96;
+
+  /* Never on the paper. Three places are tried in order, because on a short
+     screen the disc is tall enough to rule the first two out: centred at the
+     top as designed, then under the disc, then beside it. */
+  var mp = mapPlacement();
+  var clear = mp.foot + 10;
+  if (boxHitsDisc(x, y, wBox, hBox, mp.x, mp.y, clear)) {
+    var below = mp.y + mp.foot + 14;
+    var floor = VH - hBox - (MOBILE ? 78 : 26);
+    if (below <= floor) {
+      y = below;
+    } else {
+      x = Math.max(10, mp.x - clear - wBox);
+      if (boxHitsDisc(x, y, wBox, hBox, mp.x, mp.y, clear)) y = floor;
+    }
+  }
+  y -= (1 - a) * 8;
+  var cx = x + wBox / 2;
+
+  ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(11,26,32,.74)';
   ctx.strokeStyle = 'rgba(226,206,166,.22)'; ctx.lineWidth = 1.5;
-  rr(ctx, VW / 2 - wBox / 2, y, wBox, hBox, 16);
+  rr(ctx, x, y, wBox, hBox, 16);
   ctx.fill(); ctx.stroke();
   ctx.textAlign = 'center';
   ctx.fillStyle = '#f6ecd8';
-  ctx.font = '800 20px "Baloo 2", system-ui, sans-serif';
+  ctx.font = '800 ' + fTxt + 'px "Baloo 2", system-ui, sans-serif';
   ctx.textBaseline = 'middle';
-  ctx.fillText(G.toast.text, VW / 2, y + (G.toast.sub ? 22 : 22));
+  ctx.fillText(G.toast.text, cx, y + 22);
   if (G.toast.sub) {
     ctx.fillStyle = 'rgba(198,214,206,.9)';
-    ctx.font = '700 13.5px Nunito, system-ui, sans-serif';
-    ctx.fillText(G.toast.sub, VW / 2, y + 44);
+    ctx.font = '700 ' + fSub + 'px Nunito, system-ui, sans-serif';
+    ctx.fillText(G.toast.sub, cx, y + 44);
   }
   ctx.restore();
 }
@@ -2705,17 +2763,8 @@ function render() {
   drawGlows();
 
   if (G.state === 'play') {
-    var R, mx, my;
-    if (MOBILE) {
-      /* on a narrow screen the paper is drawn much larger in proportion, and
-         kept up in the corner so it never covers the fox or a running thumb */
-      R = clamp(VW * 0.235, 84, 150);
-      mx = VW - R - 12; my = R + 56;
-    } else {
-      R = clamp(Math.min(VW, VH) * 0.155, 76, 124);
-      mx = VW - R - 40; my = R + 44;
-    }
-    drawMapDisc(mx, my, R, {
+    var mp = mapPlacement();
+    drawMapDisc(mp.x, mp.y, mp.r, {
       showFox: clamp(G.sniffTime / 0.6, 0, 1) * (G.sniffTime > 0 ? 1 : 0),
       trail: G.assist > 0.45,
       meter: true,
