@@ -33,6 +33,9 @@ Full screen on the mobile web is more awkward than it looks, so it is worth bein
 - The Fullscreen API is **per document**. The spec fully exits fullscreen when a document unloads, so it can never survive the
   tap that opens a game — every page has to ask for itself, on its own user gesture. Each page therefore requests full screen on
   its first touch.
+- **Chrome counts only a finished tap** as that gesture, so asking on `pointerdown` or `touchstart` alone is quietly ignored.
+  Every game backs the request up on `touchend`, anywhere on the page. Miss that and the game simply runs with the browser's
+  toolbars over it, on the most common Android setup, with nothing in the console to say why.
 - **Safari on iPhone does not implement element fullscreen at all**, so on the most common kids' device that request does
   nothing.
 
@@ -80,7 +83,8 @@ The renderer degrades in small ordered steps if a frame genuinely costs too much
 A 90-second pond for roughly ages 5–10. Open `ducks-in-a-row/index.html` — no build step, no server, no keys, no dependencies.
 
 **Play:** hold **anywhere** and she turns towards your finger · `←` `→` (or `A` `D`) held down turn her on a keyboard ·
-`Space` start and play again · `Q` grown-ups menu · `H` back to all games.
+`Space` start and play again · `Q` grown-ups menu · `H` back to all games. The grown-ups menu also has a **Full screen**
+button.
 
 A mother duck paddles across a pond at golden hour, gathering her ducklings into a line behind her. She never stops swimming;
 the only thing a child chooses is where she points.
@@ -157,6 +161,12 @@ The pond is larger than a phone screen, so free ducklings are often off it. Up t
 screen, one per off-screen duckling, nearest first — a ring with the duckling drawn upright inside it and a point on the
 outside saying which way to go. The nearer the duckling, the bigger and brighter its arrow, so the arrows rank the choice
 rather than just listing it. They keep clear of the HUD, the two chrome buttons and the hint line.
+
+Full screen is asked for on the first touch and again on the first `touchend`, since Chrome ignores the earlier request; it
+keeps retrying until it is granted, then stops. The canvas is sized from `visualViewport` rather than `window.innerHeight`, so
+it stays correct while a mobile toolbar is sliding away, and the grown-ups menu carries a **Full screen** button for the
+manual route. On an iPhone, where there is no element fullscreen at all, that button says so and points at Add to Home Screen
+instead of sitting there dead.
 
 ### Why the ducks never rotate
 

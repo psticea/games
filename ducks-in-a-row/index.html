@@ -23,7 +23,9 @@
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{
-    width:100%;height:100%;overflow:hidden;background:#0b2d36;
+    width:100%;height:100%;
+    height:100dvh;                 /* the visible area, toolbars and all */
+    overflow:hidden;background:#0b2d36;
     font-family:var(--font);
     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
     overscroll-behavior:none;
@@ -32,7 +34,11 @@
   }
   body{position:fixed;inset:0;}
   /* touch-action:none belongs on the play surface only — never on body. */
-  canvas#game{display:block;position:fixed;inset:0;width:100%;height:100%;touch-action:none;}
+  canvas#game{
+    display:block;position:fixed;inset:0;
+    width:100%;height:100%;height:100dvh;
+    touch-action:none;
+  }
 
   /* ---------- unobtrusive top-right chrome: home + grown-ups ---------- */
   #chrome{
@@ -355,6 +361,7 @@
     <div class="rule"></div>
     <div class="footrow">
       <button class="btn ghost" id="soundBtn" type="button">Sound: <span id="soundState">On</span></button>
+      <button class="btn ghost" id="fullBtn" type="button">Full screen</button>
       <a class="btn ghost" href="../index.html">&larr; All games</a>
       <button class="btn" id="closeBtn" type="button">Back to the pond</button>
     </div>
@@ -1623,8 +1630,11 @@ const cardTitle = el('title'), cardEnd = el('end');
 const veil = el('veil');
 
 const REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* Whether this is really a touch device. The media query alone calls a
+   touchscreen laptop coarse, so a real touch event upgrades it later. */
 const COARSE  = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-const MOBILE  = COARSE || Math.min(screen.width, screen.height) < 760;
+let TOUCH = COARSE || ('ontouchstart' in window &&
+                       !(window.matchMedia && window.matchMedia('(pointer: fine)').matches));
 const STORE_BEST = 'ducksInARow.best', STORE_SND = 'ducksInARow.sound';
 
 let VW = 0, VH = 0, dpr = 1, scale = 1;
@@ -1658,8 +1668,12 @@ function pondFor(seedNum){
   return { w: Math.round(w), h: Math.round(K.POND_AREA / w * wobble) };
 }
 function resize(){
-  VW = Math.max(1, window.innerWidth);
-  VH = Math.max(1, window.innerHeight);
+  /* The visual viewport is the honest size while a mobile toolbar is sliding
+     away; window.innerHeight can lag it by a frame or lie by the toolbar's
+     height. Fall back when it is not there. */
+  const vv = window.visualViewport;
+  VW = Math.max(1, Math.round(vv ? vv.width : window.innerWidth));
+  VH = Math.max(1, Math.round(vv ? vv.height : window.innerHeight));
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   cv.width = Math.round(VW * dpr);
   cv.height = Math.round(VH * dpr);
@@ -2427,7 +2441,7 @@ function toWorld(clientX, clientY, S){
 let pointerDown = false;
 function press(e){
   Snd.init(); Snd.resume();
-  if (MOBILE) goFullscreen();
+  if (TOUCH) goFullscreen();
   if (veil.classList.contains('open')) return;
   if (state !== 'play'){ startRun(); return; }
   pointerDown = true;
@@ -2486,14 +2500,44 @@ function applyKeys(){
   else { sim.input.mode = 'turn'; sim.input.dir = dir; }
 }
 
+function isFullscreen(){
+  return !!(document.fullscreenElement || document.webkitFullscreenElement);
+}
 function goFullscreen(){
+  if (isFullscreen()) return;
   try {
     const d = document.documentElement;
-    if (!document.fullscreenElement && !document.webkitFullscreenElement){
-      const req = d.requestFullscreen || d.webkitRequestFullscreen;
-      if (req){ const p = req.call(d, { navigationUI: 'hide' }); if (p && p.catch) p.catch(function(){}); }
-    }
+    const req = d.requestFullscreen || d.webkitRequestFullscreen;
+    if (req){ const p = req.call(d, { navigationUI: 'hide' }); if (p && p.catch) p.catch(function(){}); }
   } catch (e) {}
+}
+/* Chrome counts only a *finished* tap as the user gesture the Fullscreen API
+   insists on, so the request made on pointerdown above is backed up here — on
+   touchend, anywhere on the page, including a tap that lands on the chrome.
+   This is the handler that actually wins on Android; without it the game runs
+   with the browser's toolbars over it. It keeps trying until it succeeds,
+   then takes itself off, so a first tap that Chrome rejects is not the end of
+   it. Safari on iPhone has no element fullscreen at all: there the answer is
+   Add to Home Screen, which the manifest and the picker already handle. */
+document.addEventListener('touchend', function retry(){
+  TOUCH = true;
+  goFullscreen();
+  if (isFullscreen()) document.removeEventListener('touchend', retry);
+}, { passive: true });
+/* A real touch also settles the question of what kind of device this is. */
+window.addEventListener('touchstart', function once(){
+  TOUCH = true;
+  body.classList.remove('has-keys');
+  titleBestText();
+  window.removeEventListener('touchstart', once);
+}, { passive: true, once: true });
+
+document.addEventListener('fullscreenchange', syncFullBtn);
+document.addEventListener('webkitfullscreenchange', syncFullBtn);
+function syncFullBtn(){
+  const b = el('fullBtn');
+  if (b) b.textContent = isFullscreen() ? 'Leave full screen' : 'Full screen';
+  setTimeout(resize, 60);
 }
 
 /* ---------- grown-ups menu ---------- */
@@ -2518,8 +2562,34 @@ el('soundBtn').addEventListener('click', function(){
 });
 el('soundState').textContent = soundOn ? 'On' : 'Off';
 
+el('fullBtn').addEventListener('click', function(e){
+  e.preventDefault(); e.stopPropagation();
+  try {
+    if (!isFullscreen()) goFullscreen();
+    else if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  } catch (err) {}
+});
+/* On a device with no element fullscreen — an iPhone — that button could never
+   do anything, so it says what does work there rather than sitting dead. */
+if (!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen)){
+  const fb = el('fullBtn');
+  fb.disabled = true;
+  fb.textContent = 'Add to Home Screen for full screen';
+  fb.style.opacity = '.7';
+  fb.style.cursor = 'default';
+} else {
+  syncFullBtn();
+}
+
 /* ---------- lifecycle ---------- */
 window.addEventListener('resize', resize);
+/* The visual viewport is what actually changes when a mobile toolbar slides
+   away, and it does not always fire a window resize. */
+if (window.visualViewport){
+  window.visualViewport.addEventListener('resize', resize);
+  window.visualViewport.addEventListener('scroll', resize);
+}
 window.addEventListener('orientationchange', function(){ setTimeout(resize, 120); });
 document.addEventListener('visibilitychange', function(){
   if (document.hidden){ paused = true; }
